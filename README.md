@@ -21,22 +21,24 @@ Este proyecto forma parte del trabajo integrador de la carrera y se desarrollar�
 
 ---
 
-## 🏗️ Arquitectura
+### 🏗️ Arquitectura
 
 El proyecto está organizado siguiendo una arquitectura basada en features:
 
+```text
 src/
 ├── app/
-    ├── core/           # servicios globales (auth, api, etc)
-    ├── shared/         # componentes reutilizables
-    ├── layout/         # sidebar, topbar
-    ├── features/       # módulos funcionales
-    ├── expedientes/
-    ├── clientes/
-    ├── agenda/
-    ├── log/
-    ├── configuracion/
-    └── auth/
+│   ├── core/           # servicios globales (auth, api, etc)
+│   ├── shared/         # componentes reutilizables
+│   ├── layout/         # sidebar, topbar
+│   └── features/       # módulos funcionales
+│       ├── expedientes/
+│       ├── clientes/
+│       ├── agenda/
+│       ├── log/
+│       ├── configuracion/
+│       └── auth/
+```
 
 ---
 
@@ -57,3 +59,4 @@ cd lexora-app
 npm install
 ng serve
 Abrir en navegador: http://localhost:4200
+```
