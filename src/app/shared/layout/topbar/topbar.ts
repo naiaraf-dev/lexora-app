@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-topbar',
   imports: [],
   templateUrl: './topbar.html',
-  styleUrl: './topbar.css',
 })
 export class Topbar {}

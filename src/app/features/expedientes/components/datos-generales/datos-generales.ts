@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-datos-generales',
   imports: [],
   templateUrl: './datos-generales.html',
-  styleUrl: './datos-generales.css',
 })
 export class DatosGenerales {}

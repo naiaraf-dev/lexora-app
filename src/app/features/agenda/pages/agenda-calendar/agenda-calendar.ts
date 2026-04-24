@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-agenda-calendar',
   imports: [],
   templateUrl: './agenda-calendar.html',
-  styleUrl: './agenda-calendar.css',
 })
 export class AgendaCalendar {}

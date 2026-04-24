@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-expediente-view',
   imports: [],
   templateUrl: './expediente-view.html',
-  styleUrl: './expediente-view.css',
 })
 export class ExpedienteView {}

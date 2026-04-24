@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-log-list',
   imports: [],
   templateUrl: './log-list.html',
-  styleUrl: './log-list.css',
 })
 export class LogList {}
