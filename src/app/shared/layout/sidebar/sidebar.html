@@ -1,1 +1,89 @@
-<p>sidebar works!</p>
+<aside
+  [class]="collapsed()
+    ? 'w-16 transition-all duration-300 ease-in-out'
+    : 'w-64 transition-all duration-300 ease-in-out'"
+  class="flex flex-col h-screen bg-[#0F172A] border-r border-white/5 relative"
+>
+
+  <!-- Logo -->
+  <div class="flex items-center justify-center px-4 py-6 min-h-[80px]">
+    <ng-container *ngIf="!collapsed(); else collapsedLogo">
+      <!-- Logo expandido -->
+      <img
+        src="images/lexora_logo.png"
+        alt="Lexora"
+        class="h-12 max-w-[160px] object-contain"
+      />
+    </ng-container>
+
+    <ng-template #collapsedLogo>
+      <!-- Logo colapsado (LX) -->
+      <img
+        src="images/lexora_logo_collapsed.png"
+        alt="LX"
+        class="h-8 max-w-[160px] object-contain"
+      />
+    </ng-template>
+  </div>
+
+  <!-- Divider -->
+  <div class="mx-4 h-px bg-white/10"></div>
+
+  <!-- Nav Items -->
+  <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
+    <a
+      *ngFor="let item of navItems"
+      [routerLink]="item.route"
+      routerLinkActive="bg-[#6366F1]/20 text-[#6366F1] border-l-2 border-[#6366F1]"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all duration-200 group cursor-pointer border-l-2 border-transparent"
+      [title]="collapsed() ? item.label : ''"
+    >
+      <!-- Icon -->
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
+      </svg>
+
+      <!-- Label -->
+      <span
+        *ngIf="!collapsed()"
+        class="text-sm font-medium whitespace-nowrap transition-opacity duration-200"
+      >
+        {{ item.label }}
+      </span>
+    </a>
+  </nav>
+
+  <!-- Collapse Button -->
+  <div class="mx-4 h-px bg-white/10"></div>
+  <button
+    (click)="toggleCollapse()"
+    class="flex items-center gap-3 px-5 py-4 text-white/50 hover:text-white transition-colors duration-200 w-full"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-4 h-4 shrink-0 transition-transform duration-300"
+      [class.rotate-180]="collapsed()"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+    <span
+      *ngIf="!collapsed()"
+      class="text-sm font-medium"
+    >
+      Colapsar
+    </span>
+  </button>
+
+</aside>
