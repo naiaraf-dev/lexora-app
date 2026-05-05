@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { Modal } from './modal';
+import { UiModal } from './ui-modal';
 
 describe('Modal', () => {
-  let component: Modal;
-  let fixture: ComponentFixture<Modal>;
+  let component: UiModal;
+  let fixture: ComponentFixture<UiModal>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Modal],
+      imports: [UiModal],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Modal);
+    fixture = TestBed.createComponent(UiModal);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

@@ -1,1 +1,34 @@
-<p>button works!</p>
+<button
+  [class]="classes"
+  [disabled]="disabled || loading"
+>
+
+  <!-- Loader -->
+  @if (loading) {
+    <svg
+      class="w-4 h-4 animate-spin absolute"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="3"
+      ></circle>
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a10 10 0 100 20v-4l3 3-3 3v-4a8 8 0 01-8-8z"
+      ></path>
+    </svg>
+  }
+
+  <!-- Content -->
+  <span class="inline-flex items-center gap-2" [class.opacity-0]="loading">
+    <ng-content></ng-content>
+  </span>
+
+</button>
