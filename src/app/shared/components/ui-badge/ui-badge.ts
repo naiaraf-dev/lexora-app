@@ -1,7 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-type Estado = 'EN_TRAMITE' | 'FINALIZADO' | 'ARCHIVADO';
+export interface BadgeConfig {
+  label: string;
+  classes: string;
+  dot: string;
+}
 
 @Component({
   selector: 'ui-badge',
@@ -10,30 +14,18 @@ type Estado = 'EN_TRAMITE' | 'FINALIZADO' | 'ARCHIVADO';
   templateUrl: './ui-badge.html',
 })
 export class UiBadge {
+  @Input() estado!: string;
+  @Input() config!: Record<string, BadgeConfig>;
 
-  @Input() estado!: Estado;
-
-  get label(): string {
-    switch (this.estado) {
-      case 'EN_TRAMITE': return 'En trámite';
-      case 'FINALIZADO': return 'Finalizado';
-      case 'ARCHIVADO': return 'Archivado';
-    }
+  get resolved(): BadgeConfig {
+    return this.config?.[this.estado] ?? {
+      label: this.estado,
+      classes: 'bg-gray-100 text-gray-500',
+      dot: 'bg-gray-400',
+    };
   }
 
-  get classes(): string {
-    switch (this.estado) {
-      case 'EN_TRAMITE': return 'bg-info/10 text-info';
-      case 'FINALIZADO': return 'bg-success/10 text-success';
-      case 'ARCHIVADO': return 'bg-gray-100 text-gray-500';
-    }
-  }
-
-  get dot(): string {
-    switch (this.estado) {
-      case 'EN_TRAMITE': return 'bg-info';
-      case 'FINALIZADO': return 'bg-success';
-      case 'ARCHIVADO': return 'bg-gray-400';
-    }
-  }
+  get label() { return this.resolved.label; }
+  get classes() { return this.resolved.classes; }
+  get dot() { return this.resolved.dot; }
 }

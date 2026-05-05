@@ -32,7 +32,7 @@
 
                 <!-- BADGE -->
                 @if (col.type === 'badge') {
-                  <ui-badge [estado]="row[col.key]"></ui-badge>
+                  <ui-badge [estado]="row[col.key]" [config]="col.badgeConfig!"></ui-badge>
                 }
 
                 <!-- DATE -->

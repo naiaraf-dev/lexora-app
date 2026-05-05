@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { UiBadge } from '../ui-badge/ui-badge';
+import { BadgeConfig, UiBadge } from '../ui-badge/ui-badge';
 
 export type TableAction = 'view' | 'edit' | 'delete';
 
@@ -9,6 +9,7 @@ export interface TableColumn {
   type?: 'text' | 'badge' | 'date' | 'actions';
   actions?: TableAction[];
   getActions?: (row: any) => TableAction[];
+  badgeConfig?: Record<string, BadgeConfig>;
 }
 
 @Component({
