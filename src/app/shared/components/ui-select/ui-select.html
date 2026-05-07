@@ -6,19 +6,24 @@
     </label>
   }
 
-  <select
-    [ngModel]="model"
-    (ngModelChange)="modelChange.emit($event)"
-    class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary
-           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-  >
-    <option value="">Todos</option>
+  <div class="relative">
+    <select
+      [ngModel]="model"
+      (ngModelChange)="modelChange.emit($event)"
+      class="w-full appearance-none px-3 py-2 pr-8 rounded-lg border border-gray-200 bg-white text-sm text-text-primary
+             focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary cursor-pointer"
+    >
+      <option value="">Todos</option>
+      @for (opt of options; track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+      }
+    </select>
 
-    @for (opt of options; track opt.value) {
-      <option [value]="opt.value">
-        {{ opt.label }}
-      </option>
-    }
+    <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  </div>
 
-  </select>
 </div>
