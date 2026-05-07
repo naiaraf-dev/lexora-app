@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { BadgeConfig, UiBadge } from '../ui-badge/ui-badge';
 
 export type TableAction = 'view' | 'edit' | 'delete';
@@ -15,7 +16,7 @@ export interface TableColumn {
 @Component({
   selector: 'app-ui-table',
   standalone: true,
-  imports: [UiBadge],
+  imports: [UiBadge, CommonModule],
   templateUrl: './ui-table.html',
 })
 export class UiTable {

@@ -7,7 +7,11 @@
       <thead>
         <tr class="border-b border-gray-100 text-left bg-gray-50">
           @for (col of columns; track col.key) {
-            <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">
+            <th
+              [class]="col.type === 'actions'
+                ? 'px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase text-center'
+                : 'px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase'"
+            >
               {{ col.label }}
             </th>
           }
@@ -38,7 +42,7 @@
                 <!-- DATE -->
                 @if (col.type === 'date') {
                   <span class="text-xs text-text-primary/60">
-                    {{ row[col.key] }}
+                    {{ row[col.key] | date:'dd/MM/yyyy HH:mm' }}
                   </span>
                 }
 
