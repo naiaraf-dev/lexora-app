@@ -1,5 +1,18 @@
 <div class="flex flex-col gap-6">
-  <app-expediente-header></app-expediente-header>
-  <app-expediente-filters></app-expediente-filters> 
-  <app-expediente-table></app-expediente-table>
+  <app-expediente-header
+    (expedienteCreado)="onExpedienteCreado($event)"
+  ></app-expediente-header>
+
+  <app-expediente-filters
+    (filtersChange)="onFiltersChange($event)"
+  ></app-expediente-filters>
+
+  <app-expediente-table
+    [expedientes]="expedientesPagina"
+    [total]="total"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (delete)="onEliminar($event)"
+    (pageChange)="onPageChange($event)"
+  ></app-expediente-table>
 </div>

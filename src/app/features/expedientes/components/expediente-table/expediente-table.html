@@ -1,1 +1,34 @@
-<p>expediente-table works!</p>
+<div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+  <app-ui-table
+    [columns]="columns"
+    [data]="expedientes"
+    (action)="onAction($event)"
+  ></app-ui-table>
+
+  <!-- Footer paginación -->
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
+    <span>Mostrando {{ expedientes.length }} de {{ total }} expedientes</span>
+    <div class="flex items-center gap-1">
+      <button
+        (click)="onPageChange(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
+      >←</button>
+
+      @for (page of pages; track page) {
+        <button
+          (click)="onPageChange(page)"
+          [class]="page === currentPage
+            ? 'px-2.5 py-1 rounded bg-primary text-white'
+            : 'px-2.5 py-1 rounded hover:bg-gray-100 transition'"
+        >{{ page }}</button>
+      }
+
+      <button
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
+      >→</button>
+    </div>
+  </div>
+</div>

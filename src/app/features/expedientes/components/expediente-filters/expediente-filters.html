@@ -1,1 +1,36 @@
-<p>expediente-filters works!</p>
+<div class="flex flex-wrap items-center gap-3">
+
+  <!-- N° de expediente -->
+  <app-ui-input [label]="'N° Expediente'" placeholder="N° expediente..." [(model)]="filters.numero" (modelChange)="filtersChange.emit({...filters})"></app-ui-input>
+
+  <!-- N° de causa -->
+  <app-ui-input [label]="'N° Causa'" placeholder="N° causa..." [(model)]="filters.causa" (modelChange)="filtersChange.emit({...filters})"></app-ui-input>
+
+  <!-- Carátula -->
+  <app-ui-input [label]="'Carátula'" placeholder="Buscar por carátula..." [(model)]="filters.caratula" (modelChange)="filtersChange.emit({...filters})"></app-ui-input>
+
+  <!-- Área -->
+  <app-ui-select [label]="'Área'" [(model)]="filters.area" [options]="areaOptions" (modelChange)="filtersChange.emit({...filters})"></app-ui-select>
+
+  <!-- Tipo de expediente -->
+  <app-ui-select [label]="'Tipo de expediente'" [(model)]="filters.tipo" [options]="tipoOptions" (modelChange)="filtersChange.emit({...filters})"></app-ui-select>
+
+  <!-- Estado -->
+  <app-ui-select [label]="'Estado'" [(model)]="filters.estado" [options]="estadoOptions" (modelChange)="filtersChange.emit({...filters})"></app-ui-select>
+
+  <!-- Cliente -->
+  <app-ui-select [label]="'Cliente'" [(model)]="filters.clienteId" [options]="clienteOptions" (modelChange)="filtersChange.emit({...filters})"></app-ui-select>
+
+  <!-- Limpiar filtros -->
+  @if (hasActiveFilters()) {
+    <button
+      (click)="clearFilters()"
+      class="self-end flex items-center gap-1.5 px-3 py-2 text-sm text-text-primary/40 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors whitespace-nowrap"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+      Limpiar filtros
+    </button>
+  }
+</div>
