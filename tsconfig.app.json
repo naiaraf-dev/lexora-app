@@ -3,7 +3,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./out-tsc/app",
+    "outDir": "./out-tsc/app", // puede generar error fantasma, no se genera el outDir pero tira error de que no existe, se ignora
     "types": []
   },
   "include": [

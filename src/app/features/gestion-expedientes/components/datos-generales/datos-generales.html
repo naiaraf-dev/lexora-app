@@ -1,0 +1,228 @@
+<div class="flex flex-col gap-4 max-w-6xl mx-auto">
+
+    <!-- Datos del expediente -->
+    <div class="bg-white rounded-xl border border-black/8 p-6 flex flex-col gap-5">
+
+        <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">
+        Datos del expediente
+        </h2>
+
+        <!-- Fila 1: N° Expediente | Carátula | Área -->
+        <div class="grid grid-cols-3 gap-4">
+        <app-ui-input
+            label="N° de Expediente"
+            [model]="form.get('numero')?.value"
+            [disabled]="true"
+        ></app-ui-input>
+        <app-ui-input
+            label="Carátula *"
+            [model]="form.get('caratula')?.value"
+            (modelChange)="form.get('caratula')?.setValue($event)"
+        ></app-ui-input>
+        <app-ui-select
+            label="Área *"
+            variant="native"
+            [options]="areaOptions"
+            [model]="form.get('area')?.value"
+            (modelChange)="form.get('area')?.setValue($event)"
+        ></app-ui-select>
+        </div>
+
+        <!-- Fila 2: Tipo | Cliente | Rol del cliente -->
+        <div class="grid grid-cols-3 gap-4">
+        <app-ui-select
+            label="Tipo de expediente *"
+            [options]="tipoOptions"
+            [model]="form.get('tipo')?.value"
+            (modelChange)="form.get('tipo')?.setValue($event)"
+        ></app-ui-select>
+        <app-ui-select
+            label="Cliente"
+            [options]="clienteOptions"
+            [model]="form.get('clienteId')?.value"
+            (modelChange)="form.get('clienteId')?.setValue($event)"
+        ></app-ui-select>
+        <app-ui-select
+            label="Rol del cliente"
+            [options]="rolOptions"
+            [model]="form.get('rolCliente')?.value"
+            (modelChange)="form.get('rolCliente')?.setValue($event)"
+        ></app-ui-select>
+        </div>
+
+        <!-- Fila 3: Estado -->
+        <div class="grid grid-cols-3 gap-4">
+        <app-ui-select
+            label="Estado del expediente"
+            [options]="estadoOptions"
+            [model]="form.get('estado')?.value"
+            (modelChange)="form.get('estado')?.setValue($event)"
+        ></app-ui-select>
+        </div>
+
+        <!-- Descripción -->
+        <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60">
+            Descripción / Objeto del expediente
+        </label>
+        <textarea
+            [value]="form.get('descripcion')?.value ?? ''"
+            (input)="form.get('descripcion')?.setValue($any($event.target).value)"
+            placeholder="Descripción del objeto del expediente..."
+            rows="3"
+            class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none
+                focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200
+                placeholder:text-text-primary/30"
+        ></textarea>
+        </div>
+
+    </div>
+
+    <!-- Datos Judiciales -->
+    <div class="bg-white rounded-xl border border-black/8 p-6 flex flex-col gap-5">
+
+        <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">
+        Datos Judiciales
+        </h2>
+
+        <!-- Fila 1: Fuero | Secretaría | Juzgado -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-select
+                label="Fuero"
+                [options]="fueroOptions"
+                [model]="form.get('fuero')?.value"
+                (modelChange)="form.get('fuero')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-select
+                label="Juzgado"
+                [options]="juzgadoOptions"
+                [model]="form.get('juzgado')?.value"
+                (modelChange)="form.get('juzgado')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-input
+                label="Secretaría (Opcional)"
+                [model]="form.get('secretaria')?.value"
+                (modelChange)="form.get('secretaria')?.setValue($event)"
+            ></app-ui-input>
+        </div>
+
+        <!-- Fila 2: Jurisdicción | N° de Causa PJN | Instancia -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-select
+                label="Jurisdicción"
+                [options]="jurisdiccionOptions"
+                [model]="form.get('jurisdiccion')?.value"
+                (modelChange)="form.get('jurisdiccion')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-input
+                label="N° de Causa PJN"
+                [model]="form.get('causaPJNId')?.value"
+                (modelChange)="form.get('causaPJNId')?.setValue($event)"
+            ></app-ui-input>
+            <app-ui-select
+                label="Instancia"
+                [options]="instanciaOptions"
+                [model]="form.get('instancia')?.value"
+                (modelChange)="form.get('instancia')?.setValue($event)"
+            ></app-ui-select>
+        </div>
+
+    </div>
+
+    <!-- Profesiondales Intervinientes -->
+    <div class="bg-white rounded-xl border border-black/8 p-6 flex flex-col gap-5">
+
+        <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">
+        Profesiondales Intervinientes
+        </h2>
+
+        <!-- Fila 1: Abogado responsable | Abogado secundario | Contraparte -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-select
+                label="Abogado responsable"
+                [options]="abogadoOptions"
+                [model]="form.get('abogadoResponsable')?.value"
+                (modelChange)="form.get('abogadoResponsable')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-select
+                label="Abogado secundario"
+                [options]="abogadoOptions"
+                [model]="form.get('abogadoSecundario')?.value"
+                (modelChange)="form.get('abogadoSecundario')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-input
+                label="Contraparte"
+                [model]="form.get('contraparte')?.value"
+                (modelChange)="form.get('contraparte')?.setValue($event)"
+            ></app-ui-input>
+        </div>
+
+        <!-- Fila 2: Abogado contraparte -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-input
+                label="Abogado contraparte"
+                [model]="form.get('abogadoContraparte')?.value"
+                (modelChange)="form.get('abogadoContraparte')?.setValue($event)"
+            ></app-ui-input>
+        </div>
+
+    </div>
+
+    <!-- Fechas Claves -->
+    <div class="bg-white rounded-xl border border-black/8 p-6 flex flex-col gap-5">
+
+        <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">
+        Fechas Claves
+        </h2>
+
+        <!-- Fila 1: Fecha de inicio | Fecha de última actuación | Fecha procesal próximo -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-date-input
+                label="Fecha de inicio"
+                [model]="form.get('fechaInicio')?.value"
+                (modelChange)="form.get('fechaInicio')?.setValue($event)"
+            ></app-ui-date-input>
+            <app-ui-date-input
+                label="Fecha de última actuación"
+                [model]="form.get('fechaUltimaActuacion')?.value"
+                (modelChange)="form.get('fechaUltimaActuacion')?.setValue($event)"
+            ></app-ui-date-input>
+            <app-ui-date-input
+                label="Fecha procesal próximo"
+                [model]="form.get('fechaProcesalProximo')?.value"
+                (modelChange)="form.get('fechaProcesalProximo')?.setValue($event)"
+            ></app-ui-date-input>
+        </div>
+
+    </div>
+
+    <!-- Clasificación Interna -->
+    <div class="bg-white rounded-xl border border-black/8 p-6 flex flex-col gap-5">
+
+        <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">
+        Clasificación Interna
+        </h2>
+
+        <!-- Fila 1: Prioridad | Etiqueta / Categoría | Origen del caso -->
+        <div class="grid grid-cols-3 gap-4">
+            <app-ui-select
+                label="Prioridad"
+                [options]="prioridadOptions"
+                [model]="form.get('prioridad')?.value"
+                (modelChange)="form.get('prioridad')?.setValue($event)"
+            ></app-ui-select>
+            <app-ui-input
+                label="Etiqueta / Categoría"
+                [model]="form.get('etiquetaCategoria')?.value"
+                (modelChange)="form.get('etiquetaCategoria')?.setValue($event)"
+            ></app-ui-input>
+            <app-ui-input
+                label="Origen del caso"
+                [model]="form.get('origenCaso')?.value"
+                (modelChange)="form.get('origenCaso')?.setValue($event)"
+            ></app-ui-input>
+        </div>
+
+    </div>
+
+</div>

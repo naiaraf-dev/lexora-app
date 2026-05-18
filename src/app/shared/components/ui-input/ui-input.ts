@@ -12,4 +12,5 @@ export class UiInput {
   @Input() placeholder = '';
   @Input() model: any;
   @Output() modelChange = new EventEmitter<any>();
+  @Input() disabled = false;
 }

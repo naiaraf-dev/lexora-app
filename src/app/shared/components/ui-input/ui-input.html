@@ -12,5 +12,8 @@
     class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary
            focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
            transition-all duration-200"
+    [disabled]="disabled"
+    [class.opacity-50]="disabled"
+    [class.cursor-not-allowed]="disabled"
   />
 </div>
