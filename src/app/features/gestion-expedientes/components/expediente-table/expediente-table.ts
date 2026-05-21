@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-table';
+import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
 import { Router } from '@angular/router';
 
 export interface Expediente {
@@ -41,10 +41,10 @@ export class ExpedienteTable {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
-  onAction(event: { type: 'view' | 'edit' | 'delete'; row: Expediente }): void {
-    if (event.type === 'view')   this.view.emit(event.row);
-    if (event.type === 'edit')   this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
-    if (event.type === 'delete') this.delete.emit(event.row);
+  onAction(event: { type: TableAction; row: Expediente }): void {
+    if (event.type === 'view')     this.view.emit(event.row);
+    if (event.type === 'edit')     this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
+    if (event.type === 'delete')   this.delete.emit(event.row);
   }
 
   onPageChange(page: number): void { this.pageChange.emit(page); }

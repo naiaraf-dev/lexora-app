@@ -4,11 +4,13 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
+import { PrimaryBtn  } from '../../../../shared/components/primary-btn/primary-btn';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-datos-generales',
   standalone: true,
-  imports: [ReactiveFormsModule, UiInput, UiSelect, UiDateInput],
+  imports: [ReactiveFormsModule, UiInput, UiSelect, UiDateInput, PrimaryBtn],
   templateUrl: './datos-generales.html',
 })
 export class DatosGenerales implements OnInit {
@@ -184,4 +186,32 @@ export class DatosGenerales implements OnInit {
     { value: '3', label: 'López Hnos. S.R.L.'     },
     { value: '4', label: 'Rodríguez, María Elena' },
   ];
+
+  volver(): void {
+    this.router.navigate(['/gestion-expedientes']);
+  }
+
+  guardando = false;
+  
+  guardar(): void {
+    this.guardando = true;
+
+    // 🔴 MOCK — reemplazar por:
+    // const id = this.route.snapshot.paramMap.get('id')!;
+    // this.expedientesService.update(id, form.value).subscribe({
+    //   next: () => {
+    //     this.guardando = false;
+    //     toast.success('Expediente actualizado correctamente');
+    //   },
+    //   error: () => {
+    //     this.guardando = false;
+    //     toast.error('No se pudo guardar. Intentá de nuevo.');
+    //   },
+    // });
+
+    setTimeout(() => {
+      this.guardando = false;
+      toast.success('Expediente actualizado correctamente');
+    }, 800);
+  }
 }

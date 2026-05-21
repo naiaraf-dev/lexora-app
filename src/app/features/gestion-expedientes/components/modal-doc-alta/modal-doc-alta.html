@@ -1,0 +1,62 @@
+<app-ui-modal [open]="open" (cerrar)="cerrarModal()">
+  <div slot="titulo" class="flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    <span class="font-semibold text-text-primary">Subir Documento</span>
+  </div>
+
+  <div slot="cuerpo" class="flex flex-col gap-4">
+    <!-- Drop zone -->
+    <div>
+      <label class="text-xs font-medium text-text-primary/60">Archivo</label>
+      <label
+        class="mt-1 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-8 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+        (dragover)="$event.preventDefault()"
+        (drop)="onDrop($event)"
+      >
+        <input type="file" class="hidden" accept=".pdf,.doc,.docx,.jpg,.png" (change)="onFileChange($event)" />
+        @if (form.archivo) {
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="text-sm font-medium text-primary">{{ form.archivo.name }}</span>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-text-primary/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span class="text-sm text-text-primary/50">Arrastra un archivo o <span class="text-primary font-medium">seleccionalo</span></span>
+          <span class="text-xs text-text-primary/30">PDF, DOC, DOCX, JPG, PNG</span>
+        }
+      </label>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <app-ui-select label="Tipo de documento" [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
+      <app-ui-date-input label="Fecha del documento" [(model)]="form.fechaDocumento"></app-ui-date-input>
+    </div>
+
+    <app-ui-input label="Relacionado con" placeholder="Seleccionar..." [(model)]="form.relacionadoCon"></app-ui-input>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-medium text-text-primary/60">Descripción</label>
+      <textarea
+        [(ngModel)]="form.descripcion"
+        placeholder="Descripción del documento..."
+        rows="4"
+        class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+      ></textarea>
+    </div>
+  </div>
+
+  <div slot="footer" class="flex justify-end gap-2">
+    <app-primary-btn variant="secondary" (click)="cerrarModal()">Cancelar</app-primary-btn>
+    <app-primary-btn variant="primary" [loading]="guardando" (click)="submit()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 3v4H7V3" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 12a3 3 0 100 6 3 3 0 000-6z" />
+      </svg>
+      Subir Documento
+    </app-primary-btn>
+  </div>
+</app-ui-modal>
