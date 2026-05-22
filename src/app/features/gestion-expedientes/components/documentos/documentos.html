@@ -17,7 +17,6 @@
     [total]="filteredDocumentos.length"
     [currentPage]="currentPage"
     [totalPages]="totalPages"
-    (view)="onView($event)"
     (edit)="onEdit($event)"
     (delete)="onDelete($event)"
     (pageChange)="currentPage = $event"
@@ -30,12 +29,6 @@
   #modalAltaRef
   (guardar)="onGuardarAlta($event)"
 ></app-modal-doc-alta>
-
-<app-modal-doc-view
-  [open]="modalViewOpen"
-  [documento]="selectedDoc"
-  (cerrar)="modalViewOpen = false"
-></app-modal-doc-view>
 
 <app-modal-doc-edit
   [open]="modalEditOpen"

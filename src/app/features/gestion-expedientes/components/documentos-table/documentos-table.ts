@@ -51,22 +51,24 @@ export class DocumentosTable {
       label: 'Tipo',
       type: 'badge',
       badgeConfig: {
-        ESCRITO:   { label: 'Escrito',   classes: 'bg-blue-100 text-blue-600',   dot: 'bg-blue-500' },
+        ESCRITO:   { label: 'Escrito',   classes: 'bg-blue-100 text-blue-600',     dot: 'bg-blue-500' },
         CONTRATO:  { label: 'Contrato',  classes: 'bg-purple-100 text-purple-600', dot: 'bg-purple-500' },
         OFICIO:    { label: 'Oficio',    classes: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' },
-        PERICIAL:  { label: 'Pericial',  classes: 'bg-amber-100 text-amber-600',  dot: 'bg-amber-500' },
-        SENTENCIA: { label: 'Sentencia', classes: 'bg-rose-100 text-rose-600',    dot: 'bg-rose-500' },
-        OTRO:      { label: 'Otro',      classes: 'bg-gray-100 text-gray-500',    dot: 'bg-gray-400' },
+        PERICIAL:  { label: 'Pericial',  classes: 'bg-amber-100 text-amber-600',   dot: 'bg-amber-500' },
+        SENTENCIA: { label: 'Sentencia', classes: 'bg-rose-100 text-rose-600',     dot: 'bg-rose-500' },
+        OTRO:      { label: 'Otro',      classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400' },
       }
     },
-    { key: 'relacionadoCon', label: 'Relacionado a',  type: 'text' },
-    { key: 'fechaCarga',     label: 'Fecha carga',    type: 'date' },
-    { key: 'tamanio',        label: 'Tamaño',         type: 'text' },
+    { key: 'fechaDocumento', label: 'Fecha del documento',  type: 'date' },
+    { key: 'descripcion',    label: 'Descripción',          type: 'text' },
+    { key: 'relacionadoCon', label: 'Relacionado a',        type: 'text' },
+    { key: 'fechaCarga',     label: 'Fecha de carga',       type: 'date' },
+    { key: 'tamanio',        label: 'Tamaño',               type: 'text' },
     {
       key: 'acciones',
       label: 'Acciones',
       type: 'actions',
-      getActions: () => ['view', 'download', 'edit', 'delete'] as any
+      getActions: () => ['download', 'edit', 'delete'] as any
     },
   ];
 }

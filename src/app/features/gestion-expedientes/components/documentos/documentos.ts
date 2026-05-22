@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { DocumentosFilters, DocumentoFilterState } from '../documentos-filters/documentos-filters';
 import { DocumentosTable, Documento } from '../documentos-table/documentos-table';
 import { ModalDocAlta } from '../modal-doc-alta/modal-doc-alta';
-import { ModalDocView } from '../modal-doc-view/modal-doc-view';
 import { ModalDocEdit } from '../modal-doc-edit/modal-doc-edit';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { toast } from 'ngx-sonner';
@@ -11,7 +10,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-documentos',
   standalone: true,
-  imports: [DocumentosFilters, DocumentosTable, ModalDocAlta, ModalDocView, ModalDocEdit, PrimaryBtn],
+  imports: [DocumentosFilters, DocumentosTable, ModalDocAlta, ModalDocEdit, PrimaryBtn],
   templateUrl: './documentos.html',
 })
 export class Documentos {
@@ -51,7 +50,6 @@ export class Documentos {
     this.currentPage = 1;
   }
 
-  onView(doc: Documento)   { this.selectedDoc = doc; this.modalViewOpen = true; }
   onEdit(doc: Documento)   { this.selectedDoc = doc; this.modalEditOpen = true; }
   onDelete(doc: Documento) {
     this.allDocumentos = this.allDocumentos.filter(d => d.id !== doc.id);
@@ -60,13 +58,57 @@ export class Documentos {
   }
 
   onGuardarAlta(doc: any) {
+    const nuevo: Documento = {
+      id:             Date.now().toString(),
+      nombre:         doc.archivo?.name ?? 'Sin nombre',
+      tipo:           doc.tipo,
+      tipoLabel:      this.tipoOptions[doc.tipo] ?? doc.tipo,
+      relacionadoCon: doc.relacionadoCon,
+      fechaCarga:     new Date().toISOString(),
+      tamanio:        doc.archivo ? this.formatSize(doc.archivo.size) : '—',
+      descripcion:    doc.descripcion,
+      fechaDocumento: doc.fechaDocumento,
+    };
+    this.allDocumentos = [nuevo, ...this.allDocumentos];
+    this.filteredDocumentos = [nuevo, ...this.filteredDocumentos];
     toast.success('Documento subido correctamente');
-    // 🔴 MOCK — agregar a la lista local o refrescar desde servicio
+  }
+
+  private tipoOptions: Record<string, string> = {
+    ESCRITO:   'Escrito',
+    CONTRATO:  'Contrato',
+    OFICIO:    'Oficio',
+    PERICIAL:  'Pericial',
+    SENTENCIA: 'Sentencia',
+    OTRO:      'Otro',
+  };
+
+  private formatSize(bytes: number): string {
+    if (bytes < 1024)        return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   onGuardarEdit(changes: Partial<Documento>) {
+    if (!this.selectedDoc) return;
+
+    const tipoLabel = changes.tipo ? (this.tipoOptions[changes.tipo] ?? changes.tipo) : this.selectedDoc.tipoLabel;
+
+    const actualizado: Documento = {
+      ...this.selectedDoc,
+      ...changes,
+      tipoLabel,
+    };
+
+    this.allDocumentos = this.allDocumentos.map(d =>
+      d.id === this.selectedDoc!.id ? actualizado : d
+    );
+    this.filteredDocumentos = this.filteredDocumentos.map(d =>
+      d.id === this.selectedDoc!.id ? actualizado : d
+    );
+
+    this.selectedDoc = null;
     toast.success('Documento actualizado correctamente');
-    // 🔴 MOCK — actualizar en lista local o refrescar
   }
 
   volver(): void {
