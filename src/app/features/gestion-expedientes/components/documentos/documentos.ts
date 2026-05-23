@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DocumentosFilters, DocumentoFilterState } from '../documentos-filters/documentos-filters';
 import { DocumentosTable, Documento } from '../documentos-table/documentos-table';
 import { ModalDocAlta } from '../modal-doc-alta/modal-doc-alta';
 import { ModalDocEdit } from '../modal-doc-edit/modal-doc-edit';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { ExpedienteStore } from '../../services/expediente-store';
 import { toast } from 'ngx-sonner';
-import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-documentos',
@@ -14,21 +14,25 @@ import { Router } from '@angular/router';
   templateUrl: './documentos.html',
 })
 export class Documentos {
-  constructor(
-    private router: Router,
-  ) {}
+  private store = inject(ExpedienteStore);
 
-  // 🔴 MOCK
-  allDocumentos: Documento[] = [
-    { id: '1', nombre: 'Demanda inicial.pdf',    tipo: 'ESCRITO',  tipoLabel: 'Escrito',  relacionadoCon: 'Novedad: Presentación de prueba', fechaCarga: '2025-06-15T00:00:00', tamanio: '3.4 MB',  descripcion: '', fechaDocumento: '2025-06-01' },
-    { id: '2', nombre: 'Contrato_locacion.pdf',  tipo: 'CONTRATO', tipoLabel: 'Contrato', relacionadoCon: '',                                  fechaCarga: '2026-01-06T00:00:00', tamanio: '156 KB', descripcion: '', fechaDocumento: '2026-01-05' },
-    { id: '3', nombre: 'Demanda inicial.pdf',    tipo: 'OFICIO',   tipoLabel: 'Oficio',   relacionadoCon: 'Novedad: Oficio recibido',           fechaCarga: '2025-12-23T00:00:00', tamanio: '245 KB', descripcion: '', fechaDocumento: '2025-12-20' },
-  ];
+  // Filtros activos
+  activeFilters: DocumentoFilterState = { nombre: '', tipo: '' };
+  router: any;
 
-  filteredDocumentos: Documento[] = [...this.allDocumentos];
+  // Lista filtrada (derivada del store)
+  get allDocumentos(): Documento[] { return this.store.documentos(); }
+
+  get filteredDocumentos(): Documento[] {
+    const f = this.activeFilters;
+    return this.allDocumentos.filter(d =>
+      (!f.nombre || d.nombre.toLowerCase().includes(f.nombre.toLowerCase())) &&
+      (!f.tipo   || d.tipo === f.tipo)
+    );
+  }
 
   // Paginación
-  pageSize = 25;
+  pageSize = 10;
   currentPage = 1;
   get totalPages() { return Math.max(1, Math.ceil(this.filteredDocumentos.length / this.pageSize)); }
   get pagedDocumentos() {
@@ -36,52 +40,69 @@ export class Documentos {
     return this.filteredDocumentos.slice(start, start + this.pageSize);
   }
 
+  // Opciones novedades para el select "Relacionado con"
+  get novedadOpciones() { return this.store.novedadesComoOpciones(); }
+
   // Modales
   modalAltaRef: any;
-  modalViewOpen = false;
   modalEditOpen = false;
   selectedDoc: Documento | null = null;
 
   onFiltersChange(f: DocumentoFilterState) {
-    this.filteredDocumentos = this.allDocumentos.filter(d =>
-      (!f.nombre || d.nombre.toLowerCase().includes(f.nombre.toLowerCase())) &&
-      (!f.tipo   || d.tipo === f.tipo)
-    );
+    this.activeFilters = f;
     this.currentPage = 1;
   }
 
   onEdit(doc: Documento)   { this.selectedDoc = doc; this.modalEditOpen = true; }
+
   onDelete(doc: Documento) {
-    this.allDocumentos = this.allDocumentos.filter(d => d.id !== doc.id);
-    this.filteredDocumentos = this.filteredDocumentos.filter(d => d.id !== doc.id);
+    this.store.eliminarDocumento(doc.id);
     toast.success('Documento eliminado');
   }
 
-  onGuardarAlta(doc: any) {
+  onGuardarAlta(formData: any) {
+    const relacionadoNovedad = this.store.novedades().find(n => n.id === formData.relacionadoId);
     const nuevo: Documento = {
-      id:             Date.now().toString(),
-      nombre:         doc.archivo?.name ?? 'Sin nombre',
-      tipo:           doc.tipo,
-      tipoLabel:      this.tipoOptions[doc.tipo] ?? doc.tipo,
-      relacionadoCon: doc.relacionadoCon,
+      id:             crypto.randomUUID(),
+      nombre:         formData.archivo?.name ?? 'Sin nombre',
+      tipo:           formData.tipo || 'OTRO',
+      tipoLabel:      this.tipoLabel(formData.tipo),
+      relacionadoCon: relacionadoNovedad ? `Novedad: ${relacionadoNovedad.titulo}` : '',
+      relacionadoId:  formData.relacionadoId ?? '',
       fechaCarga:     new Date().toISOString(),
-      tamanio:        doc.archivo ? this.formatSize(doc.archivo.size) : '—',
-      descripcion:    doc.descripcion,
-      fechaDocumento: doc.fechaDocumento,
+      tamanio:        formData.archivo ? this.formatSize(formData.archivo.size) : '—',
+      descripcion:    formData.descripcion ?? '',
+      fechaDocumento: formData.fechaDocumento ?? '',
+      url:            '#', // 🔴 MOCK — reemplazar por URL real del storage
     };
-    this.allDocumentos = [nuevo, ...this.allDocumentos];
-    this.filteredDocumentos = [nuevo, ...this.filteredDocumentos];
+    this.store.agregarDocumento(nuevo);
     toast.success('Documento subido correctamente');
   }
 
-  private tipoOptions: Record<string, string> = {
-    ESCRITO:   'Escrito',
-    CONTRATO:  'Contrato',
-    OFICIO:    'Oficio',
-    PERICIAL:  'Pericial',
-    SENTENCIA: 'Sentencia',
-    OTRO:      'Otro',
-  };
+  onGuardarEdit(changes: Partial<Documento>) {
+    if (!this.selectedDoc) return;
+    const relacionadoNovedad = changes.relacionadoId
+      ? this.store.novedades().find(n => n.id === changes.relacionadoId)
+      : null;
+    const update: Partial<Documento> = {
+      ...changes,
+      tipoLabel:      changes.tipo ? this.tipoLabel(changes.tipo) : this.selectedDoc.tipoLabel,
+      relacionadoCon: relacionadoNovedad
+        ? `Novedad: ${relacionadoNovedad.titulo}`
+        : (changes.relacionadoId === '' ? '' : this.selectedDoc.relacionadoCon),
+    };
+    this.store.actualizarDocumento(this.selectedDoc.id, update);
+    this.selectedDoc = null;
+    toast.success('Documento actualizado correctamente');
+  }
+
+  private tipoLabel(tipo: string): string {
+    const map: Record<string, string> = {
+      ESCRITO: 'Escrito', CONTRATO: 'Contrato', OFICIO: 'Oficio',
+      PERICIAL: 'Pericial', SENTENCIA: 'Sentencia', OTRO: 'Otro',
+    };
+    return map[tipo] ?? tipo;
+  }
 
   private formatSize(bytes: number): string {
     if (bytes < 1024)        return `${bytes} B`;
@@ -89,29 +110,14 @@ export class Documentos {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  onGuardarEdit(changes: Partial<Documento>) {
-    if (!this.selectedDoc) return;
-
-    const tipoLabel = changes.tipo ? (this.tipoOptions[changes.tipo] ?? changes.tipo) : this.selectedDoc.tipoLabel;
-
-    const actualizado: Documento = {
-      ...this.selectedDoc,
-      ...changes,
-      tipoLabel,
-    };
-
-    this.allDocumentos = this.allDocumentos.map(d =>
-      d.id === this.selectedDoc!.id ? actualizado : d
-    );
-    this.filteredDocumentos = this.filteredDocumentos.map(d =>
-      d.id === this.selectedDoc!.id ? actualizado : d
-    );
-
-    this.selectedDoc = null;
-    toast.success('Documento actualizado correctamente');
-  }
-
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
+  }
+
+  onDownload(doc: Documento) {
+    // 🔴 MOCK — url: '#' no descarga nada
+    // Cuando el back esté listo, doc.url va a ser una URL real (a definir)
+    // y esto va a funcionar solo
+    window.open(doc.url, '_blank');
   }
 }

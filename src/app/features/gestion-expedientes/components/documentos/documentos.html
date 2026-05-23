@@ -20,6 +20,7 @@
     (edit)="onEdit($event)"
     (delete)="onDelete($event)"
     (pageChange)="currentPage = $event"
+    (download)="onDownload($event)"
   ></app-documentos-table>
 
 </div>
@@ -27,6 +28,7 @@
 <!-- Modales -->
 <app-modal-doc-alta
   #modalAltaRef
+  [novedadOpciones]="novedadOpciones"
   (guardar)="onGuardarAlta($event)"
 ></app-modal-doc-alta>
 

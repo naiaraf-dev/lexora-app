@@ -7,10 +7,12 @@ export interface Documento {
   tipo: string;           // código: 'ESCRITO', 'CONTRATO', etc.
   tipoLabel: string;      // label para mostrar
   relacionadoCon: string; // "Novedad: Oficio recibido" (texto libre por ahora)
+  relacionadoId: string;
   fechaCarga: string;     // ISO date
   tamanio: string;        // "3.4 MB"
   descripcion: string;
   fechaDocumento: string;
+  url: string;
 }
 
 @Component({

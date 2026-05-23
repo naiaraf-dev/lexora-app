@@ -1,0 +1,103 @@
+<app-ui-modal [open]="open" (cerrar)="cerrarModal()">
+
+    <div slot="titulo" class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <span class="font-semibold text-text-primary">{{ titulo }}</span>
+    </div>
+
+    <div slot="cuerpo" class="flex flex-col gap-4">
+
+        <!-- Fila 1: tipo + fecha -->
+        <div class="grid grid-cols-2 gap-3">
+        <app-ui-select label="Tipo de novedad" [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
+        <app-ui-date-input label="Fecha de la actuación" [(model)]="form.fechaActuacion"></app-ui-date-input>
+        </div>
+
+        <!-- Fila 2: título + etapa -->
+        <div class="grid grid-cols-1 gap-3">
+        <app-ui-input label="Título" placeholder="Ej: Se presenta demanda" [(model)]="form.titulo"></app-ui-input>
+        </div>
+
+        <!-- Descripción -->
+        <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60">Descripción</label>
+        <textarea
+            [(ngModel)]="form.descripcion"
+            placeholder="Descripción la actuación..."
+            rows="4"
+            class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        ></textarea>
+        </div>
+
+        <!-- Adjuntar documentos -->
+        <div>
+        <label class="text-xs font-medium text-text-primary/60">Adjuntar Documentos</label>
+        <label
+            class="mt-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-5 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+            (dragover)="$event.preventDefault()"
+            (drop)="onDrop($event)"
+        >
+            <input type="file" multiple class="hidden" (change)="onFileChange($event)" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+            @if (archivosAdjuntos.length > 0) {
+            <span class="text-sm text-primary font-medium">{{ archivosAdjuntos.length }} archivo(s) seleccionado(s)</span>
+            } @else {
+            <span class="text-sm text-text-primary/40">Arrastra un archivo o <span class="text-primary font-medium">seleccionalos</span></span>
+            }
+        </label>
+        </div>
+
+        <!-- Sección tarea / plazo asociado -->
+        <!-- 🗓️ AGENDA — todo este bloque se conectará al módulo de agenda -->
+        <div class="rounded-xl border border-gray-200 p-4 flex flex-col gap-4">
+
+        <!-- Checkbox -->
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input
+            type="checkbox"
+            [(ngModel)]="crearTarea"
+            class="w-4 h-4 rounded accent-primary"
+            />
+            <span class="text-sm font-medium text-text-primary">Crear tarea / plazo asociado</span>
+        </label>
+
+        @if (crearTarea) {
+            <!-- Título tarea + prioridad -->
+            <div class="grid grid-cols-2 gap-3">
+            <app-ui-input label="Título de la tarea" placeholder="Ej: Presentar escrito" [(model)]="tareaForm.titulo"></app-ui-input>
+            <app-ui-select label="Prioridad" [(model)]="tareaForm.prioridad" [options]="prioridadOptions"></app-ui-select>
+            </div>
+
+            <!-- Fecha vencimiento + hora -->
+            <div class="grid grid-cols-2 gap-3">
+            <app-ui-date-input label="Fecha de vencimiento" [(model)]="tareaForm.fechaVencimiento"></app-ui-date-input>
+            <app-ui-input label="Hora (opcional)" placeholder="--:--" [(model)]="tareaForm.hora"></app-ui-input>
+            </div>
+
+            <!-- Responsable -->
+            <app-ui-input label="Responsable" placeholder="Seleccionar..." [(model)]="tareaForm.responsable"></app-ui-input>
+
+            <!-- Descripción / instrucciones -->
+            <app-ui-input label="Descripción / Instrucciones" placeholder="Ej: Presentar escrito antes del vencimiento." [(model)]="tareaForm.descripcionInstrucciones"></app-ui-input>
+        }
+        </div>
+
+    </div>
+
+    <div slot="footer" class="flex justify-end gap-2">
+        <app-primary-btn variant="secondary" (click)="cerrarModal()">Cancelar</app-primary-btn>
+        <app-primary-btn variant="primary" [loading]="guardando" (click)="submit()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 3v4H7V3" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a3 3 0 100 6 3 3 0 000-6z" />
+        </svg>
+        {{ labelGuardar }}
+        </app-primary-btn>
+    </div>
+
+</app-ui-modal>
