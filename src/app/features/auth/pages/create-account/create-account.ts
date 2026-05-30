@@ -1,0 +1,48 @@
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { z } from 'zod';
+import { AuthLayout } from '../../components/auth-layout/auth-layout';
+import { AuthCard } from '../../components/auth-card/auth-card';
+import { UiInput } from '../../../../shared/components/ui-input/ui-input';
+import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { registerSchema, RegisterErrors } from '../../models/auth.schema';
+
+@Component({
+  selector: 'app-create-account',
+  standalone: true,
+  imports: [FormsModule, RouterModule, AuthLayout, AuthCard, UiInput, PrimaryBtn],
+  templateUrl: './create-account.html',
+})
+export class CreateAccount {
+  nombre          = '';
+  apellido        = '';
+  matricula       = '';
+  email           = '';
+  password        = '';
+  confirmPassword = '';
+  loading         = signal(false);
+  errors          = signal<RegisterErrors>({});
+
+  onSubmit() {
+    const parsed = registerSchema.safeParse({
+      nombre: this.nombre, apellido: this.apellido, matricula: this.matricula,
+      email: this.email, password: this.password, confirmPassword: this.confirmPassword,
+    });
+    if (!parsed.success) {
+      const flat = z.flattenError(parsed.error).fieldErrors;
+      this.errors.set({
+        nombre:          flat['nombre']?.[0],
+        apellido:        flat['apellido']?.[0],
+        matricula:       flat['matricula']?.[0],
+        email:           flat['email']?.[0],
+        password:        flat['password']?.[0],
+        confirmPassword: flat['confirmPassword']?.[0],
+      });
+      return;
+    }
+    this.errors.set({});
+    this.loading.set(true);
+    setTimeout(() => this.loading.set(false), 1500);
+  }
+}

@@ -1,0 +1,17 @@
+<div class="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg min-w-[480px] mx-4">
+
+  <!-- Ícono -->
+  <div class="flex justify-center mb-4">
+    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+      <ng-content select="[auth-icon]"></ng-content>
+    </div>
+  </div>
+
+  <!-- Título y subtítulo -->
+  <h2 class="text-xl font-bold text-text-primary text-center mb-1">{{ title }}</h2>
+  <p class="text-xs text-gray-400 text-center mb-5">{{ subtitle }}</p>
+
+  <!-- Contenido proyectado (formulario) -->
+  <ng-content />
+
+</div>

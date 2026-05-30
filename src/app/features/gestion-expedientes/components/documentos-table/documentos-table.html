@@ -1,0 +1,18 @@
+<div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+  <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+    <app-ui-table
+      [columns]="columns"
+      [data]="documentos"
+      (action)="onAction($event)"
+    ></app-ui-table>
+
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
+      <span>Mostrando {{ documentos.length }} de {{ total }} documentos</span>
+      <app-ui-pagination
+        [paginaActual]="currentPage"
+        [totalPaginas]="totalPages"
+        (cambio)="onPageChange($event)"
+      ></app-ui-pagination>
+    </div>
+  </div>
+</div>

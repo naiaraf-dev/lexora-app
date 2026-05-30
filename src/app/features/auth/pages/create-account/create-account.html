@@ -1,0 +1,58 @@
+<app-auth-layout>
+  <app-auth-card title="Crear cuenta" subtitle="Completa los datos para registrarte en el sistema">
+
+    <svg auth-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+
+    <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+      <div class="grid grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1">
+          <app-ui-input label="Nombre" placeholder="Juan" [(model)]="nombre" />
+          @if (errors().nombre) { <p class="text-xs text-danger">{{ errors().nombre }}</p> }
+        </div>
+        <div class="flex flex-col gap-1">
+          <app-ui-input label="Apellido" placeholder="Pérez" [(model)]="apellido" />
+          @if (errors().apellido) { <p class="text-xs text-danger">{{ errors().apellido }}</p> }
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input label="N° de Matrícula" placeholder="Ej: 1234" [(model)]="matricula" />
+        @if (errors().matricula) { <p class="text-xs text-danger">{{ errors().matricula }}</p> }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input label="Email" type="email" placeholder="juan.perez@gmail.com" [(model)]="email" />
+        @if (errors().email) { <p class="text-xs text-danger">{{ errors().email }}</p> }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input label="Contraseña" type="password" placeholder="Min. 8 caracteres" [(model)]="password" />
+        @if (errors().password) { <p class="text-xs text-danger">{{ errors().password }}</p> }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input label="Reingrese la contraseña" type="password" placeholder="Repita la contraseña" [(model)]="confirmPassword" />
+        @if (errors().confirmPassword) { <p class="text-xs text-danger">{{ errors().confirmPassword }}</p> }
+      </div>
+
+      <app-primary-btn [full]="true" [loading]="loading()" [disabled]="loading()">
+        Registrarse
+      </app-primary-btn>
+
+    </form>
+
+    <div class="flex justify-center mt-4">
+      <a routerLink="/login" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-text-primary transition-colors font-medium">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Volver a Iniciar Sesión
+      </a>
+    </div>
+
+  </app-auth-card>
+</app-auth-layout>

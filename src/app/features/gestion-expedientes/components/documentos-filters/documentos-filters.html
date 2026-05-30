@@ -1,0 +1,22 @@
+<div class="flex flex-wrap items-center gap-3">
+  <app-ui-input
+    label="Documento"
+    placeholder="Buscar por nombre..."
+    [(model)]="filters.nombre"
+    (modelChange)="filtersChange.emit({...filters})"
+  ></app-ui-input>
+
+  <app-ui-select
+    label="Tipo de documento"
+    [(model)]="filters.tipo"
+    [options]="tipoOptions"
+    (modelChange)="filtersChange.emit({...filters})"
+  ></app-ui-select>
+
+  <button
+    (click)="limpiar()"
+    class="self-end px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+  >
+    Limpiar
+  </button>
+</div>

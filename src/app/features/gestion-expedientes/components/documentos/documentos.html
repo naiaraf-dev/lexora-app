@@ -1,0 +1,46 @@
+<div class="flex flex-col gap-4">
+
+  <!-- Filtros + botón subir -->
+  <div class="bg-white rounded-xl border border-black/8 px-4 py-4 flex flex-wrap items-end justify-between gap-3">
+    <app-documentos-filters (filtersChange)="onFiltersChange($event)"></app-documentos-filters>
+    <app-primary-btn (click)="modalAltaRef.abrir()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
+      Subir Documento
+    </app-primary-btn>
+  </div>
+
+  <!-- Tabla -->
+  <app-documentos-table
+    [documentos]="pagedDocumentos"
+    [total]="filteredDocumentos.length"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (edit)="onEdit($event)"
+    (delete)="onDelete($event)"
+    (pageChange)="currentPage = $event"
+    (download)="onDownload($event)"
+  ></app-documentos-table>
+
+</div>
+
+<!-- Modales -->
+<app-modal-doc-alta
+  #modalAltaRef
+  [novedadOpciones]="novedadOpciones"
+  (guardar)="onGuardarAlta($event)"
+></app-modal-doc-alta>
+
+<app-modal-doc-edit
+  [open]="modalEditOpen"
+  [documento]="selectedDoc"
+  (cerrar)="modalEditOpen = false"
+  (guardar)="onGuardarEdit($event)"
+></app-modal-doc-edit>
+
+<div class="fixed bottom-0 right-0 px-6 py-4 z-10">
+    <app-primary-btn variant="secondary" (click)="volver()">
+        ← Volver a bandeja
+    </app-primary-btn>
+</div>

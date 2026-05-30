@@ -8,5 +8,6 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class UiModal {
   @Input() open = false;
+  @Input() headerClass = '';
   @Output() cerrar = new EventEmitter<void>();
 }

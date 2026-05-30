@@ -1,1 +1,20 @@
-<p>tarea-item works!</p>
+<button
+  type="button"
+  class="w-full flex items-start gap-1 text-left text-[11px] leading-tight hover:bg-primary/5 rounded px-1 py-0.5 transition"
+  (click)="ver.emit(tarea)"
+>
+  <span
+    class="w-2 h-2 rounded-full mt-1 shrink-0"
+    [ngClass]="obtenerColorEstado()"
+  ></span>
+
+  <span
+    class="truncate"
+    [class.text-red-600]="tarea.estado === 'Vencida'"
+    [class.text-green-600]="tarea.estado === 'Cumplida'"
+    [class.text-blue-600]="tarea.estado === 'En curso'"
+    [class.text-gray-700]="tarea.estado === 'Pendiente'"
+  >
+    {{ tarea.titulo }}
+  </span>
+</button>

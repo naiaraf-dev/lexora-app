@@ -1,0 +1,39 @@
+<div class="flex flex-col gap-4">
+
+    <!-- Filtros -->
+    <app-novedades-filter
+        (filtersChange)="onFiltersChange($event)"
+        (nuevaNovedad)="abrirAlta()"
+    ></app-novedades-filter>
+
+    <!-- Timeline -->
+    <div class="px-2">
+        @if (novedadesOrdenadas.length === 0) {
+        <div class="text-center py-16 text-text-primary/40">No hay novedades</div>
+        }
+
+        @for (novedad of novedadesOrdenadas; track novedad.id; let i = $index) {
+        <app-novedades-card
+            [novedad]="novedad"
+            [numero]="novedadesOrdenadas.length - i"
+            (editar)="onEditar($event)"
+            (eliminar)="onEliminar($event)"
+        ></app-novedades-card>
+        }
+    </div>
+
+</div>
+
+<!-- Modal alta / editar -->
+<app-modal-novedad
+    [open]="modalOpen"
+    [novedad]="novedadEditando"
+    (cerrar)="modalOpen = false"
+    (guardar)="onGuardar($event)"
+></app-modal-novedad>
+
+<div class="fixed bottom-0 right-0 px-6 py-4 z-10">
+    <app-primary-btn variant="secondary" (click)="volver()">
+        ← Volver a bandeja
+    </app-primary-btn>
+</div>

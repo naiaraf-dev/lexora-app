@@ -1,0 +1,49 @@
+@if (totalPaginas() > 1) {
+    <div class="flex items-center justify-center gap-1">
+
+        <!-- Primera -->
+        <button (click)="ir(1)" [disabled]="paginaActual() === 1"
+                class="p-2 rounded-lg text-text-primary/40 hover:bg-gray-100 disabled:opacity-30 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+        </svg>
+        </button>
+
+        <!-- Anterior -->
+        <button (click)="ir(paginaActual() - 1)" [disabled]="paginaActual() === 1"
+                class="p-2 rounded-lg text-text-primary/40 hover:bg-gray-100 disabled:opacity-30 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        </button>
+
+        <!-- Páginas -->
+        @for (p of paginasVisibles(); track p) {
+        @if (p === '...') {
+            <span class="px-2 text-text-primary/30 text-sm">...</span>
+        } @else {
+            <button
+            (click)="ir(p)"
+            [class]="p === paginaActual()
+                ? 'w-8 h-8 rounded-lg bg-primary text-white text-sm font-semibold'
+                : 'w-8 h-8 rounded-lg text-text-primary/60 text-sm hover:bg-gray-100 transition'"
+            >{{ p }}</button>
+        }
+        }
+
+        <button (click)="ir(paginaActual() + 1)" [disabled]="paginaActual() === totalPaginas()"
+                class="p-2 rounded-lg text-text-primary/40 hover:bg-gray-100 disabled:opacity-30 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        </button>
+
+        <button (click)="ir(totalPaginas())" [disabled]="paginaActual() === totalPaginas()"
+                class="p-2 rounded-lg text-text-primary/40 hover:bg-gray-100 disabled:opacity-30 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M6 5l7 7-7 7"/>
+        </svg>
+        </button>
+
+    </div>
+}

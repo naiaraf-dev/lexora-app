@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, computed, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -12,4 +12,18 @@ export class UiInput {
   @Input() placeholder = '';
   @Input() model: any;
   @Output() modelChange = new EventEmitter<any>();
+  @Input() disabled = false;
+  @Input() type = 'text';
+
+  mostrarPassword = signal(false);
+
+  esPassword = computed(() => this.type === 'password');
+
+  tipoEfectivo = computed(() =>
+    this.esPassword() ? (this.mostrarPassword() ? 'text' : 'password') : this.type
+  );
+
+  togglePassword() {
+    this.mostrarPassword.set(!this.mostrarPassword());
+  }
 }
