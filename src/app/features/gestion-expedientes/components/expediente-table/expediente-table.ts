@@ -1,6 +1,9 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
 import { Router } from '@angular/router';
+import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
+import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
+import { CommonModule } from '@angular/common';
 
 export interface Expediente {
   id: string;
@@ -20,7 +23,7 @@ export interface Expediente {
 @Component({
   selector: 'app-expediente-table',
   standalone: true,
-  imports: [UiTable],
+  imports: [UiTable, UiPagination, UiModal, CommonModule],
   templateUrl: './expediente-table.html',
 })
 export class ExpedienteTable {
@@ -35,16 +38,25 @@ export class ExpedienteTable {
   @Output() delete = new EventEmitter<Expediente>();
   @Output() pageChange = new EventEmitter<number>();
 
+  expedienteAEliminar: Expediente | null = null;
+
   constructor(private router: Router) {}
 
-  get pages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  onAction(event: { type: TableAction; row: Expediente }): void {
+    if (event.type === 'view')   this.router.navigate(['/gestion-expedientes', event.row.id]);
+    if (event.type === 'edit')   this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
+    if (event.type === 'delete') this.expedienteAEliminar = event.row;
   }
 
-  onAction(event: { type: TableAction; row: Expediente }): void {
-    if (event.type === 'view')     this.view.emit(event.row);
-    if (event.type === 'edit')     this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
-    if (event.type === 'delete')   this.delete.emit(event.row);
+  confirmarEliminar(): void {
+    if (this.expedienteAEliminar) {
+      this.delete.emit(this.expedienteAEliminar);
+      this.expedienteAEliminar = null;
+    }
+  }
+
+  cancelarEliminar(): void {
+    this.expedienteAEliminar = null;
   }
 
   onPageChange(page: number): void { this.pageChange.emit(page); }

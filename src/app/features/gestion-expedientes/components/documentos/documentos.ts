@@ -6,6 +6,7 @@ import { ModalDocEdit } from '../modal-doc-edit/modal-doc-edit';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { ExpedienteStore } from '../../services/expediente-store';
 import { toast } from 'ngx-sonner';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-documentos',
@@ -15,10 +16,10 @@ import { toast } from 'ngx-sonner';
 })
 export class Documentos {
   private store = inject(ExpedienteStore);
+  private router = inject(Router);
 
   // Filtros activos
   activeFilters: DocumentoFilterState = { nombre: '', tipo: '' };
-  router: any;
 
   // Lista filtrada (derivada del store)
   get allDocumentos(): Documento[] { return this.store.documentos(); }

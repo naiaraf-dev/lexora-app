@@ -12,8 +12,11 @@ export class PrimaryBtn {
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   @Input() loading = false;
   @Input() disabled = false;
+  @Input() full = false;
 
   get classes(): string {
+    const width = this.full ? 'w-full' : '';
+
     const base = 'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all duration-200';
 
     const variants = {
@@ -32,11 +35,6 @@ export class PrimaryBtn {
       ? 'opacity-50 cursor-not-allowed hover:bg-inherit'
       : '';
 
-    return [
-      base,
-      variants[this.variant],
-      sizes[this.size],
-      disabledState
-    ].join(' ');
+    return [base, variants[this.variant], sizes[this.size], disabledState, width].join(' ');
   }
 }

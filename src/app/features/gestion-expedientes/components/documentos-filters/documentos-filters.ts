@@ -26,4 +26,9 @@ export class DocumentosFilters {
     { value: 'SENTENCIA', label: 'Sentencia' },
     { value: 'OTRO',      label: 'Otro' },
   ];
+
+  limpiar() {
+    this.filters = { nombre: '', tipo: '' };
+    this.filtersChange.emit({ ...this.filters });
+  }
 }

@@ -13,6 +13,13 @@
         [options]="tipoOptions"
         (modelChange)="filtersChange.emit({...filters})"
         ></app-ui-select>
+
+        <button
+        (click)="limpiar()"
+        class="px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+        >
+        Limpiar
+        </button>
     </div>
 
     <app-primary-btn (click)="nuevaNovedad.emit()">

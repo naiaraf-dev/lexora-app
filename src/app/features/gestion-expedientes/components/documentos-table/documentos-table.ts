@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-table';
+import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
+import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 
 export interface Documento {
   id: string;
@@ -18,7 +19,7 @@ export interface Documento {
 @Component({
   selector: 'app-documentos-table',
   standalone: true,
-  imports: [UiTable],
+  imports: [UiTable, UiPagination],
   templateUrl: './documentos-table.html',
 })
 export class DocumentosTable {
@@ -33,11 +34,7 @@ export class DocumentosTable {
   @Output() download = new EventEmitter<Documento>();
   @Output() pageChange = new EventEmitter<number>();
 
-  get pages(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
-  }
-
-  onAction(event: { type: 'view' | 'edit' | 'delete' | 'download'; row: Documento }): void {
+  onAction(event: { type: TableAction; row: Documento }): void {
     if (event.type === 'view')     this.view.emit(event.row);
     if (event.type === 'edit')     this.edit.emit(event.row);
     if (event.type === 'delete')   this.delete.emit(event.row);

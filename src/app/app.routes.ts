@@ -19,6 +19,30 @@ export const routes: Routes = [
         redirectTo: 'gestion-expedientes',
         pathMatch: 'full',
       },
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./features/clientes/pages/clientes-list/clientes-list')
+            .then((m) => m.ClientesList),
+      },
+      {
+        path: 'agenda',
+        loadComponent: () =>
+          import('./features/agenda/pages/agenda-calendar/agenda-calendar')
+            .then((m) => m.AgendaCalendar),
+      },
+      {
+        path: 'seguridad/log-view',
+        loadComponent: () =>
+          import('./features/log/pages/log-view/log-view')
+            .then((m) => m.LogView),
+      },
+      {
+        path: 'configuracion',
+        loadComponent: () =>
+          import('./features/configuracion/pages/configuracion/configuracion')
+            .then((m) => m.ConfiguracionView),
+      },
     ],
   },
 
@@ -63,9 +87,26 @@ export const routes: Routes = [
     ],
   },
 
+  // Auth (sin layout)
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./features/auth/pages/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/auth/pages/create-account/create-account').then((m) => m.CreateAccount),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/pages/forgot-pass/forgot-pass').then((m) => m.ForgotPass),
+  },
+
   // fallback
   {
     path: '**',
-    redirectTo: 'gestion-expedientes',
+    redirectTo: 'login',
   },
 ];

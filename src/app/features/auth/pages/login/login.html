@@ -1,0 +1,57 @@
+<app-auth-layout>
+  <app-auth-card title="Iniciar sesión" subtitle="Ingresá tus credenciales para acceder al sistema">
+
+    <svg auth-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+    </svg>
+
+    <form (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input
+          label="Usuario"
+          placeholder="Ingrese su usuario..."
+          [(model)]="username"
+        />
+        @if (errors().username) {
+          <p class="text-xs text-danger">{{ errors().username }}</p>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <app-ui-input
+          label="Contraseña"
+          type="password"
+          placeholder="Ingrese su contraseña..."
+          [(model)]="password"
+        />
+        @if (errors().password) {
+          <p class="text-xs text-danger">{{ errors().password }}</p>
+        }
+        <div class="flex justify-end">
+          <a routerLink="/forgot-password" class="text-xs text-primary hover:text-hover transition-colors font-medium">
+            ¿Olvidó su contraseña?
+          </a>
+        </div>
+      </div>
+
+      <app-primary-btn [full]="true" [loading]="loading()" [disabled]="loading()">
+        Entrar
+      </app-primary-btn>
+
+    </form>
+
+    <div class="flex items-center gap-3 my-4">
+      <div class="flex-1 h-px bg-gray-200"></div>
+      <span class="text-xs text-gray-400">o</span>
+      <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <p class="text-center text-sm text-gray-500">
+      ¿No tenés cuenta?
+      <a routerLink="/register" class="text-primary hover:text-hover font-semibold transition-colors ml-1">Registrate aquí</a>
+    </p>
+
+  </app-auth-card>
+</app-auth-layout>

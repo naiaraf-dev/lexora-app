@@ -1,34 +1,56 @@
 <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
-  <app-ui-table
-    [columns]="columns"
-    [data]="expedientes"
-    (action)="onAction($event)"
-  ></app-ui-table>
+  <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+    <app-ui-table
+      [columns]="columns"
+      [data]="expedientes"
+      (action)="onAction($event)"
+    ></app-ui-table>
 
-  <!-- Footer paginación -->
-  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
-    <span>Mostrando {{ expedientes.length }} de {{ total }} expedientes</span>
-    <div class="flex items-center gap-1">
-      <button
-        (click)="onPageChange(currentPage - 1)"
-        [disabled]="currentPage === 1"
-        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
-      >←</button>
-
-      @for (page of pages; track page) {
-        <button
-          (click)="onPageChange(page)"
-          [class]="page === currentPage
-            ? 'px-2.5 py-1 rounded bg-primary text-white'
-            : 'px-2.5 py-1 rounded hover:bg-gray-100 transition'"
-        >{{ page }}</button>
-      }
-
-      <button
-        (click)="onPageChange(currentPage + 1)"
-        [disabled]="currentPage === totalPages"
-        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
-      >→</button>
+    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
+      <span>Mostrando {{ expedientes.length }} de {{ total }} expedientes</span>
+      <app-ui-pagination
+        [paginaActual]="currentPage"
+        [totalPaginas]="totalPages"
+        (cambio)="onPageChange($event)"
+      ></app-ui-pagination>
     </div>
   </div>
+  
+  <!-- Modal confirmación eliminar -->
+  <app-ui-modal [open]="!!expedienteAEliminar" (cerrar)="cancelarEliminar()">
+    <div slot="titulo" class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-danger/10 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <p class="text-sm font-semibold text-text-primary">Eliminar expediente</p>
+    </div>
+
+    <div slot="cuerpo">
+      <p class="text-sm text-text-primary/70">
+        ¿Estás seguro que querés eliminar el expediente
+        <span class="font-semibold text-text-primary">{{ expedienteAEliminar?.numero }}</span>?
+      </p>
+      <p class="text-xs text-text-primary/40 mt-1">Esta acción no se puede deshacer.</p>
+    </div>
+
+    <div slot="footer" class="flex justify-end gap-3">
+      <button
+        type="button"
+        (click)="cancelarEliminar()"
+        class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        (click)="confirmarEliminar()"
+        class="px-4 py-2 text-sm font-medium text-white bg-danger hover:bg-red-600 rounded-lg transition-colors"
+      >
+        Eliminar
+      </button>
+    </div>
+  </app-ui-modal>
+
 </div>

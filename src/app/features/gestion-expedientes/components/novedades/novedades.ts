@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NovedadesFilter, NovedadFilterState } from '../novedades-filter/novedades-filter';
 import { NovedadesCard, Novedad } from '../novedades-card/novedades-card';
 import { ModalNovedad } from '../modal-novedad/modal-novedad';
 import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-novedades',
@@ -13,6 +14,7 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
   templateUrl: './novedades.html',
 })
 export class Novedades {
+  private router = inject(Router);
 
   // 🔴 MOCK — reemplazar por servicio
   allNovedades: Novedad[] = [
@@ -73,7 +75,6 @@ export class Novedades {
 
   modalOpen = false;
   novedadEditando: Novedad | null = null;
-  router: any;
 
   get novedadesOrdenadas(): Novedad[] {
     // Orden descendente por fecha (más reciente = número más alto en el timeline)

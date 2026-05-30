@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeConfig, UiBadge } from '../ui-badge/ui-badge';
 
-export type TableAction = 'view' | 'edit' | 'delete' | 'download';
+export type TableAction = 'view' | 'edit' | 'delete' | 'download' | 'complete';
 
 export interface TableColumn {
   key: string;
@@ -28,7 +28,7 @@ export class UiTable {
     row: any;
   }>();
 
-  onAction(type: 'view' | 'edit' | 'delete' | 'download', row: any) {
+  onAction(type: TableAction, row: any) {
     this.action.emit({ type, row });
   }
 }

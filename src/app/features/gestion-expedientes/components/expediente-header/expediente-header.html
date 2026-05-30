@@ -1,18 +1,26 @@
 <div class="flex items-center justify-between">
   <div>
-    <h1 class="text-xl font-semibold text-text-primary">Gestión de Expedientes</h1>
+    <h1 class="text-2xl font-bold text-text-primary">Gestión de Expedientes</h1>
     <p class="text-sm text-text-primary/50 mt-0.5">Administrá todos los expedientes judiciales</p>
   </div>
-  <app-primary-btn (click)="abrirModal()">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-    </svg>
-    Nuevo expediente
-  </app-primary-btn>
+  <div class="flex items-center gap-3">
+    <app-primary-btn variant="secondary" (click)="exportar()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+      </svg>
+      Exportar
+    </app-primary-btn>
+    <app-primary-btn (click)="abrirModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+      Nuevo expediente
+    </app-primary-btn>
+  </div>
 </div>
 
 <app-modal-exptes
   [open]="modalAbierto"
   (cerrar)="cerrarModal()"
   (guardarExpediente)="onGuardar($event)"
-/>
+></app-modal-exptes>

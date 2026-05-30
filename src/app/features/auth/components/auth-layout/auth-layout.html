@@ -1,0 +1,38 @@
+<div class="min-h-screen flex">
+
+  <!-- Panel izquierdo: marca -->
+  <div class="hidden lg:flex w-2/5 bg-secondary flex-col justify-center px-12 text-white">
+
+    <div class="mb-6">
+      <img src="images/lexora_logo.png" alt="Lexora" class="h-16 w-auto" />
+    </div>
+
+    <p class="text-lg font-light tracking-wide text-white/90 mb-4">
+      Sistema de Gestión Judicial
+    </p>
+
+    <div class="w-12 h-0.5 bg-primary mb-12"></div>
+
+    <div class="flex items-start gap-4">
+      <div class="flex-shrink-0 w-12 h-12 rounded-full border-2 border-primary/60 flex items-center justify-center">
+        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 003 10.5c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.56-.27-3.056-.768-4.438A11.96 11.96 0 0012 2.714z" />
+        </svg>
+      </div>
+      <p class="text-white/70 text-sm leading-relaxed">
+        Gestioná expedientes, audiencias y<br />
+        documentación de manera eficiente,<br />
+        segura y centralizada.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Panel derecho: fondo + contenido proyectado -->
+  <div class="flex-1 flex items-center justify-center relative overflow-hidden"
+       style="background-image: url('images/fondo-login.svg'); background-size: cover; background-position: center;">
+    <ng-content />
+  </div>
+
+</div>

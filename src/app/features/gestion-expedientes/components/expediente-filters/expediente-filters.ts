@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
@@ -23,6 +23,8 @@ export class ExpedienteFilters {
 
   @Input() clientes: { id: string; nombre: string }[] = [];
   @Output() filtersChange = new EventEmitter<ExpedienteFilterState>();
+
+  filtrosAbiertos = signal(true);
 
   filters: ExpedienteFilterState = {
     numero: '',
@@ -79,12 +81,12 @@ export class ExpedienteFilters {
     return this.clientes.map(c => ({ value: c.id, label: c.nombre }));
   }
 
-  clearFilters(): void {
-    this.filters = { numero: '', causa: '', caratula: '', area: '', tipo: '', estado: '', clienteId: '' };
+  buscar() {
     this.filtersChange.emit({ ...this.filters });
   }
 
-  hasActiveFilters(): boolean {
-    return Object.values(this.filters).some(v => v !== '');
+  limpiar(): void {
+    this.filters = { numero: '', causa: '', caratula: '', area: '', tipo: '', estado: '', clienteId: '' };
+    this.filtersChange.emit({ ...this.filters });
   }
 }

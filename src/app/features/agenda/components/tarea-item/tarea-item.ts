@@ -1,8 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { TareaAgenda } from '../../services/agenda';
 
 @Component({
   selector: 'app-tarea-item',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './tarea-item.html',
 })
-export class TareaItem {}
+export class TareaItem {
+  @Input() tarea!: TareaAgenda;
+  @Output() ver = new EventEmitter<TareaAgenda>();
+
+  obtenerColorEstado(): string {
+    if (this.tarea.estado === 'Vencida') return 'bg-red-500';
+    if (this.tarea.estado === 'Cumplida') return 'bg-green-500';
+    if (this.tarea.estado === 'En curso') return 'bg-blue-500';
+    return 'bg-yellow-400';
+  }
+}

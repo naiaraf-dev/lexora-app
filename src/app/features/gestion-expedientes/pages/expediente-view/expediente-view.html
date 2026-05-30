@@ -1,1 +1,243 @@
-<p>expediente-view works!</p>
+<div class="flex flex-col gap-6 max-w-6xl mx-auto">
+
+  <!-- Breadcrumb + acciones -->
+  <div class="flex items-center justify-between">
+    <nav class="text-sm">
+      <a class="text-gray-400 hover:underline cursor-pointer" (click)="volver()">Gestión de expedientes</a>
+      <span class="text-gray-300 mx-1.5">/</span>
+      <span class="text-text-primary font-medium">Expediente 1234/2026</span>
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <app-primary-btn variant="secondary" (click)="volver()">
+        ← Volver a bandeja
+      </app-primary-btn>
+
+      <app-primary-btn>
+        Descargar PDF
+      </app-primary-btn>
+    </div>
+  </div>
+
+  <!-- Resumen del Expediente -->
+  <app-info-card title="Resumen del Expediente">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+
+      <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+          {{ resumen.estado }}
+        </span>
+        <span class="text-xs text-gray-400 mt-0.5">Estado actual</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <span class="text-sm font-semibold text-text-primary">{{ resumen.proximoVencimiento }}</span>
+        <span class="text-xs text-gray-400">Próximo vencimiento</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <span class="text-xl font-bold text-success">{{ resumen.cumplidas }}</span>
+        <span class="text-xs text-gray-400">Tareas cumplidas</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <span class="text-xl font-bold text-warning">{{ resumen.pendientes }}</span>
+        <span class="text-xs text-gray-400">Tareas pendientes</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <span class="text-xl font-bold text-danger">{{ resumen.vencidas }}</span>
+        <span class="text-xs text-gray-400">Tareas vencidas</span>
+      </div>
+
+    </div>
+  </app-info-card>
+
+  <!-- Datos Generales -->
+  <app-info-card title="Datos Generales" [collapsible]="true">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+      @for (campo of datosGenerales; track campo.label) {
+        <div class="flex flex-col gap-1" [class.lg:col-span-4]="campo.full" [class.sm:col-span-2]="campo.full">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
+            </svg>
+            <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+          </div>
+          <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Datos Judiciales -->
+  <app-info-card title="Datos Judiciales" [collapsible]="true">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5">
+      @for (campo of datosJudiciales; track campo.label) {
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
+            </svg>
+            <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+          </div>
+          <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Profesionales Intervinientes -->
+  <app-info-card title="Profesionales Intervinientes" [collapsible]="true">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+      @for (campo of profesionales; track campo.label) {
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
+            </svg>
+            <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+          </div>
+          <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Fechas Claves -->
+  <app-info-card title="Fechas Claves" [collapsible]="true">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+      @for (campo of fechasClaves; track campo.label) {
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
+            </svg>
+            <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+          </div>
+          <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Clasificación Interna -->
+  <app-info-card title="Clasificación Interna" [collapsible]="true">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
+      @for (campo of clasificacion; track campo.label) {
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
+            </svg>
+            <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+          </div>
+          <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Documentos -->
+  <app-info-card title="Documentos">
+    <span slot="header-actions" class="text-sm text-gray-400">
+      {{ documentos.length }} documentos registrados
+    </span>
+
+    <div class="flex flex-col gap-3">
+      @for (doc of documentos; track doc.nombre) {
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <svg class="w-5 h-5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <div class="flex flex-col min-w-0">
+              <span class="text-sm font-medium text-text-primary truncate">{{ doc.nombre }}</span>
+              <span class="text-xs text-gray-400 truncate">{{ doc.meta }}</span>
+            </div>
+          </div>
+
+          <app-primary-btn variant="secondary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Descargar
+          </app-primary-btn>
+        </div>
+      }
+    </div>
+  </app-info-card>
+
+  <!-- Historial de Novedades -->
+  <app-info-card title="Historial de Novedades">
+    <ol class="flex flex-col">
+      @for (nov of novedades; track nov.titulo; let last = $last) {
+        <li class="relative flex gap-4 pb-6" [class.pb-0]="last">
+          <!-- Línea + punto -->
+          <div class="flex flex-col items-center">
+            <span class="w-4 h-4 rounded-full border-2 bg-white shrink-0" [ngClass]="nov.dotClasses"></span>
+            @if (!last) {
+              <span class="w-px flex-1 bg-gray-200 mt-1"></span>
+            }
+          </div>
+
+          <!-- Contenido -->
+          <div class="flex flex-col gap-1 flex-1 -mt-0.5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [ngClass]="nov.badgeClasses">
+                {{ nov.tipo }}
+              </span>
+              <span class="text-sm font-semibold text-text-primary">{{ nov.fecha }}</span>
+              <span class="text-xs text-gray-400">{{ nov.autor }}</span>
+            </div>
+
+            <p class="text-sm font-medium text-text-primary">{{ nov.titulo }}</p>
+            <p class="text-sm text-gray-500">{{ nov.descripcion }}</p>
+
+            <!-- Adjuntos -->
+            @if (nov.adjuntos.length) {
+              <div class="flex items-center gap-2 flex-wrap mt-1">
+                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                </svg>
+                @for (adj of nov.adjuntos; track adj) {
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-500">{{ adj }}</span>
+                }
+              </div>
+            }
+
+            <!-- Tarea asociada -->
+            @if (nov.tarea; as tarea) {
+              <div class="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 mt-2">
+                @if (tarea.estado === 'Cumplida') {
+                  <svg class="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4 text-warning shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                }
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-text-primary">{{ tarea.titulo }}</span>
+                  <span class="text-xs text-gray-400">
+                    Vencimiento: {{ tarea.vencimiento }} - Estado:
+                    <span [class.text-success]="tarea.estado === 'Cumplida'"
+                          [class.text-warning]="tarea.estado === 'Pendiente'"
+                          class="font-medium">{{ tarea.estado }}</span>
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+  </app-info-card>
+
+</div>

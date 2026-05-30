@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Output } from '@angular/core';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
@@ -30,4 +30,9 @@ export class NovedadesFilter {
     { value: 'NOTIFICACION', label: 'Notificación' },
     { value: 'OTRO',         label: 'Otro' },
   ];
+
+  limpiar() {
+    this.filters = { buscar: '', tipo: '' };
+    this.filtersChange.emit({ ...this.filters });
+  }
 }

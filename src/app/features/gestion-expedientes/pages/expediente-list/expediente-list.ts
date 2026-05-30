@@ -4,7 +4,7 @@ import { ExpedienteHeader } from '../../components/expediente-header/expediente-
 import { ExpedienteFilters, ExpedienteFilterState } from '../../components/expediente-filters/expediente-filters';
 import { ExpedienteTable, Expediente } from '../../components/expediente-table/expediente-table';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 @Component({
   selector: 'app-expediente-list',
