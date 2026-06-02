@@ -16,8 +16,8 @@ Este proyecto forma parte del trabajo integrador de la carrera y se desarrollar�
 - Gestión de clientes
 - Novedades y documentos asociados
 - Agenda de tareas y plazos
-- Sistema de autenticación (roles: Admin / Abogado)
-- Exportación de reportes
+- Sistema de autenticación
+- Log de seguridad
 
 ---
 
@@ -47,15 +47,17 @@ src/
 - Angular (Standalone Components)
 - TypeScript
 - Tailwind CSS
-- RxJS / Signals
+- Node
+- Express
+- SQL Server
 
 ---
 
-## ▶️ Instalación
+## ▶️ Instalación Frontend
 
 ```bash
 git clone https://github.com/naiaraf-dev/lexora-app.git
-cd lexora-app
+cd lexora-app/frontend
 npm install
 ng serve
 Abrir en navegador: http://localhost:4200
