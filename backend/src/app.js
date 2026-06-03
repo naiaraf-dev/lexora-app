@@ -1,11 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
 
-const { sql, conectarBD } = require('./db');
+const { sql, conectarBD } = require('./config/db');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -32,7 +30,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
 
 /*
     TIPO CLIENTE
@@ -510,21 +507,4 @@ app.post('/api/enums/prioridad', async (req, res) => {
     }
 });
 
-
-/*
-    INICIAR SERVIDOR
-*/
-
-async function iniciarServidor() {
-    try {
-        await conectarBD();
-
-        app.listen(PORT, () => {
-            console.log(`Servidor corriendo en http://localhost:${PORT}`);
-        });
-    } catch (error) {
-        console.error('No se pudo iniciar el servidor:', error.message);
-    }
-}
-
-iniciarServidor();
+module.exports = app;
