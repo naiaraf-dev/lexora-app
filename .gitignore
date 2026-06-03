@@ -1,0 +1,38 @@
+# --- Cache de Angular (¡Súper importante!) ---
+.angular/
+**/.angular/
+.sass-cache/
+
+# --- Dependencias y Binarios ---
+node_modules/
+**/node_modules/
+**/dist/
+**/tmp/
+**/out-tsc/
+**/bazel-out/
+build/
+
+# --- Variables de Entorno y Logs ---
+.env
+**/.env
+*.log
+**/npm-debug.log
+**/yarn-error.log
+**/libpeerconnection.log
+**/testem.log
+
+# --- IDEs, Editores y VS Code ---
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+**/.history/
+.vscode/
+**/.vscode/
+
+# --- Archivos de Sistema ---
+.DS_Store
+Thumbs.db
