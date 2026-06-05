@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('./novedades_controller');
+const controller = require('../controllers/novedades.controller');
 
 // GET  /api/novedades/:id        → obtener una
 router.get('/:id',  controller.obtener);

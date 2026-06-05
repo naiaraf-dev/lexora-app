@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('./expedientes_controller');
+const controller = require('../controllers/expedientes.controller');
 
 // GET  /api/expedientes          → listar con filtros y paginación
 router.get('/',     controller.listar);

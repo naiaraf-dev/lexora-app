@@ -1,4 +1,4 @@
-const repo = require('./novedades_repository');
+const repo = require('../repositories/novedades.repository');
 
 async function listarPorExpediente(expedienteId) {
     const registros = await repo.getAllByExpediente(expedienteId);

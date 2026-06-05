@@ -1,4 +1,4 @@
-const service = require('./novedades_service');
+const service = require('../services/novedades.service');
 
 async function listarPorExpediente(req, res) {
     try {

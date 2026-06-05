@@ -1,4 +1,4 @@
-const repo = require('./expedientes_repository');
+const repo = require('../repositories/expedientes.repository');
 
 async function listar(filtros) {
     const registros = await repo.getAll(filtros);

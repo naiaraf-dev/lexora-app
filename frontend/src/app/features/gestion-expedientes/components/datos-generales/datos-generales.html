@@ -203,7 +203,7 @@
         Clasificación Interna
         </h2>
 
-        <!-- Fila 1: Prioridad | Etiqueta / Categoría | Origen del caso -->
+        <!-- Fila 1: Prioridad | Origen del caso -->
         <div class="grid grid-cols-3 gap-4">
             <app-ui-select
                 label="Prioridad"
@@ -211,11 +211,6 @@
                 [model]="form.get('prioridad')?.value"
                 (modelChange)="form.get('prioridad')?.setValue($event)"
             ></app-ui-select>
-            <app-ui-input
-                label="Etiqueta / Categoría"
-                [model]="form.get('etiquetaCategoria')?.value"
-                (modelChange)="form.get('etiquetaCategoria')?.setValue($event)"
-            ></app-ui-input>
             <app-ui-input
                 label="Origen del caso"
                 [model]="form.get('origenCaso')?.value"
