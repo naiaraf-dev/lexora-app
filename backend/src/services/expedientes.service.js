@@ -47,9 +47,10 @@ async function obtener(id) {
         numeroInterno:             `${r.id}/${new Date(r.fecha_creacion).getFullYear()}`,
         numeroExpedienteJudicial:  r.numero_expediente_judicial,
         caratula:                  r.caratula,
-        area:                      r.fuero,
+        area:                      r.area,
         descripcion:               r.descripcion,
         juzgado:                   r.juzgado,
+        fuero:                     r.fuero,
         secretaria:                r.secretaria,
         jurisdiccion:              r.jurisdiccion,
         instancia:                 r.instancia,
@@ -97,6 +98,8 @@ async function crear(data) {
     if (!data.caratula)        throw { status: 400, mensaje: 'caratula es obligatoria' };
     if (!data.usuario_creacion)throw { status: 400, mensaje: 'usuario_creacion es obligatorio' };
     if (!data.usuario_principal)throw { status: 400, mensaje: 'usuario_principal es obligatorio' };
+    if (!data.area)    throw { status: 400, mensaje: 'area es obligatoria' };
+    if (!data.cliente) throw { status: 400, mensaje: 'cliente es obligatorio' };
 
     return repo.crear(data);
 }

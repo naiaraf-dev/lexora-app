@@ -1,8 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { ModalExptes } from '../modal-exptes/modal-exptes';
 import { Expediente } from '../expediente-table/expediente-table';
 import * as XLSXStyle from 'xlsx-js-style';
+import { ExpedientesService } from '../../services/expedientes.service';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-expediente-header',
@@ -13,15 +15,23 @@ import * as XLSXStyle from 'xlsx-js-style';
 export class ExpedienteHeader {
   @Input() expedientesFiltrados: Expediente[] = [];
   @Output() expedienteCreado = new EventEmitter<unknown>();
+  private expedientesService = inject(ExpedientesService);
 
   modalAbierto = false;
 
   abrirModal(): void { this.modalAbierto = true; }
   cerrarModal(): void { this.modalAbierto = false; }
 
-  onGuardar(expediente: unknown): void {
-    this.modalAbierto = false;
-    this.expedienteCreado.emit(expediente);
+  onGuardar(payload: any): void {
+    this.expedientesService.crear(payload).subscribe({
+      next: () => {
+        this.expedienteCreado.emit();
+        toast.success('Expediente creado correctamente');
+      },
+      error: () => {
+        toast.error('Error al crear el expediente');
+      }
+    });
   }
 
   exportar(): void {
@@ -44,13 +54,13 @@ export class ExpedienteHeader {
     }));
 
     const filasDatos = this.expedientesFiltrados.map(e => [
-      e.numero,
-      e.causa,
+      e.numeroInterno,
+      e.numeroExpedienteJudicial ?? '—',
       e.caratula,
-      e.clienteNombre,
+      e.cliente?.nombre ?? '—',
       e.area,
-      e.tipoLabel,
-      e.estado,
+      e.tipo?.nombre ?? '—',
+      e.estado?.nombre ?? '—',
       new Date(e.fechaInicio).toLocaleDateString('es-AR'),
       new Date(e.ultimaActualizacion).toLocaleDateString('es-AR'),
     ].map(v => ({

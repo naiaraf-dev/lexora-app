@@ -30,19 +30,19 @@
                 <!-- TEXT -->
                 @if (col.type === 'text' || !col.type) {
                   <span class="text-text-primary/70">
-                    {{ row[col.key] }}
+                    {{ getValue(row, col.key) }}
                   </span>
                 }
 
                 <!-- BADGE -->
                 @if (col.type === 'badge') {
-                  <ui-badge [estado]="row[col.key]" [config]="col.badgeConfig!"></ui-badge>
+                  <ui-badge [estado]="getValue(row, col.key)" [config]="col.badgeConfig!"></ui-badge>
                 }
 
                 <!-- DATE -->
                 @if (col.type === 'date') {
                   <span class="text-xs text-text-primary/60">
-                    {{ row[col.key] | date:'dd/MM/yyyy HH:mm' }}
+                    {{ getValue(row, col.key) | date:'dd/MM/yyyy HH:mm' }}
                   </span>
                 }
 

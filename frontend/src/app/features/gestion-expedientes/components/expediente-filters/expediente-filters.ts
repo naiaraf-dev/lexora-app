@@ -1,7 +1,9 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, EventEmitter, OnInit, Output, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
+import { environment } from '../../../../../environments/environment';
 
 export interface ExpedienteFilterState {
   numero: string;
@@ -19,21 +21,15 @@ export interface ExpedienteFilterState {
   imports: [FormsModule, UiInput, UiSelect],
   templateUrl: './expediente-filters.html',
 })
-export class ExpedienteFilters {
+export class ExpedienteFilters implements OnInit {
+  private http = inject(HttpClient);
 
-  @Input() clientes: { id: string; nombre: string }[] = [];
   @Output() filtersChange = new EventEmitter<ExpedienteFilterState>();
 
   filtrosAbiertos = signal(true);
 
   filters: ExpedienteFilterState = {
-    numero: '',
-    causa: '',
-    caratula: '',
-    area: '',
-    tipo: '',
-    estado: '',
-    clienteId: '',
+    numero: '', causa: '', caratula: '', area: '', tipo: '', estado: '', clienteId: '',
   };
 
   areaOptions = [
@@ -49,39 +45,30 @@ export class ExpedienteFilters {
     { value: 'SOCIETARIO', label: 'Societario' },
   ];
 
-  tipoOptions = [
-    { value: 'OFICIO', label: 'Oficios' },
-    { value: 'CARTA_DOC', label: 'Carta Documento' },
-    { value: 'MEDIACION', label: 'Mediaciones' },
-    { value: 'BENEFICIO_LITIGAR', label: 'Beneficios de litigar sin gastos' },
-    { value: 'COBRO_CANON', label: 'Cobro de Cánones' },
-    { value: 'RECLAMO_CONTRAT', label: 'Reclamo a Contratista / Proveedor' },
-    { value: 'LANZAMIENTO', label: 'Lanzamientos' },
-    { value: 'RECUPERO', label: 'Recuperos' },
-    { value: 'EJECUCION_GAR', label: 'Ejecución de Pólizas' },
-    { value: 'DEMANDA_CIVIL', label: 'Demanda Civil' },
-    { value: 'DEMANDA_LABORAL', label: 'Demanda Laboral' },
-    { value: 'DEFENSA_CIVIL', label: 'Defensas Civiles' },
-    { value: 'SECLOS', label: 'SECLO' },
-    { value: 'CONSIGNACION', label: 'Consignaciones' },
-    { value: 'DESAFUERO', label: 'Desafueros' },
-    { value: 'QUERELLA', label: 'Querellas' },
-    { value: 'DEFENSA_PENAL', label: 'Defensas Penales' },
-    { value: 'CARTA_SUCESO', label: 'Cartas Suceso' },
-    { value: 'OTRAS', label: 'Otras presentaciones / gestiones' },
-  ];
+  tipoOptions:   { value: string; label: string }[] = [];
+  estadoOptions: { value: string; label: string }[] = [];
+  clienteOptions:{ value: string; label: string }[] = [];
 
-  estadoOptions = [
-    { value: 'EN_TRAMITE', label: 'En trámite' },
-    { value: 'FINALIZADO', label: 'Finalizado' },
-    { value: 'ARCHIVADO', label: 'Archivado' },
-  ];
+  ngOnInit(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/enums/tipoexpediente`).subscribe({
+      next: (res) => this.tipoOptions = res.map(r => ({ value: String(r.id), label: r.nombre }))
+    });
 
-  get clienteOptions() {
-    return this.clientes.map(c => ({ value: c.id, label: c.nombre }));
+    this.http.get<any[]>(`${environment.apiUrl}/enums/estadoexpediente`).subscribe({
+      next: (res) => this.estadoOptions = res.map(r => ({ value: String(r.id), label: r.nombre }))
+    });
+
+    this.http.get<any[]>(`${environment.apiUrl}/clientes`).subscribe({
+      next: (res) => this.clienteOptions = res.map(c => ({
+        value: String(c.id),
+        label: `${c.nombre} ${c.apellido}`,
+      }))
+    });
+
+    this.filtersChange.emit({ ...this.filters });
   }
 
-  buscar() {
+  buscar(): void {
     this.filtersChange.emit({ ...this.filters });
   }
 
