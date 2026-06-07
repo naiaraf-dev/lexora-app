@@ -6,13 +6,13 @@ async function listarPorExpediente(expedienteId) {
     return registros.map(r => ({
         id:          r.id,
         expediente:  r.expediente,
-        fecha:       r.fec,
+        fecha:       r.fecha_novedad,
         titulo:      r.titulo,
         descripcion: r.descripcion,
-        esPrincipal: r.es_principal,
+        esProcesal:  r.es_procesal,
         tipoNovedad: r.tipoNovedadId ? {
-            id:     r.tipoNovedadId,
-            nombre: r.tipoNovedadNombre,
+            id:      r.tipoNovedadId,
+            nombre:  r.tipoNovedadNombre,
         } : null,
         usuarioCreacion: r.usuarioCreacionId ? {
             id:     r.usuarioCreacionId,
@@ -30,13 +30,13 @@ async function obtener(id) {
     return {
         id:          r.id,
         expediente:  r.expediente,
-        fecha:       r.fec,
+        fecha:       r.fecha_novedad,
         titulo:      r.titulo,
         descripcion: r.descripcion,
-        esPrincipal: r.es_principal,
+        esProcesal:  r.es_procesal,
         tipoNovedad: r.tipoNovedadId ? {
-            id:     r.tipoNovedadId,
-            nombre: r.tipoNovedadNombre,
+            id:      r.tipoNovedadId,
+            nombre:  r.tipoNovedadNombre,
         } : null,
         usuarioCreacion: r.usuarioCreacionId ? {
             id:     r.usuarioCreacionId,

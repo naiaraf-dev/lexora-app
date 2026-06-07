@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/expedientes.controller');
+const novedadesController = require('../controllers/novedades.controller');
 
 // GET  /api/expedientes          → listar con filtros y paginación
 router.get('/',     controller.listar);
+
+// GET  /api/expedientes/:id/novedades → listar novedades del expediente
+router.get('/:id/novedades', novedadesController.listarPorExpediente);
 
 // GET  /api/expedientes/:id      → obtener uno completo
 router.get('/:id',  controller.obtener);

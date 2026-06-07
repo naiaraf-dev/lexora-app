@@ -101,7 +101,6 @@ export class ExpedienteView {
   profesionales: Campo[] = [
     { iconPath: ICON.user, label: 'Abogado responsable', value: '-' },
     { iconPath: ICON.user, label: 'Abogado secundario', value: '-' },
-    { iconPath: ICON.building, label: 'Estudio / Sede', value: '-' },
     { iconPath: ICON.user, label: 'Contraparte', value: '-' },
     { iconPath: ICON.user, label: 'Abogado contraparte', value: '-' },
   ];

@@ -5,6 +5,9 @@ const { sql, conectarBD } = require('./config/db');
 
 const app = express();
 
+const expedientesRouter = require('./routes/expedientes.routes');
+const novedadesRouter   = require('./routes/novedades.routes');
+
 app.use(cors());
 app.use(express.json());
 
@@ -30,6 +33,13 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
+
+/*
+    Expedientes y novedades
+*/
+
+app.use('/api/expedientes', expedientesRouter);
+app.use('/api/novedades',   novedadesRouter);
 
 /*
     TIPO CLIENTE
