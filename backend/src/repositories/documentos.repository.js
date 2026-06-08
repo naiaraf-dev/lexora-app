@@ -58,6 +58,11 @@ async function obtenerDocumentos(filtros) {
         request.input('fechaCreacion', sql.DateTime2, filtros.fechaCreacion);
     }
 
+    if (filtros.nombreDocumento) {
+        query += ` AND d.nombre_archivo LIKE @nombreDocumento`;
+        request.input('nombreDocumento', sql.NVarChar(200), `%${filtros.nombreDocumento}%`);
+    }
+
     if (filtros.fechaUltimaModificacion) {
         query += ` AND CONVERT(date, d.fecha_ultima_modificacion) = CONVERT(date, @fechaUltimaModificacion)`;
         request.input('fechaUltimaModificacion', sql.DateTime2, filtros.fechaUltimaModificacion);
