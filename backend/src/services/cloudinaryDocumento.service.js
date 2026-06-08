@@ -1,13 +1,20 @@
+const path = require('path');
 const cloudinary = require('../config/cloudinary');
+
+function limpiarNombreArchivo(nombre) {
+    return nombre
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\-]/g, '');
+}
 
 function subirDocumentoACloudinary(file, carpeta = 'lexora/documentos') {
     return new Promise((resolve, reject) => {
-        const nombreSinExtension = file.originalname
-            .replace(/\.[^/.]+$/, '')
-            .replace(/\s+/g, '_')
-            .replace(/[^\w\-]/g, '');
+        const extension = path.extname(file.originalname); // .pdf, .docx, .png
+        const nombreBase = path.basename(file.originalname, extension);
 
-        const publicId = `${Date.now()}_${nombreSinExtension}`;
+        const nombreLimpio = limpiarNombreArchivo(nombreBase);
+
+        const publicId = `${Date.now()}_${nombreLimpio}${extension}`;
 
         const uploadStream = cloudinary.uploader.upload_stream(
             {
