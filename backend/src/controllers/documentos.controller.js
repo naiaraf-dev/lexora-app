@@ -10,6 +10,7 @@ async function obtenerDocumentos(req, res) {
             tipoDocumento: req.query.tipoDocumento,
             fechaCreacion: req.query.fechaCreacion,
             fechaUltimaModificacion: req.query.fechaUltimaModificacion,
+            nombreDocumento: req.query.nombreDocumento,
             activo: req.query.activo !== undefined ? req.query.activo === 'true' || req.query.activo === '1' : undefined
         };
 
@@ -20,6 +21,23 @@ async function obtenerDocumentos(req, res) {
         res.status(500).json({
             mensaje: 'Error al obtener documento/s',
             error: error.message
+        });
+    }
+}
+
+async function subirDocumento(req, res) {
+    console.log('Endpoint ejecutado: POST /api/subirDocumento');
+
+    try {
+        const documentoInsertado = await documentosService.subirEInsertarDocumento(req.body, req.file);
+
+        res.status(201).json({
+            mensaje: 'Documento subido e insertado correctamente',
+            documento: documentoInsertado
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            mensaje: error.message || 'Error al subir documento'
         });
     }
 }
@@ -59,5 +77,6 @@ async function insertarDocumento(req, res) {
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
-    insertarDocumento
+    insertarDocumento,
+    subirDocumento
 };

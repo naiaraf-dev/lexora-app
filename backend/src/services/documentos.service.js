@@ -1,4 +1,5 @@
 const documentosRepository = require('../repositories/documentos.repository');
+const { subirDocumentoACloudinary } = require('./cloudinaryDocumento.service');
 
 async function obtenerDocumentos(filtros) {
     return await documentosRepository.obtenerDocumentos(filtros);
@@ -95,8 +96,105 @@ async function insertarDocumento(datos) {
     return await documentosRepository.insertarDocumento(documento);
 }
 
+async function subirEInsertarDocumento(datos, file) {
+    if (!file) {
+        const error = new Error('El archivo es obligatorio');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const {
+        descripcion,
+        fecha_documento,
+        activo,
+        expediente,
+        novedad,
+        usuario_creacion,
+        tipo_documento
+    } = datos;
+
+    if (!expediente) {
+        const error = new Error('El expediente es obligatorio');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!usuario_creacion) {
+        const error = new Error('El usuario de creación es obligatorio');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!tipo_documento) {
+        const error = new Error('El tipo de documento es obligatorio');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const expedienteExiste = await documentosRepository.existeExpediente(Number(expediente));
+
+    if (!expedienteExiste) {
+        const error = new Error(`No existe un expediente con id ${expediente}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (novedad) {
+        const novedadExiste = await documentosRepository.existeNovedad(Number(novedad));
+
+        if (!novedadExiste) {
+            const error = new Error(`No existe una novedad con id ${novedad}`);
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
+    const usuarioExiste = await documentosRepository.existeUsuario(Number(usuario_creacion));
+
+    if (!usuarioExiste) {
+        const error = new Error(`No existe un usuario con id ${usuario_creacion}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const tipoDocumentoExiste = await documentosRepository.existeTipoDocumento(Number(tipo_documento));
+
+    if (!tipoDocumentoExiste) {
+        const error = new Error(`No existe un tipo de documento con id ${tipo_documento}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const resultadoCloudinary = await subirDocumentoACloudinary(file);
+
+    const documento = {
+        nombre_archivo: file.originalname,
+        descripcion,
+        fecha_documento: fecha_documento || null,
+        storage_key: resultadoCloudinary.public_id,
+        activo: activo === undefined ? true : activo === 'true' || activo === true || activo === '1',
+        expediente: Number(expediente),
+        novedad: novedad ? Number(novedad) : null,
+        usuario_creacion: Number(usuario_creacion),
+        tipo_documento: Number(tipo_documento)
+    };
+
+    const documentoInsertado = await documentosRepository.insertarDocumento(documento);
+
+    return {
+        ...documentoInsertado,
+        cloudinary: {
+            public_id: resultadoCloudinary.public_id,
+            secure_url: resultadoCloudinary.secure_url,
+            resource_type: resultadoCloudinary.resource_type,
+            format: resultadoCloudinary.format
+        }
+    };
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
-    insertarDocumento
+    insertarDocumento,
+    subirEInsertarDocumento
 };
