@@ -236,10 +236,110 @@ async function eliminarDocumento(idDocumento) {
     };
 }
 
+async function modificarDocumento(idDocumento, datos, file) {
+    if (!idDocumento || isNaN(Number(idDocumento))) {
+        const error = new Error('El id del documento es obligatorio y debe ser numérico');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const documentoActual = await documentosRepository.obtenerDocumentoPorId(Number(idDocumento));
+
+    if (!documentoActual) {
+        const error = new Error(`No existe un documento con id ${idDocumento}`);
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const {
+        descripcion,
+        fecha_documento,
+        idexpediente,
+        novedad
+    } = datos;
+
+    if (!idexpediente) {
+        const error = new Error('El expediente es obligatorio');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const expedienteExiste = await documentosRepository.existeExpediente(Number(idexpediente));
+
+    if (!expedienteExiste) {
+        const error = new Error(`No existe un expediente con id ${idexpediente}`);
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (novedad) {
+        const novedadExiste = await documentosRepository.existeNovedad(Number(novedad));
+
+        if (!novedadExiste) {
+            const error = new Error(`No existe una novedad con id ${novedad}`);
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
+    let resultadoCloudinaryNuevo = null;
+    let resultadoCloudinaryAnterior = null;
+
+    const datosActualizacion = {
+        descripcion,
+        fecha_documento: fecha_documento || null,
+        expediente: Number(idexpediente),
+        novedad: novedad ? Number(novedad) : null
+    };
+
+    if (file) {
+        resultadoCloudinaryNuevo = await subirDocumentoACloudinary(file);
+
+        datosActualizacion.nombre_archivo = file.originalname;
+        datosActualizacion.storage_key = resultadoCloudinaryNuevo.public_id;
+    }
+
+    let documentoModificado;
+
+    try {
+        documentoModificado = await documentosRepository.modificarDocumento(
+            Number(idDocumento),
+            datosActualizacion
+        );
+    } catch (error) {
+        if (resultadoCloudinaryNuevo?.public_id) {
+            await eliminarDocumentoDeCloudinary(resultadoCloudinaryNuevo.public_id);
+        }
+
+        throw error;
+    }
+
+    if (file && documentoActual.storage_key) {
+        resultadoCloudinaryAnterior = await eliminarDocumentoDeCloudinary(documentoActual.storage_key);
+    }
+
+    return {
+        documentoAnterior: documentoActual,
+        documentoModificado,
+        cloudinary: {
+            archivoNuevo: resultadoCloudinaryNuevo
+                ? {
+                    public_id: resultadoCloudinaryNuevo.public_id,
+                    secure_url: resultadoCloudinaryNuevo.secure_url,
+                    resource_type: resultadoCloudinaryNuevo.resource_type,
+                    format: resultadoCloudinaryNuevo.format
+                }
+                : null,
+            archivoAnteriorEliminado: resultadoCloudinaryAnterior
+        }
+    };
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
     insertarDocumento,
     subirEInsertarDocumento,
-    eliminarDocumento
+    eliminarDocumento,
+    modificarDocumento
 };

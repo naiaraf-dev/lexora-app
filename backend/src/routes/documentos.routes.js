@@ -15,4 +15,6 @@ router.post('/subirDocumento',uploadDocumento.single('archivo'),documentosContro
 
 router.delete('/documento/:iddocumento', documentosController.eliminarDocumento);
 
+router.put('/documento/:iddocumento',uploadDocumento.single('archivo'),documentosController.modificarDocumento);
+
 module.exports = router;

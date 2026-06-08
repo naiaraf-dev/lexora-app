@@ -255,6 +255,45 @@ async function eliminarDocumentoPorId(idDocumento) {
     return resultado.recordset[0];
 }
 
+async function modificarDocumento(idDocumento, datos) {
+    const pool = await conectarBD();
+
+    const request = pool.request();
+
+    request.input('idDocumento', sql.Int, idDocumento);
+    request.input('descripcion', sql.NVarChar(sql.MAX), datos.descripcion ?? null);
+    request.input('fecha_documento', sql.DateTime2, datos.fecha_documento || null);
+    request.input('expediente', sql.Int, datos.expediente);
+    request.input('novedad', sql.Int, datos.novedad || null);
+
+    let camposArchivo = '';
+
+    if (datos.nombre_archivo && datos.storage_key) {
+        request.input('nombre_archivo', sql.NVarChar(200), datos.nombre_archivo);
+        request.input('storage_key', sql.NVarChar(sql.MAX), datos.storage_key);
+
+        camposArchivo = `
+            nombre_archivo = @nombre_archivo,
+            storage_key = @storage_key,
+        `;
+    }
+
+    const resultado = await request.query(`
+        UPDATE documento
+        SET
+            descripcion = @descripcion,
+            fecha_documento = @fecha_documento,
+            expediente = @expediente,
+            novedad = @novedad,
+            ${camposArchivo}
+            fecha_ultima_modificacion = SYSDATETIME()
+        OUTPUT INSERTED.*
+        WHERE id = @idDocumento
+    `);
+
+    return resultado.recordset[0];
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
@@ -264,5 +303,6 @@ module.exports = {
     existeTipoDocumento,
     insertarDocumento,
     obtenerDocumentoPorId,
-    eliminarDocumentoPorId
+    eliminarDocumentoPorId,
+    modificarDocumento
 };

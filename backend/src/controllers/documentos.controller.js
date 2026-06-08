@@ -95,10 +95,36 @@ async function eliminarDocumento(req, res) {
     }
 }
 
+async function modificarDocumento(req, res) {
+    console.log('Endpoint ejecutado: PUT /api/documento/:iddocumento');
+
+    try {
+        const { iddocumento } = req.params;
+
+        const resultado = await documentosService.modificarDocumento(
+            iddocumento,
+            req.body,
+            req.file
+        );
+
+        res.json({
+            mensaje: 'Documento modificado correctamente',
+            documento: resultado.documentoModificado,
+            cloudinary: resultado.cloudinary
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            mensaje: error.message || 'Error al modificar documento',
+            detalle: error.detalle || undefined
+        });
+    }
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
     insertarDocumento,
     subirDocumento,
-    eliminarDocumento
+    eliminarDocumento,
+    modificarDocumento
 };
