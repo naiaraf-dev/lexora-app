@@ -1,5 +1,9 @@
 const documentosRepository = require('../repositories/documentos.repository');
-const { subirDocumentoACloudinary } = require('./cloudinaryDocumento.service');
+
+const {
+    subirDocumentoACloudinary,
+    eliminarDocumentoDeCloudinary
+} = require('./cloudinaryDocumento.service');
 
 async function obtenerDocumentos(filtros) {
     return await documentosRepository.obtenerDocumentos(filtros);
@@ -192,9 +196,50 @@ async function subirEInsertarDocumento(datos, file) {
     };
 }
 
+async function eliminarDocumento(idDocumento) {
+    if (!idDocumento || isNaN(Number(idDocumento))) {
+        const error = new Error('El id del documento es obligatorio y debe ser numérico');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const documento = await documentosRepository.obtenerDocumentoPorId(Number(idDocumento));
+
+    if (!documento) {
+        const error = new Error(`No existe un documento con id ${idDocumento}`);
+        error.statusCode = 404;
+        throw error;
+    }
+
+    let resultadoCloudinary = null;
+
+    if (documento.storage_key) {
+        resultadoCloudinary = await eliminarDocumentoDeCloudinary(documento.storage_key);
+
+        if (
+            resultadoCloudinary.result !== 'ok' &&
+            resultadoCloudinary.result !== 'not found' &&
+            resultadoCloudinary.result !== 'sin_storage_key'
+        ) {
+            const error = new Error('No se pudo eliminar el documento de Cloudinary');
+            error.statusCode = 500;
+            error.detalle = resultadoCloudinary;
+            throw error;
+        }
+    }
+
+    const documentoEliminado = await documentosRepository.eliminarDocumentoPorId(Number(idDocumento));
+
+    return {
+        documentoEliminado,
+        cloudinary: resultadoCloudinary
+    };
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
     insertarDocumento,
-    subirEInsertarDocumento
+    subirEInsertarDocumento,
+    eliminarDocumento
 };

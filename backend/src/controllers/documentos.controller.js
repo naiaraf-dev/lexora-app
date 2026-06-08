@@ -74,9 +74,31 @@ async function insertarDocumento(req, res) {
     }
 }
 
+async function eliminarDocumento(req, res) {
+    console.log('Endpoint ejecutado: DELETE /api/documento/:iddocumento');
+
+    try {
+        const { iddocumento } = req.params;
+
+        const resultado = await documentosService.eliminarDocumento(iddocumento);
+
+        res.json({
+            mensaje: 'Documento eliminado correctamente',
+            documento: resultado.documentoEliminado,
+            cloudinary: resultado.cloudinary
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            mensaje: error.message || 'Error al eliminar documento',
+            detalle: error.detalle || undefined
+        });
+    }
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
     insertarDocumento,
-    subirDocumento
+    subirDocumento,
+    eliminarDocumento
 };

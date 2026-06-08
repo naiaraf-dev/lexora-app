@@ -35,6 +35,21 @@ function subirDocumentoACloudinary(file, carpeta = 'lexora/documentos') {
     });
 }
 
+async function eliminarDocumentoDeCloudinary(storageKey) {
+    if (!storageKey) {
+        return {
+            result: 'sin_storage_key'
+        };
+    }
+
+    const resultado = await cloudinary.uploader.destroy(storageKey, {
+        resource_type: 'raw'
+    });
+
+    return resultado;
+}
+
 module.exports = {
-    subirDocumentoACloudinary
+    subirDocumentoACloudinary,
+    eliminarDocumentoDeCloudinary
 };

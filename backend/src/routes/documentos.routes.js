@@ -13,4 +13,6 @@ router.post('/insertarDocumento', documentosController.insertarDocumento);
 
 router.post('/subirDocumento',uploadDocumento.single('archivo'),documentosController.subirDocumento);
 
+router.delete('/documento/:iddocumento', documentosController.eliminarDocumento);
+
 module.exports = router;

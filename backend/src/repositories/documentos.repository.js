@@ -215,6 +215,46 @@ async function insertarDocumento(documento) {
     return resultado.recordset[0];
 }
 
+async function obtenerDocumentoPorId(idDocumento) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('idDocumento', sql.Int, idDocumento)
+        .query(`
+            SELECT 
+                id,
+                nombre_archivo,
+                descripcion,
+                fecha_creacion,
+                fecha_documento,
+                fecha_ultima_modificacion,
+                storage_key,
+                activo,
+                expediente,
+                novedad,
+                usuario_creacion,
+                tipo_documento
+            FROM documento
+            WHERE id = @idDocumento
+        `);
+
+    return resultado.recordset[0];
+}
+
+async function eliminarDocumentoPorId(idDocumento) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('idDocumento', sql.Int, idDocumento)
+        .query(`
+            DELETE FROM documento
+            OUTPUT DELETED.*
+            WHERE id = @idDocumento
+        `);
+
+    return resultado.recordset[0];
+}
+
 module.exports = {
     obtenerDocumentos,
     obtenerTodosLosDocumentos,
@@ -222,5 +262,7 @@ module.exports = {
     existeNovedad,
     existeUsuario,
     existeTipoDocumento,
-    insertarDocumento
+    insertarDocumento,
+    obtenerDocumentoPorId,
+    eliminarDocumentoPorId
 };
