@@ -3,12 +3,15 @@ const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
 const documentosRoutes = require('./routes/documentos.routes');
+const tareasRoutes = require('./routes/tareas.routes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use('/api', documentosRoutes);
+app.use('/api', tareasRoutes);
+
 
 /*
     PRUEBA DE CONEXIÓN
