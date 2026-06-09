@@ -10,6 +10,9 @@ import { Configuracion } from '../../services/configuracion';
 import { PerfilUsuario } from '../../models/configuracion.model';
 import { perfilSchema, PerfilErrores } from '../../models/configuracion.schema';
 
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
+import { toast } from 'ngx-sonner';
+
 type Tab = 'perfil' | 'seguridad';
 type ToastTipo = 'success' | 'error';
 
@@ -18,7 +21,7 @@ const TAMANO_MAX_MB = 5;
 @Component({
   selector: 'app-configuracion',
   standalone: true,
-  imports: [CommonModule, FormsModule, UiModal, UiInput],
+  imports: [CommonModule, FormsModule, UiModal, UiInput, UiConfirmModal],
   templateUrl: './configuracion.html',
 })
 export class ConfiguracionView implements OnInit {
@@ -171,7 +174,7 @@ export class ConfiguracionView implements OnInit {
 
   // Toast
   private mostrarToast(tipo: ToastTipo, texto: string) {
-    this.toast.set({ tipo, texto });
-    setTimeout(() => this.toast.set(null), 3500);
+    if (tipo === 'success') toast.success(texto);
+    else toast.error(texto);
   }
 }

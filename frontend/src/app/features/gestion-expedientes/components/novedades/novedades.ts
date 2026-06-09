@@ -1,77 +1,80 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { NovedadesFilter, NovedadFilterState } from '../novedades-filter/novedades-filter';
 import { NovedadesCard, Novedad } from '../novedades-card/novedades-card';
 import { ModalNovedad } from '../modal-novedad/modal-novedad';
 import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
-import { Router } from '@angular/router';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
 @Component({
   selector: 'app-novedades',
   standalone: true,
-  imports: [CommonModule, NovedadesFilter, NovedadesCard, ModalNovedad, PrimaryBtn],
+  imports: [CommonModule, NovedadesFilter, NovedadesCard, ModalNovedad, PrimaryBtn, UiConfirmModal],
   templateUrl: './novedades.html',
 })
-export class Novedades {
+export class Novedades implements OnInit {
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
+  private http   = inject(HttpClient);
+  private cdr    = inject(ChangeDetectorRef);
+  private expedienteId!: number;
 
-  // 🔴 MOCK — reemplazar por servicio
-  allNovedades: Novedad[] = [
-    {
-      id: '3',
-      tipo: 'PRESENTACION', tipoLabel: 'Presentación',
-      fechaActuacion: '2023-03-12T00:00:00',
-      titulo: 'Se presenta demanda',
-      descripcion: 'Se presenta demanda por daños y perjuicios ante el Juzgado Civil N 32. Se adjunta documentación respaldatoria.',
-      responsable: 'Dra. Martínez',
-      archivos: [
-        { nombre: 'demanda inicial.pdf', url: '#' },
-        { nombre: 'contrato de locación.pdf', url: '#' },
-      ],
-      tarea: undefined,
-    },
-    {
-      id: '2',
-      tipo: 'AUDIENCIA', tipoLabel: 'Audiencia',
-      fechaActuacion: '2023-09-20T00:00:00',
-      titulo: 'Audiencia de conciliacion',
-      descripcion: 'Se celebra audiencia de conciliación ante el juez. Las partes no llegan a un acuerdo. Se fija audiencia de prueba.',
-      responsable: 'Dra. Morales',
-      archivos: [],
-      tarea: {
-        id: 't1',
-        titulo: 'Preparar alegato para audiencia de prueba',
-        prioridad: 'MEDIA',
-        fechaVencimiento: '2023-10-10',
-        responsable: 'Dra. Morales',
-        descripcionInstrucciones: '',
-        cumplida: false,
-        // agendaEventId: undefined, // 🗓️ AGENDA — a poblar cuando se conecte la agenda
-      },
-    },
-    {
-      id: '1',
-      tipo: 'RESOLUCION', tipoLabel: 'Resolución',
-      fechaActuacion: '2024-11-10T00:00:00',
-      titulo: 'Resolución interlocutoria',
-      descripcion: 'El juzgado resuelve hacer lugar a la prueba ofrecida por la parte actora. Se fija plazo de 10 dias para producción de prueba.',
-      responsable: 'Dra. Martínez',
-      archivos: [{ nombre: 'resolución interlocutoria.pdf', url: '#' }],
-      tarea: {
-        id: 't2',
-        titulo: 'Producir prueba en 10 dias',
-        prioridad: 'ALTA',
-        fechaVencimiento: '2024-11-20',
-        responsable: 'Dra. Martínez',
-        descripcionInstrucciones: '',
-        cumplida: false,
-        // agendaEventId: undefined, // 🗓️ AGENDA — a poblar cuando se conecte la agenda
-      },
-    },
-  ];
+  ngOnInit(): void {
+    this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
+    this.cargarNovedades();
+    this.cargarCatalogos();
+  }
 
-  filteredNovedades: Novedad[] = [...this.allNovedades];
+  private cargarNovedades(): void {
+    console.log('cargando novedades para expediente:', this.expedienteId);
+      this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
+          .subscribe({
+              next: (res) => {
+                console.log('novedades recibidas:', res);
+                  this.allNovedades = res.map(n => ({
+                      id:             String(n.id),
+                      tipo:           n.tipoNovedad ? String(n.tipoNovedad.id) : '', 
+                      tipoLabel:      n.tipoNovedad?.nombre ?? 'Observación',
+                      fechaActuacion: n.fecha,
+                      titulo:         n.titulo,
+                      descripcion:    n.descripcion ?? '',
+                      responsable:    n.usuarioCreacion?.nombre ?? '—',
+                      // TODO: mapear archivos cuando se implemente endpoint correspondiente en el backend.
+                      archivos: (n.archivos ?? []).map((a: any) => ({
+                        nombre: a.nombre,
+                        url:    a.url ?? '#',
+                      })),
+                      // TODO: mapear tarea asociada cuando se implemente endpoint correspondiente en el backend
+                      tarea:          undefined,
+                  }));
+                  this.filteredNovedades = [...this.allNovedades];
+                  this.cdr.detectChanges();
+              }
+          });
+  }
+
+  private cargarCatalogos(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/enums/tiponovedad`).subscribe({
+      next: (res) => {
+        this.tipoNovedadOptions = res.map(t => ({ value: String(t.id), label: t.nombre }));
+      }
+    });
+    this.http.get<any[]>(`${environment.apiUrl}/enums/prioridad`).subscribe({
+      next: (res) => {
+        this.prioridadOptions = res.map(p => ({ value: String(p.id), label: p.nombre }));
+      }
+    });
+  }
+
+  allNovedades: Novedad[] = [];
+  filteredNovedades: Novedad[] = [];
+
+  tipoNovedadOptions: { value: string; label: string }[] = [];
+  prioridadOptions:   { value: string; label: string }[] = [];
 
   modalOpen = false;
   novedadEditando: Novedad | null = null;
@@ -101,37 +104,68 @@ export class Novedades {
     this.modalOpen = true;
   }
 
+  novedadAEliminar: Novedad | null = null;
+  confirmEliminarOpen = false;
+
   onEliminar(novedad: Novedad) {
-    this.allNovedades = this.allNovedades.filter(n => n.id !== novedad.id);
-    this.filteredNovedades = this.filteredNovedades.filter(n => n.id !== novedad.id);
-    toast.success('Novedad eliminada');
+    this.novedadAEliminar = novedad;
+    this.confirmEliminarOpen = true;
+  }
+
+  confirmarEliminar() {
+    if (!this.novedadAEliminar) return;
+    this.http.delete(`${environment.apiUrl}/novedades/${this.novedadAEliminar.id}`)
+      .subscribe({
+        next: () => {
+          this.allNovedades = this.allNovedades.filter(n => n.id !== this.novedadAEliminar!.id);
+          this.filteredNovedades = this.filteredNovedades.filter(n => n.id !== this.novedadAEliminar!.id);
+          toast.success('Novedad eliminada');
+          this.confirmEliminarOpen = false;
+          this.novedadAEliminar = null;
+        }
+      });
   }
 
   onGuardar(payload: Partial<Novedad>) {
     if (this.novedadEditando) {
-      // Edición
-      this.allNovedades = this.allNovedades.map(n =>
-        n.id === this.novedadEditando!.id ? { ...n, ...payload } : n
-      );
-      toast.success('Novedad actualizada correctamente');
+      this.http.put(`${environment.apiUrl}/novedades/${this.novedadEditando.id}`, {
+        titulo:        payload.titulo,
+        descripcion:   payload.descripcion,
+        fecha_novedad: payload.fechaActuacion,
+        tipo_novedad:  payload.tipo ? Number(payload.tipo) : null,
+      }).subscribe({
+        next: () => {
+          this.cargarNovedades();
+          this.modalOpen = false;
+          this.novedadEditando = null;
+          toast.success('Novedad actualizada correctamente');
+        }
+      });
     } else {
-      // Alta
-      const nueva: Novedad = {
-        id: crypto.randomUUID(),
-        tipoLabel: payload.tipo ?? '',
-        responsable: 'Usuario actual', // 🔴 MOCK — reemplazar por usuario logueado
-        archivos: [],
-        ...payload,
-      } as Novedad;
-      this.allNovedades = [nueva, ...this.allNovedades];
-      toast.success('Novedad creada correctamente');
+      this.http.post(`${environment.apiUrl}/novedades`, {
+        expediente:       this.expedienteId,
+        titulo:           payload.titulo,
+        descripcion:      payload.descripcion,
+        fecha_novedad:    payload.fechaActuacion,
+        es_procesal:      false,
+        tipo_novedad:     payload.tipo ? Number(payload.tipo) : null,
+        usuario_creacion: 1,
+      }).subscribe({
+        next: () => {
+          this.cargarNovedades();
+          this.modalOpen = false;
+          this.novedadEditando = null;
+          toast.success('Novedad creada correctamente');
+        }
+      });
     }
-    this.filteredNovedades = [...this.allNovedades];
-    this.modalOpen = false;
-    this.novedadEditando = null;
   }
 
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
+  }
+
+  get mensajeConfirmar(): string {
+    return `¿Estás seguro que querés eliminar la novedad "${this.novedadAEliminar?.titulo ?? ''}"? Esta acción no se puede deshacer.`;
   }
 }

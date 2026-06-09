@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
 import { Router } from '@angular/router';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
-import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { CommonModule } from '@angular/common';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
 export interface Expediente {
   id: number;
@@ -22,7 +22,7 @@ export interface Expediente {
 @Component({
   selector: 'app-expediente-table',
   standalone: true,
-  imports: [UiTable, UiPagination, UiModal, CommonModule],
+  imports: [UiTable, UiPagination, UiConfirmModal, CommonModule],
   templateUrl: './expediente-table.html',
 })
 export class ExpedienteTable {
@@ -77,4 +77,8 @@ export class ExpedienteTable {
       getActions: () => ['view', 'edit', 'delete']
     },
   ];
+
+  get mensajeConfirmarEliminar(): string {
+    return `¿Estás seguro que querés eliminar el expediente "${this.expedienteAEliminar?.numeroInterno}"? Esta acción no se puede deshacer.`;
+  }
 }

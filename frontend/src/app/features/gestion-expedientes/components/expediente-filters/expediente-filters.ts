@@ -65,7 +65,7 @@ export class ExpedienteFilters implements OnInit {
       }))
     });
 
-    this.filtersChange.emit({ ...this.filters });
+    setTimeout(() => this.filtersChange.emit({ ...this.filters }));
   }
 
   buscar(): void {

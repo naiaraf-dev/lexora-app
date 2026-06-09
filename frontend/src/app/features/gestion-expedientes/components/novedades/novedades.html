@@ -2,6 +2,7 @@
 
     <!-- Filtros -->
     <app-novedades-filter
+        [tipoOptions]="tipoNovedadOptions"
         (filtersChange)="onFiltersChange($event)"
         (nuevaNovedad)="abrirAlta()"
     ></app-novedades-filter>
@@ -22,12 +23,23 @@
         }
     </div>
 
+    <app-ui-confirm-modal
+    [open]="confirmEliminarOpen"
+    titulo="Eliminar novedad"
+    [mensaje]="mensajeConfirmar"
+    labelConfirmar="Eliminar"
+    (confirmar)="confirmarEliminar()"
+    (cancelar)="confirmEliminarOpen = false; novedadAEliminar = null"
+    ></app-ui-confirm-modal>
+
 </div>
 
 <!-- Modal alta / editar -->
 <app-modal-novedad
     [open]="modalOpen"
     [novedad]="novedadEditando"
+    [tipoOptions]="tipoNovedadOptions"
+    [prioridadOptions]="prioridadOptions"
     (cerrar)="modalOpen = false"
     (guardar)="onGuardar($event)"
 ></app-modal-novedad>

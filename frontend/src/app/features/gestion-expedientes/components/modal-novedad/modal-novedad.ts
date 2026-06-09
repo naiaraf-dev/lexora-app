@@ -18,12 +18,15 @@ import { toast } from 'ngx-sonner';
 export class ModalNovedad implements OnChanges {
   @Input() open = false;
   @Input() novedad: Novedad | null = null; // null = alta, valor = editar
+  @Input() tipoOptions: { value: string; label: string }[] = [];
+  @Input() prioridadOptions: { value: string; label: string }[] = [];
   @Output() cerrar  = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<Partial<Novedad>>();
 
   guardando = false;
   crearTarea = true; // checkbox "Crear tarea / plazo asociado"
   archivosAdjuntos: File[] = [];
+  archivosExistentes: { nombre: string; url: string }[] = [];
 
   form = {
     tipo: '',
@@ -43,22 +46,6 @@ export class ModalNovedad implements OnChanges {
     descripcionInstrucciones: '',
   };
 
-  tipoOptions = [
-    { value: 'PRESENTACION', label: 'Presentación' },
-    { value: 'AUDIENCIA',    label: 'Audiencia' },
-    { value: 'RESOLUCION',   label: 'Resolución' },
-    { value: 'OFICIO',       label: 'Oficio' },
-    { value: 'PERICIA',      label: 'Pericia' },
-    { value: 'NOTIFICACION', label: 'Notificación' },
-    { value: 'OTRO',         label: 'Otro' },
-  ];
-
-  prioridadOptions = [
-    { value: 'ALTA',  label: 'Alta' },
-    { value: 'MEDIA', label: 'Media' },
-    { value: 'BAJA',  label: 'Baja' },
-  ];
-
   get modoEdicion(): boolean { return !!this.novedad; }
   get titulo(): string { return this.modoEdicion ? 'Editar Novedad' : 'Nueva Novedad'; }
   get labelGuardar(): string { return this.modoEdicion ? 'Guardar cambios' : 'Guardar novedad'; }
@@ -67,10 +54,13 @@ export class ModalNovedad implements OnChanges {
     if (this.novedad) {
       this.form = {
         tipo:             this.novedad.tipo,
-        fechaActuacion:   this.novedad.fechaActuacion,
+        fechaActuacion: this.novedad.fechaActuacion
+          ? new Date(this.novedad.fechaActuacion).toISOString().slice(0, 10)
+          : '',
         titulo:           this.novedad.titulo,
         descripcion:      this.novedad.descripcion,
       };
+      this.archivosExistentes = this.novedad.archivos ?? [];
       if (this.novedad.tarea) {
         this.crearTarea = true;
         this.tareaForm = {
@@ -147,13 +137,10 @@ export class ModalNovedad implements OnChanges {
       tarea,
     };
 
-    // 🔴 MOCK — reemplazar por servicio
-    setTimeout(() => {
-      this.guardando = false;
-      this.guardar.emit(payload);
-      this.cerrar.emit();
-      this.resetForm();
-    }, 800);
+    this.guardando = false;
+    this.guardar.emit(payload);
+    this.cerrar.emit();
+    this.resetForm();
   }
 
   cerrarModal() { this.cerrar.emit(); this.resetForm(); }
@@ -163,9 +150,15 @@ export class ModalNovedad implements OnChanges {
     this.archivosAdjuntos = [];
     this.crearTarea = true;
     this.resetTareaForm();
+    this.archivosExistentes = [];
   }
 
   private resetTareaForm() {
     this.tareaForm = { titulo: '', prioridad: '', fechaVencimiento: '', hora: '', responsable: '', descripcionInstrucciones: '' };
+  }
+
+  eliminarArchivoExistente(archivo: { nombre: string; url: string }): void {
+    // TODO: llamar a DELETE /api/documentos/:id cuando esté disponible
+    this.archivosExistentes = this.archivosExistentes.filter(a => a.nombre !== archivo.nombre);
   }
 }

@@ -6,7 +6,7 @@ export interface TareaAsociada {
   titulo: string;
   fechaVencimiento: string; // ISO
   hora?: string;
-  prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
+  prioridad: string;
   responsable: string;
   descripcionInstrucciones: string;
   cumplida: boolean;
@@ -31,13 +31,13 @@ export interface Novedad {
 
 // Badge config por tipo de novedad
 export const NOVEDAD_BADGE: Record<string, { label: string; classes: string }> = {
-  PRESENTACION: { label: 'Presentación', classes: 'bg-blue-100 text-blue-600' },
-  AUDIENCIA:    { label: 'Audiencia',    classes: 'bg-yellow-100 text-yellow-700' },
-  RESOLUCION:   { label: 'Resolución',   classes: 'bg-green-100 text-green-700' },
-  OFICIO:       { label: 'Oficio',       classes: 'bg-indigo-100 text-indigo-600' },
-  PERICIA:      { label: 'Pericia',      classes: 'bg-purple-100 text-purple-600' },
-  NOTIFICACION: { label: 'Notificación', classes: 'bg-orange-100 text-orange-600' },
-  OTRO:         { label: 'Otro',         classes: 'bg-gray-100 text-gray-500' },
+  Audiencia:     { label: 'Audiencia',     classes: 'bg-yellow-100 text-yellow-700' },
+  Presentación:  { label: 'Presentación',  classes: 'bg-blue-100 text-blue-600' },
+  Notificación:  { label: 'Notificación',  classes: 'bg-orange-100 text-orange-600' },
+  Vencimiento:   { label: 'Vencimiento',   classes: 'bg-red-100 text-red-600' },
+  Llamada:       { label: 'Llamada',       classes: 'bg-green-100 text-green-700' },
+  Reunión:       { label: 'Reunión',       classes: 'bg-purple-100 text-purple-600' },
+  Observación:   { label: 'Observación',   classes: 'bg-gray-100 text-gray-500' },
 };
 
 @Component({
@@ -53,14 +53,15 @@ export class NovedadesCard {
   @Output() eliminar = new EventEmitter<Novedad>();
 
   get badge() {
-    return NOVEDAD_BADGE[this.novedad.tipo] ?? { label: this.novedad.tipo, classes: 'bg-gray-100 text-gray-500' };
+    return NOVEDAD_BADGE[this.novedad.tipoLabel] ?? { label: this.novedad.tipoLabel, classes: 'bg-gray-100 text-gray-500' };
   }
 
   get prioridadClasses(): string {
     const map: Record<string, string> = {
-      ALTA:  'bg-red-100 text-red-600',
-      MEDIA: 'bg-yellow-100 text-yellow-700',
-      BAJA:  'bg-green-100 text-green-700',
+      Alta:    'bg-red-100 text-red-600',
+      Media:   'bg-yellow-100 text-yellow-700',
+      Baja:    'bg-green-100 text-green-700',
+      Urgente: 'bg-rose-100 text-rose-700',
     };
     return this.novedad.tarea ? (map[this.novedad.tarea.prioridad] ?? '') : '';
   }

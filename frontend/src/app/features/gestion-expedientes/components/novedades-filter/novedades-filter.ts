@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
@@ -21,15 +21,7 @@ export class NovedadesFilter {
 
   filters: NovedadFilterState = { buscar: '', tipo: '' };
 
-  tipoOptions = [
-    { value: 'PRESENTACION', label: 'Presentación' },
-    { value: 'AUDIENCIA',    label: 'Audiencia' },
-    { value: 'RESOLUCION',   label: 'Resolución' },
-    { value: 'OFICIO',       label: 'Oficio' },
-    { value: 'PERICIA',      label: 'Pericia' },
-    { value: 'NOTIFICACION', label: 'Notificación' },
-    { value: 'OTRO',         label: 'Otro' },
-  ];
+  @Input() tipoOptions: { value: string; label: string }[] = [];
 
   limpiar() {
     this.filters = { buscar: '', tipo: '' };
