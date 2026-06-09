@@ -1,3 +1,14 @@
+@if (mensajeExito) {
+  <div class="fixed top-5 right-5 z-[9999] rounded-lg bg-green-600 text-white px-4 py-3 text-sm font-medium shadow-lg">
+    {{ mensajeExito }}
+  </div>
+}
+
+@if (mensajeError) {
+  <div class="fixed top-5 right-5 z-[9999] rounded-lg bg-red-600 text-white px-4 py-3 text-sm font-medium shadow-lg">
+    {{ mensajeError }}
+  </div>
+}
 <div class="min-h-full bg-gray-50">
   <!-- Header -->
   <div class="mb-6 flex items-start justify-between">
@@ -127,11 +138,20 @@
       <div class="grid grid-cols-7">
         @for (dia of diasCalendario; track dia.numero) {
           <div
-            class="min-h-[110px] border-r border-b border-gray-200 p-3 bg-white hover:bg-gray-50"
-            [class.bg-red-50]="dia.tareas.length && dia.tareas[0].estado === 'Vencida'"
+            class="min-h-[110px] border-r border-b border-gray-200 p-3 hover:bg-gray-50"
+            [ngClass]="{
+              'bg-slate-200 border-slate-400 shadow-inner': esDiaActual(dia.fecha),
+              'bg-red-50': !esDiaActual(dia.fecha) && dia.tareas.length && dia.tareas[0].estado === 'Vencida',
+              'bg-white': !esDiaActual(dia.fecha) && !(dia.tareas.length && dia.tareas[0].estado === 'Vencida')
+            }"
           >
             <div class="flex justify-between mb-3">
-              <span class="text-xs font-medium text-gray-800">
+              <span
+                class="text-xs font-medium"
+                [ngClass]="esDiaActual(dia.fecha)
+                  ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center'
+                  : 'text-gray-800'"
+              >
                 {{ dia.numero }}
               </span>
 
@@ -188,37 +208,90 @@
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
               <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Vencimiento</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.fecha ? obtenerFechaArgentina(tareaSeleccionada!.fecha) : '' }}</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.fecha ? obtenerFechaArgentina(tareaSeleccionada!.fecha) : 'Sin vencimiento' }}
+              </p>
             </div>
           </div>
+
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
               <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Hora</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.hora || 'Sin hora' }}</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.hora || 'Sin hora' }}
+              </p>
             </div>
           </div>
+
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
               <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Expediente</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.expediente }}</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.expediente }}
+              </p>
             </div>
           </div>
+
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
-              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Cliente</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.cliente }}</p>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Novedad</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.novedad }}
+              </p>
             </div>
           </div>
+
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
               <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Responsable</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.responsable }}</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.responsable || 'Sin responsable' }}
+              </p>
             </div>
           </div>
+
           <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
             <div>
-              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Área</p>
-              <p class="text-sm text-text-primary font-semibold">{{ tareaSeleccionada?.area }}</p>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Usuario completado</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.usuarioCompletado }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+            <div>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Fecha creación</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.fechaCreacion ? obtenerFechaArgentina(tareaSeleccionada!.fechaCreacion) : '' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+            <div>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Última modificación</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.fechaUltimaModificacion ? obtenerFechaArgentina(tareaSeleccionada!.fechaUltimaModificacion) : 'Sin modificar' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+            <div>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Estado</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.estado }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+            <div>
+              <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Activo</p>
+              <p class="text-sm text-text-primary font-semibold">
+                {{ tareaSeleccionada?.activo ? 'Sí' : 'No' }}
+              </p>
             </div>
           </div>
         </div>
@@ -235,10 +308,11 @@
         @if (tareaSeleccionada?.estado !== 'Cumplida') {
           <button
             type="button"
-            class="px-4 py-2 text-sm font-medium text-white bg-success hover:bg-green-700 rounded-lg transition-colors"
+            class="px-4 py-2 text-sm font-medium text-white bg-success hover:bg-green-700 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            [disabled]="marcandoCumplida"
             (click)="tareaSeleccionada && marcarCumplida(tareaSeleccionada)"
           >
-            Marcar cumplida
+            {{ marcandoCumplida ? 'Completando...' : 'Marcar cumplida' }}
           </button>
         }
       </div>

@@ -1,121 +1,279 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap, tap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 export type EstadoTarea = 'Pendiente' | 'Vencida' | 'Cumplida' | 'En curso';
 export type PrioridadTarea = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 
 export interface TareaAgenda {
   id: number;
+
+  expedienteId: number;
+  novedadId: number | null;
+  prioridadId: number;
+  estadoTareaId: number;
+  usuarioCreacionId: number;
+  usuarioCompletadoId: number | null;
+
   fecha: string; // YYYY-MM-DD
   hora?: string;
+
+  fechaCreacion: string;
+  fechaUltimaModificacion: string | null;
+
   titulo: string;
   descripcion: string;
+
   expediente: string;
+  novedad: string;
   cliente: string;
   responsable: string;
+  usuarioCompletado: string;
   area: string;
+
   prioridad: PrioridadTarea;
   estado: EstadoTarea;
+
+  activo: boolean;
+}
+
+interface TareaBackend {
+  id: number;
+  titulo: string;
+  descripcion: string | null;
+  fecha_creacion: string;
+  fecha_ultima_modificacion: string | null;
+  fecha_vencimiento: string | null;
+  activo: boolean;
+
+  expediente: number;
+  nombre_expediente: string;
+
+  novedad: number | null;
+  titulo_novedad?: string | null;
+
+  usuario_creacion: number;
+  nombre_usuario_creacion: string;
+  apellido_usuario_creacion: string;
+
+  usuario_completado: number | null;
+  nombre_usuario_completado: string | null;
+  apellido_usuario_completado: string | null;
+
+  prioridad: number;
+  nombre_prioridad: PrioridadTarea;
+
+  estado_tarea: number;
+  nombre_estado_tarea: EstadoTarea;
+}
+
+interface EstadoTareaEnum {
+  id: number;
+  nombre: EstadoTarea;
+}
+
+interface PrioridadEnum {
+  id: number;
+  nombre: PrioridadTarea;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class AgendaService {
-  // TODO: reemplazar por llamada HTTP al backend cuando esté disponible
-  private tareasSubject = new BehaviorSubject<TareaAgenda[]>([
-    {
-      id: 1,
-      fecha: '2026-02-05',
-      hora: '',
-      titulo: 'Vencimiento plazo contestación',
-      descripcion: 'Último día para contestar la demanda reconvencional.',
-      expediente: '2310/2025',
-      cliente: 'Ana Gómez',
-      responsable: 'Dra. Pérez',
-      area: 'Civil',
-      prioridad: 'Alta',
-      estado: 'Vencida',
-    },
-    {
-      id: 2,
-      fecha: '2026-02-17',
-      hora: '09:00',
-      titulo: 'Reunión con cliente',
-      descripcion: 'Reunión para revisar documentación pendiente.',
-      expediente: '1724/2025',
-      cliente: 'Laura Fernández',
-      responsable: 'Dr. Gómez',
-      area: 'Civil',
-      prioridad: 'Media',
-      estado: 'Pendiente',
-    },
-    {
-      id: 3,
-      fecha: '2026-02-20',
-      hora: '',
-      titulo: 'Producir prueba testimonial',
-      descripcion: 'Preparar y presentar prueba testimonial.',
-      expediente: '3298/2025',
-      cliente: 'Pablo Martínez',
-      responsable: 'Dra. Pérez',
-      area: 'Civil',
-      prioridad: 'Alta',
-      estado: 'Cumplida',
-    },
-    {
-      id: 4,
-      fecha: '2026-01-23',
-      hora: '09:00',
-      titulo: 'Audiencia de conciliación',
-      descripcion: 'Audiencia de conciliación programada.',
-      expediente: '1724/2025',
-      cliente: 'Laura Fernández',
-      responsable: 'Dra. Pérez',
-      area: 'Laboral',
-      prioridad: 'Crítica',
-      estado: 'Pendiente',
-    },
-    {
-      id: 5,
-      fecha: '2026-01-16',
-      hora: '10:30',
-      titulo: 'Audiencia preliminar',
-      descripcion: 'Audiencia preliminar del expediente.',
-      expediente: '1289/2025',
-      cliente: 'Juan Pérez',
-      responsable: 'Dr. López',
-      area: 'Civil',
-      prioridad: 'Media',
-      estado: 'En curso',
-    },
-    {
-      id: 6,
-      fecha: '2026-01-14',
-      hora: '15:00',
-      titulo: 'Reunión con cliente',
-      descripcion: 'Reunión de seguimiento.',
-      expediente: '2654/2025',
-      cliente: 'Juan Pérez',
-      responsable: 'Dra. Pérez',
-      area: 'Civil',
-      prioridad: 'Baja',
-      estado: 'Pendiente',
-    },
-  ]);
+  private readonly apiUrl = 'http://localhost:5000/api';
 
+  private tareasSubject = new BehaviorSubject<TareaAgenda[]>([]);
   tareas$ = this.tareasSubject.asObservable();
 
-  // TODO: reemplazar por llamada HTTP al backend cuando esté disponible
+  private estadosTarea: EstadoTareaEnum[] = [];
+  private prioridades: PrioridadEnum[] = [];
+
+  constructor(private http: HttpClient) {}
+
+  cargarTareas(): Observable<TareaAgenda[]> {
+    return this.http.get<TareaBackend[]>(`${this.apiUrl}/tareas`).pipe(
+      map((tareasBackend) => tareasBackend.map((tarea) => this.mapearTarea(tarea))),
+      tap((tareas) => this.tareasSubject.next(tareas))
+    );
+  }
+
   obtenerTareas(): TareaAgenda[] {
     return this.tareasSubject.value;
   }
 
-  marcarCumplida(id: number): void {
-    const tareas = this.tareasSubject.value.map((tarea) =>
-      tarea.id === id ? { ...tarea, estado: 'Cumplida' as EstadoTarea } : tarea
+  obtenerEstadosTarea(): Observable<EstadoTareaEnum[]> {
+    return this.http.get<EstadoTareaEnum[]>(`${this.apiUrl}/enums/estadotarea`).pipe(
+      tap((estados) => {
+        this.estadosTarea = estados;
+      })
     );
+  }
 
-    this.tareasSubject.next(tareas);
+  obtenerPrioridades(): Observable<PrioridadEnum[]> {
+    return this.http.get<PrioridadEnum[]>(`${this.apiUrl}/enums/prioridad`).pipe(
+      tap((prioridades) => {
+        this.prioridades = prioridades;
+      })
+    );
+  }
+
+  buscarTareas(filtros: {
+    titulo?: string;
+    descripcion?: string;
+    nombreExpediente?: string;
+    expediente?: number;
+    novedad?: number;
+    prioridad?: number;
+    estadoTarea?: number;
+    usuarioCreacion?: number;
+    usuarioCompletado?: number;
+    fechaCreacion?: string;
+    fechaVencimiento?: string;
+    activo?: boolean;
+  }): Observable<TareaAgenda[]> {
+    let params = new HttpParams();
+
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get<TareaBackend[]>(`${this.apiUrl}/tarea`, { params }).pipe(
+      map((tareasBackend) => tareasBackend.map((tarea) => this.mapearTarea(tarea))),
+      tap((tareas) => this.tareasSubject.next(tareas))
+    );
+  }
+
+  insertarTarea(tarea: {
+    titulo: string;
+    descripcion?: string;
+    expediente: number;
+    novedad?: number | null;
+    usuario_creacion: number;
+    usuario_completado?: number | null;
+    prioridad: number;
+    estado_tarea: number;
+    fecha_vencimiento?: string | null;
+    activo?: boolean;
+  }): Observable<TareaAgenda[]> {
+    return this.http.post(`${this.apiUrl}/insertarTarea`, tarea).pipe(
+      switchMap(() => this.cargarTareas())
+    );
+  }
+
+  modificarTarea(
+    id: number,
+    tarea: {
+      titulo: string;
+      descripcion?: string;
+      expediente: number;
+      novedad?: number | null;
+      usuario_completado?: number | null;
+      prioridad: number;
+      estado_tarea: number;
+      fecha_vencimiento?: string | null;
+      activo?: boolean;
+    }
+  ): Observable<TareaAgenda[]> {
+    return this.http.put(`${this.apiUrl}/tarea/${id}`, tarea).pipe(
+      switchMap(() => this.cargarTareas())
+    );
+  }
+
+  eliminarTarea(id: number): Observable<TareaAgenda[]> {
+    return this.http.delete(`${this.apiUrl}/tarea/${id}`).pipe(
+      switchMap(() => this.cargarTareas())
+    );
+  }
+
+  marcarCumplida(id: number): Observable<TareaAgenda[]> {
+    const tarea = this.tareasSubject.value.find((t) => t.id === id);
+
+    if (!tarea) {
+      throw new Error(`No existe una tarea cargada con id ${id}`);
+    }
+
+    const estadoCumplida = this.estadosTarea.find((estado) => estado.nombre === 'Cumplida');
+
+    if (!estadoCumplida) {
+      throw new Error('No se encontró el estado "Cumplida". Revisá la tabla estadotarea.');
+    }
+
+    return this.modificarTarea(id, {
+      titulo: tarea.titulo,
+      descripcion: tarea.descripcion,
+      expediente: tarea.expedienteId,
+      novedad: tarea.novedadId,
+      usuario_completado: 1,
+      prioridad: tarea.prioridadId,
+      estado_tarea: estadoCumplida.id,
+      fecha_vencimiento: tarea.fecha,
+      activo: tarea.activo,
+    });
+  }
+
+  private mapearTarea(tarea: TareaBackend): TareaAgenda {
+    const fecha = tarea.fecha_vencimiento
+      ? tarea.fecha_vencimiento.substring(0, 10)
+      : tarea.fecha_creacion.substring(0, 10);
+
+    const estadoCalculado = this.calcularEstado(tarea.nombre_estado_tarea, fecha);
+
+    return {
+      id: tarea.id,
+
+      expedienteId: tarea.expediente,
+      novedadId: tarea.novedad,
+      prioridadId: tarea.prioridad,
+      estadoTareaId: tarea.estado_tarea,
+      usuarioCreacionId: tarea.usuario_creacion,
+      usuarioCompletadoId: tarea.usuario_completado,
+
+      fecha,
+      hora: '',
+
+      fechaCreacion: tarea.fecha_creacion.substring(0, 10),
+      fechaUltimaModificacion: tarea.fecha_ultima_modificacion
+        ? tarea.fecha_ultima_modificacion.substring(0, 10)
+        : null,
+
+      titulo: tarea.titulo,
+      descripcion: tarea.descripcion || '',
+
+      expediente: tarea.nombre_expediente || String(tarea.expediente),
+      novedad: tarea.titulo_novedad || 'Sin novedad',
+
+      cliente: '',
+      responsable: `${tarea.nombre_usuario_creacion || ''} ${tarea.apellido_usuario_creacion || ''}`.trim(),
+
+      usuarioCompletado: tarea.usuario_completado
+        ? `${tarea.nombre_usuario_completado || ''} ${tarea.apellido_usuario_completado || ''}`.trim()
+        : 'Sin completar',
+
+      area: '',
+
+      prioridad: tarea.nombre_prioridad,
+      estado: estadoCalculado,
+
+      activo: tarea.activo,
+    };
+  }
+
+  private calcularEstado(estadoBackend: EstadoTarea, fecha: string): EstadoTarea {
+    if (estadoBackend === 'Cumplida') return 'Cumplida';
+    if (estadoBackend === 'En curso') return 'En curso';
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const fechaTarea = new Date(`${fecha}T00:00:00`);
+
+    if (estadoBackend === 'Pendiente' && fechaTarea < hoy) {
+      return 'Vencida';
+    }
+
+    return estadoBackend;
   }
 }
