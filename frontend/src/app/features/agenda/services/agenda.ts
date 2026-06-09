@@ -214,6 +214,32 @@ export class AgendaService {
     });
   }
 
+  desmarcarCumplida(id: number): Observable<TareaAgenda[]> {
+    const tarea = this.tareasSubject.value.find((t) => t.id === id);
+
+    if (!tarea) {
+      throw new Error(`No existe una tarea cargada con id ${id}`);
+    }
+
+    const estadoPendiente = this.estadosTarea.find((estado) => estado.nombre === 'Pendiente');
+
+    if (!estadoPendiente) {
+      throw new Error('No se encontró el estado "Pendiente". Revisá la tabla estadotarea.');
+    }
+
+    return this.modificarTarea(id, {
+      titulo: tarea.titulo,
+      descripcion: tarea.descripcion,
+      expediente: tarea.expedienteId,
+      novedad: tarea.novedadId,
+      usuario_completado: null,
+      prioridad: tarea.prioridadId,
+      estado_tarea: estadoPendiente.id,
+      fecha_vencimiento: tarea.fecha,
+      activo: tarea.activo,
+    });
+  }
+
   private mapearTarea(tarea: TareaBackend): TareaAgenda {
     const fecha = tarea.fecha_vencimiento
       ? tarea.fecha_vencimiento.substring(0, 10)

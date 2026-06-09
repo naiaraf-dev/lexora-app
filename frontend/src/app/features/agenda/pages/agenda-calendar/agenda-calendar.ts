@@ -35,6 +35,7 @@ export class AgendaCalendar implements OnInit {
   mensajeError = '';
   cargandoTareas = false;
   marcandoCumplida = false;
+  desmarcandoCumplida = false;
 
   filtroPrioridad = '';
   filtroExpediente = '';
@@ -278,6 +279,7 @@ export class AgendaCalendar implements OnInit {
   cerrarDetalle(): void {
     this.tareaSeleccionada = null;
     this.marcandoCumplida = false;
+    this.desmarcandoCumplida = false;
   }
 
   marcarCumplida(tarea: TareaAgenda): void {
@@ -312,6 +314,49 @@ export class AgendaCalendar implements OnInit {
           'Error al marcar la tarea como cumplida';
 
         console.error('Error al marcar tarea como cumplida', error);
+
+        this.cdr.detectChanges();
+
+        setTimeout(() => {
+          this.mensajeError = '';
+          this.cdr.detectChanges();
+        }, 4000);
+      },
+    });
+  }
+
+  desmarcarCumplida(tarea: TareaAgenda): void {
+    if (this.desmarcandoCumplida) return;
+
+    this.mensajeExito = '';
+    this.mensajeError = '';
+    this.desmarcandoCumplida = true;
+
+    this.agendaService.desmarcarCumplida(tarea.id).subscribe({
+      next: () => {
+        this.desmarcandoCumplida = false;
+        this.tareaSeleccionada = null;
+
+        this.aplicarFiltros();
+
+        this.mensajeExito = 'Tarea marcada como pendiente correctamente';
+
+        this.cdr.detectChanges();
+
+        setTimeout(() => {
+          this.mensajeExito = '';
+          this.cdr.detectChanges();
+        }, 3000);
+      },
+      error: (error) => {
+        this.desmarcandoCumplida = false;
+
+        this.mensajeError =
+          error?.error?.mensaje ||
+          error?.message ||
+          'Error al desmarcar la tarea';
+
+        console.error('Error al desmarcar tarea', error);
 
         this.cdr.detectChanges();
 

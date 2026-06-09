@@ -305,6 +305,7 @@
         >
           Cerrar
         </button>
+
         @if (tareaSeleccionada?.estado !== 'Cumplida') {
           <button
             type="button"
@@ -313,6 +314,17 @@
             (click)="tareaSeleccionada && marcarCumplida(tareaSeleccionada)"
           >
             {{ marcandoCumplida ? 'Completando...' : 'Marcar cumplida' }}
+          </button>
+        }
+
+        @if (tareaSeleccionada?.estado === 'Cumplida') {
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white bg-warning hover:bg-yellow-600 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            [disabled]="desmarcandoCumplida"
+            (click)="tareaSeleccionada && desmarcarCumplida(tareaSeleccionada)"
+          >
+            {{ desmarcandoCumplida ? 'Desmarcando...' : 'Marcar pendiente' }}
           </button>
         }
       </div>
