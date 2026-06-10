@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../../../environments/environment';
 
 export interface TareaAsociada {
   id: string;
@@ -17,6 +18,14 @@ export interface TareaAsociada {
   // agendaEventId?: string;  // ID del evento creado en la agenda (a poblar al conectar)
 }
 
+export interface ArchivoNovedad {
+  id?: string;
+  nombre: string;
+  url: string;
+  tipoLabel?: string;
+  fechaDocumento?: string;
+}
+
 export interface Novedad {
   id: string;
   tipo: string;        // código: 'PRESENTACION', 'AUDIENCIA', etc.
@@ -25,7 +34,7 @@ export interface Novedad {
   titulo: string;
   descripcion: string;
   responsable: string;
-  archivos: { nombre: string; url: string }[];
+  archivos: ArchivoNovedad[];
   etapaRelacionada?: string;
   tarea?: TareaAsociada;    // opcional — novedad puede no tener tarea
 }
@@ -50,11 +59,15 @@ export const NOVEDAD_BADGE: Record<string, { label: string; classes: string }> =
 export class NovedadesCard {
   @Input() novedad!: Novedad;
   @Input() numero!: number;
+
   @Output() editar   = new EventEmitter<Novedad>();
   @Output() eliminar = new EventEmitter<Novedad>();
 
   get badge() {
-    return NOVEDAD_BADGE[this.novedad.tipoLabel] ?? { label: this.novedad.tipoLabel, classes: 'bg-gray-100 text-gray-500' };
+    return NOVEDAD_BADGE[this.novedad.tipoLabel] ?? {
+      label: this.novedad.tipoLabel,
+      classes: 'bg-gray-100 text-gray-500',
+    };
   }
 
   get prioridadClasses(): string {
@@ -64,6 +77,15 @@ export class NovedadesCard {
       Baja:    'bg-green-100 text-green-700',
       Urgente: 'bg-rose-100 text-rose-700',
     };
+
     return this.novedad.tarea ? (map[this.novedad.tarea.prioridad] ?? '') : '';
+  }
+
+  descargarArchivo(archivo: ArchivoNovedad): void {
+    if (!archivo.id) {
+      return;
+    }
+
+    window.open(`${environment.apiUrl}/documento/${archivo.id}/descargar`, '_blank');
   }
 }

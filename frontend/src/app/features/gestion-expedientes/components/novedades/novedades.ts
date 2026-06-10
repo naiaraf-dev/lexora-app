@@ -6,7 +6,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { NovedadesFilter, NovedadFilterState } from '../novedades-filter/novedades-filter';
-import { NovedadesCard, Novedad } from '../novedades-card/novedades-card';
+import { NovedadesCard, Novedad, ArchivoNovedad } from '../novedades-card/novedades-card';
 import { ModalNovedad, NovedadPayloadConDocumentos } from '../modal-novedad/modal-novedad';
 import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
@@ -49,61 +49,94 @@ export class Novedades implements OnInit {
   }
 
   private cargarNovedades(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
-      .subscribe({
-        next: (novedades) => {
-          const tareaRequests = novedades.map(n =>
-            this.http.get<any[]>(`${environment.apiUrl}/tarea?novedad=${n.id}`)
-          );
+    forkJoin({
+      novedades: this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`),
+      documentos: this.http.get<any[]>(`${environment.apiUrl}/documento?expediente=${this.expedienteId}`),
+    }).subscribe({
+      next: ({ novedades, documentos }) => {
+        const documentosPorNovedad = this.agruparDocumentosPorNovedad(documentos);
 
-          Promise.all(
-            tareaRequests.map((req, i) =>
-              new Promise<any>(resolve => {
-                req.subscribe({
-                  next: (tareas) => resolve({ novedad: novedades[i], tarea: tareas[0] ?? null }),
-                  error: ()      => resolve({ novedad: novedades[i], tarea: null }),
-                });
-              })
-            )
-          ).then(results => {
-            this.allNovedades = results.map(({ novedad: n, tarea: t }) => ({
-              id:             String(n.id),
-              tipo:           n.tipoNovedad ? String(n.tipoNovedad.id) : '',
-              tipoLabel:      n.tipoNovedad?.nombre ?? 'Observación',
-              fechaActuacion: n.fecha,
-              titulo:         n.titulo,
-              descripcion:    n.descripcion ?? '',
-              responsable:    n.usuarioCreacion?.nombre ?? '—',
-              archivos:       [],
-              tarea: t ? {
-                id:                       String(t.id),
-                titulo:                   t.titulo,
-                prioridad:                t.prioridad ? String(t.prioridad) : '',
-                fechaVencimiento:         t.fecha_vencimiento ?? '',
-                responsableNombre:        t.nombre_usuario_completado
-                                            ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
-                                            : '—',
-                responsable:              t.usuario_completado ? String(t.usuario_completado) : '',
-                descripcionInstrucciones: t.descripcion ?? '',
-                cumplida:                 t.nombre_estado_tarea === 'Cumplido',
-              } : undefined,
-            }));
+        const tareaRequests = novedades.map(n =>
+          this.http.get<any[]>(`${environment.apiUrl}/tarea?novedad=${n.id}`)
+        );
 
-            this.filteredNovedades = [...this.allNovedades];
-            this.cdr.detectChanges();
-          });
-        },
-        error: () => toast.error('Error al cargar novedades'),
+        Promise.all(
+          tareaRequests.map((req, i) =>
+            new Promise<any>(resolve => {
+              req.subscribe({
+                next: (tareas) => resolve({ novedad: novedades[i], tarea: tareas[0] ?? null }),
+                error: ()      => resolve({ novedad: novedades[i], tarea: null }),
+              });
+            })
+          )
+        ).then(results => {
+          this.allNovedades = results.map(({ novedad: n, tarea: t }) => ({
+            id:             String(n.id),
+            tipo:           n.tipoNovedad ? String(n.tipoNovedad.id) : '',
+            tipoLabel:      n.tipoNovedad?.nombre ?? 'Observación',
+            fechaActuacion: n.fecha,
+            titulo:         n.titulo,
+            descripcion:    n.descripcion ?? '',
+            responsable:    n.usuarioCreacion?.nombre ?? '—',
+
+            // Acá quedan los documentos asociados a esta novedad
+            archivos:       documentosPorNovedad.get(String(n.id)) ?? [],
+
+            tarea: t ? {
+              id:                       String(t.id),
+              titulo:                   t.titulo,
+              prioridad:                t.prioridad ? String(t.prioridad) : '',
+              fechaVencimiento:         t.fecha_vencimiento ?? '',
+              responsableNombre:        t.nombre_usuario_completado
+                                          ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
+                                          : '—',
+              responsable:              t.usuario_completado ? String(t.usuario_completado) : '',
+              descripcionInstrucciones: t.descripcion ?? '',
+              cumplida:                 t.nombre_estado_tarea === 'Cumplido',
+            } : undefined,
+          }));
+
+          this.filteredNovedades = [...this.allNovedades];
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => toast.error('Error al cargar novedades'),
+    });
+  }
+
+  private agruparDocumentosPorNovedad(documentos: any[]): Map<string, ArchivoNovedad[]> {
+    const documentosPorNovedad = new Map<string, ArchivoNovedad[]>();
+
+    documentos.forEach(doc => {
+      if (!doc.novedad) return;
+
+      const novedadId = String(doc.novedad);
+
+      if (!documentosPorNovedad.has(novedadId)) {
+        documentosPorNovedad.set(novedadId, []);
+      }
+
+      documentosPorNovedad.get(novedadId)!.push({
+        id: String(doc.id),
+        nombre: doc.nombre_archivo ?? 'Documento sin nombre',
+        url: doc.storage_key ?? '#',
+        tipoLabel: doc.nombre_tipo_documento ?? '',
+        fechaDocumento: doc.fecha_documento ? String(doc.fecha_documento).slice(0, 10) : '',
       });
+    });
+
+    return documentosPorNovedad;
   }
 
   private cargarCatalogos(): void {
     this.http.get<any[]>(`${environment.apiUrl}/enums/tiponovedad`).subscribe({
       next: (res) => {
-        this.tipoNovedadOptions = res.map(t => ({
-          value: String(t.id),
-          label: t.nombre,
-        }));
+        this.tipoNovedadOptions = res
+          .filter(t => t.nombre?.toLowerCase() !== 'todos')
+          .map(t => ({
+            value: String(t.id),
+            label: t.nombre,
+          }));
       },
       error: () => toast.error('Error al cargar tipos de novedad'),
     });

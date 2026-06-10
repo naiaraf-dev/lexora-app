@@ -39,6 +39,61 @@ async function subirDocumento(req, res) {
     }
 }
 
+async function descargarDocumento(req, res) {
+    try {
+        const { iddocumento } = req.params;
+
+        const resultado = await documentosService.obtenerUrlDescargaDocumento(iddocumento);
+
+        console.log('========== DEBUG DESCARGA DOCUMENTO ==========');
+        console.log('ID documento:', iddocumento);
+        console.log('Documento BD:', resultado.documento);
+        console.log('Storage key:', resultado.documento.storage_key);
+        console.log('URL Cloudinary generada:', resultado.url);
+
+        const response = await fetch(resultado.url);
+
+        console.log('Cloudinary response ok:', response.ok);
+        console.log('Cloudinary response status:', response.status);
+        console.log('Cloudinary response statusText:', response.statusText);
+        console.log('Cloudinary content-type:', response.headers.get('content-type'));
+
+        if (!response.ok) {
+            const textoError = await response.text();
+
+            console.log('Cloudinary error body:', textoError);
+            console.log('==============================================');
+
+            return res.status(500).json({
+                mensaje: 'No se pudo obtener el archivo desde Cloudinary',
+                statusCloudinary: response.status,
+                statusTextCloudinary: response.statusText,
+                url: resultado.url,
+                detalle: textoError
+            });
+        }
+
+        console.log('==============================================');
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const nombreArchivo = resultado.documento.nombre_archivo || 'documento';
+
+        res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename*=UTF-8''${encodeURIComponent(nombreArchivo)}`
+        );
+
+        return res.send(buffer);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            mensaje: error.message || 'Error al descargar documento'
+        });
+    }
+}
+
 async function obtenerTodosLosDocumentos(req, res) {
     try {
         const documentos = await documentosService.obtenerTodosLosDocumentos();
@@ -114,6 +169,7 @@ module.exports = {
     obtenerTodosLosDocumentos,
     insertarDocumento,
     subirDocumento,
+    descargarDocumento,
     eliminarDocumento,
     modificarDocumento
 };

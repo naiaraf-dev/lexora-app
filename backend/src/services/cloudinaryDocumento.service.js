@@ -51,7 +51,17 @@ async function eliminarDocumentoDeCloudinary(storageKey) {
     return resultado;
 }
 
+function obtenerUrlDocumentoCloudinary(storageKey) {
+    return cloudinary.url(storageKey, {
+        resource_type: 'raw',
+        type: 'upload',
+        secure: true,
+        sign_url: true
+    });
+}
+
 module.exports = {
     subirDocumentoACloudinary,
-    eliminarDocumentoDeCloudinary
+    eliminarDocumentoDeCloudinary,
+    obtenerUrlDocumentoCloudinary
 };

@@ -2,7 +2,8 @@ const documentosRepository = require('../repositories/documentos.repository');
 
 const {
     subirDocumentoACloudinary,
-    eliminarDocumentoDeCloudinary
+    eliminarDocumentoDeCloudinary,
+    obtenerUrlDocumentoCloudinary
 } = require('./cloudinaryDocumento.service');
 
 async function obtenerDocumentos(filtros) {
@@ -200,6 +201,40 @@ async function subirEInsertarDocumento(datos, file) {
     };
 }
 
+async function obtenerUrlDescargaDocumento(idDocumento) {
+    if (!idDocumento || isNaN(Number(idDocumento))) {
+        const error = new Error('El id del documento es obligatorio y debe ser numérico');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const documento = await documentosRepository.obtenerDocumentoPorId(Number(idDocumento));
+
+    if (!documento) {
+        const error = new Error(`No existe un documento con id ${idDocumento}`);
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (!documento.storage_key) {
+        const error = new Error('El documento no tiene archivo asociado');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const url = obtenerUrlDocumentoCloudinary(documento.storage_key);
+    console.log('========== DEBUG SERVICE DESCARGA ==========');
+    console.log('Documento encontrado:', documento);
+    console.log('Storage key usado:', documento.storage_key);
+    console.log('URL generada:', url);
+    console.log('===========================================');
+
+    return {
+        documento,
+        url
+    };
+}
+
 async function eliminarDocumento(idDocumento) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
         const error = new Error('El id del documento es obligatorio y debe ser numérico');
@@ -299,7 +334,10 @@ async function modificarDocumento(idDocumento, datos, file) {
     if (file) {
         resultadoCloudinaryNuevo = await subirDocumentoACloudinary(file);
 
-        datosActualizacion.nombre_archivo = file.originalname;
+        datosActualizacion.nombre_archivo = file.originalname
+            ? Buffer.from(file.originalname, 'latin1').toString('utf8')
+            : `archivo_${Date.now()}`;
+
         datosActualizacion.storage_key = resultadoCloudinaryNuevo.public_id;
     }
 
@@ -344,6 +382,7 @@ module.exports = {
     obtenerTodosLosDocumentos,
     insertarDocumento,
     subirEInsertarDocumento,
+    obtenerUrlDescargaDocumento,
     eliminarDocumento,
     modificarDocumento
 };

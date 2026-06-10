@@ -20,8 +20,10 @@ router.post('/subirDocumento', (req, res, next) => {
     });
 }, documentosController.subirDocumento);
 
+router.get('/documento/:iddocumento/descargar', documentosController.descargarDocumento);
+
 router.delete('/documento/:iddocumento', documentosController.eliminarDocumento);
 
-router.put('/documento/:iddocumento',uploadDocumento.single('archivo'),documentosController.modificarDocumento);
+router.put('/documento/:iddocumento', uploadDocumento.single('archivo'), documentosController.modificarDocumento);
 
 module.exports = router;
