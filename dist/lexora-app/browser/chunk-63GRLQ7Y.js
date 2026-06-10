@@ -1,0 +1,1 @@
+import{$a as p,Ga as i,_a as n,pb as d}from"./chunk-FQN6ASFG.js";var a=class t{static \u0275fac=function(e){return new(e||t)};static \u0275cmp=i({type:t,selectors:[["app-expediente-edit"]],decls:2,vars:0,template:function(e,s){e&1&&(n(0,"p"),d(1,"expediente-edit works!"),p())},encapsulation:2})};export{a as ExpedienteEdit};
