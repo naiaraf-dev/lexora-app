@@ -9,6 +9,19 @@ import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { Novedad, TareaAsociada } from '../novedades-card/novedades-card';
 import { toast } from 'ngx-sonner';
 
+export interface DocumentoAdjuntoNovedad {
+  id: string;
+  nombre: string;
+  tipo: string;
+  fechaDocumento: string;
+  descripcion: string;
+  archivo: File;
+}
+
+export type NovedadPayloadConDocumentos = Partial<Novedad> & {
+  documentosAdjuntos?: DocumentoAdjuntoNovedad[];
+};
+
 @Component({
   selector: 'app-modal-novedad',
   standalone: true,
@@ -18,15 +31,21 @@ import { toast } from 'ngx-sonner';
 export class ModalNovedad implements OnChanges {
   @Input() open = false;
   @Input() novedad: Novedad | null = null; // null = alta, valor = editar
+
   @Input() tipoOptions: { value: string; label: string }[] = [];
   @Input() prioridadOptions: { value: string; label: string }[] = [];
-  @Output() cerrar  = new EventEmitter<void>();
-  @Output() guardar = new EventEmitter<Partial<Novedad>>();
   @Input() usuarioOptions: { value: string; label: string }[] = [];
+
+  // Tipos de documento para los archivos que se adjuntan desde la novedad
+  @Input() tipoDocumentoOptions: { value: string; label: string }[] = [];
+
+  @Output() cerrar = new EventEmitter<void>();
+  @Output() guardar = new EventEmitter<NovedadPayloadConDocumentos>();
 
   guardando = false;
   crearTarea = true; // checkbox "Crear tarea / plazo asociado"
-  archivosAdjuntos: File[] = [];
+
+  documentosAdjuntos: DocumentoAdjuntoNovedad[] = [];
   archivosExistentes: { nombre: string; url: string }[] = [];
 
   form = {
@@ -47,29 +66,40 @@ export class ModalNovedad implements OnChanges {
     descripcionInstrucciones: '',
   };
 
-  get modoEdicion(): boolean { return !!this.novedad; }
-  get titulo(): string { return this.modoEdicion ? 'Editar Novedad' : 'Nueva Novedad'; }
-  get labelGuardar(): string { return this.modoEdicion ? 'Guardar cambios' : 'Guardar novedad'; }
+  get modoEdicion(): boolean {
+    return !!this.novedad;
+  }
+
+  get titulo(): string {
+    return this.modoEdicion ? 'Editar Novedad' : 'Nueva Novedad';
+  }
+
+  get labelGuardar(): string {
+    return this.modoEdicion ? 'Guardar cambios' : 'Guardar novedad';
+  }
 
   ngOnChanges() {
     if (this.novedad) {
       this.form = {
-        tipo:             this.novedad.tipo,
+        tipo: this.novedad.tipo,
         fechaActuacion: this.novedad.fechaActuacion
           ? new Date(this.novedad.fechaActuacion).toISOString().slice(0, 10)
           : '',
-        titulo:           this.novedad.titulo,
-        descripcion:      this.novedad.descripcion,
+        titulo: this.novedad.titulo,
+        descripcion: this.novedad.descripcion,
       };
+
       this.archivosExistentes = this.novedad.archivos ?? [];
+      this.documentosAdjuntos = [];
+
       if (this.novedad.tarea) {
         this.crearTarea = true;
         this.tareaForm = {
-          titulo:                  this.novedad.tarea.titulo,
-          prioridad:               this.novedad.tarea.prioridad,
-          fechaVencimiento:        this.novedad.tarea.fechaVencimiento,
-          hora:                    this.novedad.tarea.hora ?? '',
-          responsable:             this.novedad.tarea.responsable ?? '',
+          titulo: this.novedad.tarea.titulo,
+          prioridad: this.novedad.tarea.prioridad,
+          fechaVencimiento: this.novedad.tarea.fechaVencimiento,
+          hora: this.novedad.tarea.hora ?? '',
+          responsable: this.novedad.tarea.responsable ?? '',
           descripcionInstrucciones: this.novedad.tarea.descripcionInstrucciones,
         };
       } else {
@@ -83,19 +113,55 @@ export class ModalNovedad implements OnChanges {
 
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (input.files) this.archivosAdjuntos = Array.from(input.files);
+
+    if (input.files) {
+      this.agregarDocumentos(Array.from(input.files));
+    }
+
+    // Permite volver a seleccionar el mismo archivo si lo eliminás y lo querés cargar de nuevo
+    input.value = '';
   }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
+
     if (event.dataTransfer?.files) {
-      this.archivosAdjuntos = [...this.archivosAdjuntos, ...Array.from(event.dataTransfer.files)];
+      this.agregarDocumentos(Array.from(event.dataTransfer.files));
     }
+  }
+
+  private agregarDocumentos(files: File[]) {
+    const nuevosDocumentos: DocumentoAdjuntoNovedad[] = files.map(file => ({
+      id: crypto.randomUUID(),
+      nombre: file.name,
+      tipo: '',
+      fechaDocumento: this.form.fechaActuacion || '',
+      descripcion: '',
+      archivo: file,
+    }));
+
+    this.documentosAdjuntos = [
+      ...this.documentosAdjuntos,
+      ...nuevosDocumentos,
+    ];
+  }
+
+  eliminarDocumentoAdjunto(documento: DocumentoAdjuntoNovedad): void {
+    this.documentosAdjuntos = this.documentosAdjuntos.filter(d => d.id !== documento.id);
   }
 
   submit() {
     if (!this.form.tipo || !this.form.titulo || !this.form.fechaActuacion) {
       toast.error('Completá los campos obligatorios');
+      return;
+    }
+
+    const documentoIncompleto = this.documentosAdjuntos.some(doc =>
+      !doc.tipo || !doc.fechaDocumento
+    );
+
+    if (documentoIncompleto) {
+      toast.error('Completá tipo y fecha de cada documento adjunto');
       return;
     }
 
@@ -123,21 +189,33 @@ export class ModalNovedad implements OnChanges {
 
     const tarea: TareaAsociada | undefined = this.crearTarea && this.tareaForm.titulo
       ? {
-          id:                       crypto.randomUUID(),
-          titulo:                   this.tareaForm.titulo,
-          prioridad:                this.tareaForm.prioridad as any,
-          fechaVencimiento:         this.tareaForm.fechaVencimiento,
-          hora:                     this.tareaForm.hora,
-          responsable:              this.tareaForm.responsable,
-          responsableNombre:        usuarioSeleccionado?.label ?? '—',
+          id: crypto.randomUUID(),
+          titulo: this.tareaForm.titulo,
+          prioridad: this.tareaForm.prioridad as any,
+          fechaVencimiento: this.tareaForm.fechaVencimiento,
+          hora: this.tareaForm.hora,
+          responsable: this.tareaForm.responsable,
+          responsableNombre: usuarioSeleccionado?.label ?? '—',
           descripcionInstrucciones: this.tareaForm.descripcionInstrucciones,
-          cumplida:                 false,
+          cumplida: false,
         }
       : undefined;
 
-    const payload: Partial<Novedad> = {
+    const payload: NovedadPayloadConDocumentos = {
       ...this.form,
-      archivos: this.archivosAdjuntos.map(f => ({ nombre: f.name, url: '#' })),
+
+      // Esto sirve para que la card de novedades pueda mostrar los nombres de archivos adjuntos
+      archivos: [
+        ...this.archivosExistentes,
+        ...this.documentosAdjuntos.map(d => ({
+          nombre: d.nombre,
+          url: '#',
+        })),
+      ],
+
+      // Esto es lo que usa el padre para subirlos realmente a tabla documentos
+      documentosAdjuntos: this.documentosAdjuntos,
+
       tarea,
     };
 
@@ -147,18 +225,28 @@ export class ModalNovedad implements OnChanges {
     this.resetForm();
   }
 
-  cerrarModal() { this.cerrar.emit(); this.resetForm(); }
+  cerrarModal() {
+    this.cerrar.emit();
+    this.resetForm();
+  }
 
   private resetForm() {
     this.form = { tipo: '', fechaActuacion: '', titulo: '', descripcion: '' };
-    this.archivosAdjuntos = [];
+    this.documentosAdjuntos = [];
     this.crearTarea = true;
     this.resetTareaForm();
     this.archivosExistentes = [];
   }
 
   private resetTareaForm() {
-    this.tareaForm = { titulo: '', prioridad: '', fechaVencimiento: '', hora: '', responsable: '', descripcionInstrucciones: '' };
+    this.tareaForm = {
+      titulo: '',
+      prioridad: '',
+      fechaVencimiento: '',
+      hora: '',
+      responsable: '',
+      descripcionInstrucciones: '',
+    };
   }
 
   eliminarArchivoExistente(archivo: { nombre: string; url: string }): void {

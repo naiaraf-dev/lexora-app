@@ -1,11 +1,13 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../../environments/environment';
 import { CommonModule } from '@angular/common';
 import { NovedadesFilter, NovedadFilterState } from '../novedades-filter/novedades-filter';
 import { NovedadesCard, Novedad } from '../novedades-card/novedades-card';
-import { ModalNovedad } from '../modal-novedad/modal-novedad';
+import { ModalNovedad, NovedadPayloadConDocumentos } from '../modal-novedad/modal-novedad';
 import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
@@ -23,6 +25,23 @@ export class Novedades implements OnInit {
   private cdr    = inject(ChangeDetectorRef);
   private expedienteId!: number;
 
+  allNovedades: Novedad[] = [];
+  filteredNovedades: Novedad[] = [];
+
+  tipoNovedadOptions: { value: string; label: string }[] = [];
+  prioridadOptions:   { value: string; label: string }[] = [];
+  estadoTareaOptions: { value: string; label: string }[] = [];
+  usuarioOptions:     { value: string; label: string }[] = [];
+
+  tipoDocumentoOptions: { value: string; label: string }[] = [];
+  private tipoDocumentoIdMap: Record<string, number> = {};
+
+  modalOpen = false;
+  novedadEditando: Novedad | null = null;
+
+  novedadAEliminar: Novedad | null = null;
+  confirmEliminarOpen = false;
+
   ngOnInit(): void {
     this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
     this.cargarNovedades();
@@ -33,7 +52,6 @@ export class Novedades implements OnInit {
     this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
       .subscribe({
         next: (novedades) => {
-          // Para cada novedad traemos su tarea asociada si existe
           const tareaRequests = novedades.map(n =>
             this.http.get<any[]>(`${environment.apiUrl}/tarea?novedad=${n.id}`)
           );
@@ -70,49 +88,83 @@ export class Novedades implements OnInit {
                 cumplida:                 t.nombre_estado_tarea === 'Cumplido',
               } : undefined,
             }));
+
             this.filteredNovedades = [...this.allNovedades];
             this.cdr.detectChanges();
           });
-        }
+        },
+        error: () => toast.error('Error al cargar novedades'),
       });
   }
 
   private cargarCatalogos(): void {
     this.http.get<any[]>(`${environment.apiUrl}/enums/tiponovedad`).subscribe({
       next: (res) => {
-        this.tipoNovedadOptions = res.map(t => ({ value: String(t.id), label: t.nombre }));
-      }
+        this.tipoNovedadOptions = res.map(t => ({
+          value: String(t.id),
+          label: t.nombre,
+        }));
+      },
+      error: () => toast.error('Error al cargar tipos de novedad'),
     });
+
     this.http.get<any[]>(`${environment.apiUrl}/enums/prioridad`).subscribe({
       next: (res) => {
-        this.prioridadOptions = res.map(p => ({ value: String(p.id), label: p.nombre }));
-      }
+        this.prioridadOptions = res.map(p => ({
+          value: String(p.id),
+          label: p.nombre,
+        }));
+      },
+      error: () => toast.error('Error al cargar prioridades'),
     });
+
     this.http.get<any[]>(`${environment.apiUrl}/enums/estadotarea`).subscribe({
       next: (res) => {
-        this.estadoTareaOptions = res.map(e => ({ value: String(e.id), label: e.nombre }));
-      }
+        this.estadoTareaOptions = res.map(e => ({
+          value: String(e.id),
+          label: e.nombre,
+        }));
+      },
+      error: () => toast.error('Error al cargar estados de tarea'),
     });
+
     this.http.get<any[]>(`${environment.apiUrl}/usuarios`).subscribe({
       next: (res) => {
-        this.usuarioOptions = res.map(u => ({ value: String(u.id), label: `${u.nombre} ${u.apellido}` }));
-      }
+        this.usuarioOptions = res.map(u => ({
+          value: String(u.id),
+          label: `${u.nombre} ${u.apellido}`,
+        }));
+      },
+      error: () => toast.error('Error al cargar usuarios'),
+    });
+
+    this.http.get<any[]>(`${environment.apiUrl}/enums/tipodocumento`).subscribe({
+      next: (res) => {
+        this.tipoDocumentoOptions = res.map(t => ({
+          value: this.normalizarTipoDocumento(t.nombre),
+          label: t.nombre,
+        }));
+
+        this.tipoDocumentoIdMap = Object.fromEntries(
+          res.map(t => [
+            this.normalizarTipoDocumento(t.nombre),
+            Number(t.id),
+          ])
+        );
+      },
+      error: () => toast.error('Error al cargar tipos de documento'),
     });
   }
 
-  allNovedades: Novedad[] = [];
-  filteredNovedades: Novedad[] = [];
-
-  tipoNovedadOptions: { value: string; label: string }[] = [];
-  prioridadOptions:   { value: string; label: string }[] = [];
-  estadoTareaOptions: { value: string; label: string }[] = [];
-  usuarioOptions:     { value: string; label: string }[] = [];
-
-  modalOpen = false;
-  novedadEditando: Novedad | null = null;
+  private normalizarTipoDocumento(nombre: string): string {
+    return nombre
+      .toUpperCase()
+      .replace(/\s+/g, '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
 
   get novedadesOrdenadas(): Novedad[] {
-    // Orden descendente por fecha (más reciente = número más alto en el timeline)
     return [...this.filteredNovedades].sort(
       (a, b) => new Date(b.fechaActuacion).getTime() - new Date(a.fechaActuacion).getTime()
     );
@@ -136,9 +188,6 @@ export class Novedades implements OnInit {
     this.modalOpen = true;
   }
 
-  novedadAEliminar: Novedad | null = null;
-  confirmEliminarOpen = false;
-
   onEliminar(novedad: Novedad) {
     this.novedadAEliminar = novedad;
     this.confirmEliminarOpen = true;
@@ -146,7 +195,8 @@ export class Novedades implements OnInit {
 
   confirmarEliminar() {
     if (!this.novedadAEliminar) return;
-    this.http.delete(`${environment.apiUrl}/novedades/${this.novedadAEliminar.id}`)
+
+    this.http.delete<any>(`${environment.apiUrl}/novedades/${this.novedadAEliminar.id}`)
       .subscribe({
         next: () => {
           this.allNovedades = this.allNovedades.filter(n => n.id !== this.novedadAEliminar!.id);
@@ -154,20 +204,35 @@ export class Novedades implements OnInit {
           toast.success('Novedad eliminada');
           this.confirmEliminarOpen = false;
           this.novedadAEliminar = null;
-        }
+        },
+        error: () => toast.error('Error al eliminar la novedad'),
       });
   }
 
-  onGuardar(payload: Partial<Novedad>) {
+  onGuardar(payload: NovedadPayloadConDocumentos) {
     if (this.novedadEditando) {
-      this.http.put(`${environment.apiUrl}/novedades/${this.novedadEditando.id}`, {
+      const novedadId = Number(this.novedadEditando.id);
+
+      this.http.put<any>(`${environment.apiUrl}/novedades/${novedadId}`, {
         titulo:        payload.titulo,
         descripcion:   payload.descripcion,
         fecha_novedad: payload.fechaActuacion,
         tipo_novedad:  payload.tipo ? Number(payload.tipo) : null,
       }).subscribe({
-        next: () => this.sincronizarTarea(Number(this.novedadEditando!.id), payload)
+        next: () => {
+          this.subirDocumentosAdjuntos(novedadId, payload).subscribe({
+            next: () => {
+              this.sincronizarTarea$(novedadId, payload).subscribe({
+                next: () => this.finalizarGuardado(),
+                error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al guardar la tarea'),
+              });
+            },
+            error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al subir documentos'),
+          });
+        },
+        error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al actualizar la novedad'),
       });
+
     } else {
       this.http.post<any>(`${environment.apiUrl}/novedades`, {
         expediente:       this.expedienteId,
@@ -178,34 +243,68 @@ export class Novedades implements OnInit {
         tipo_novedad:     payload.tipo ? Number(payload.tipo) : null,
         usuario_creacion: 1,
       }).subscribe({
-        next: (novedadCreada) => this.sincronizarTarea(novedadCreada.id, payload)
+        next: (novedadCreada) => {
+          const novedadId = Number(novedadCreada.id);
+
+          this.subirDocumentosAdjuntos(novedadId, payload).subscribe({
+            next: () => {
+              this.sincronizarTarea$(novedadId, payload).subscribe({
+                next: () => this.finalizarGuardado(),
+                error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al guardar la tarea'),
+              });
+            },
+            error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al subir documentos'),
+          });
+        },
+        error: (err) => toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al crear la novedad'),
       });
     }
   }
 
-  volver(): void {
-    this.router.navigate(['/gestion-expedientes']);
+  private subirDocumentosAdjuntos(novedadId: number, payload: NovedadPayloadConDocumentos): Observable<any> {
+    const documentos = payload.documentosAdjuntos ?? [];
+
+    if (documentos.length === 0) {
+      return of(null);
+    }
+
+    const requests = documentos.map(doc => {
+      const tipoDocumentoId = this.tipoDocumentoIdMap[doc.tipo] ?? this.tipoDocumentoIdMap['OTRO'];
+
+      const fd = new FormData();
+      fd.append('archivo',          doc.archivo);
+      fd.append('expediente',       String(this.expedienteId));
+      fd.append('tipo_documento',   String(tipoDocumentoId));
+      fd.append('usuario_creacion', '1');
+      fd.append('novedad',          String(novedadId));
+
+      if (doc.descripcion) {
+        fd.append('descripcion', doc.descripcion);
+      }
+
+      if (doc.fechaDocumento) {
+        fd.append('fecha_documento', doc.fechaDocumento);
+      }
+
+      return this.http.post<any>(`${environment.apiUrl}/subirDocumento`, fd);
+    });
+
+    return forkJoin(requests).pipe(
+      catchError((err) => {
+        toast.error(err?.error?.mensaje ?? err?.error ?? 'Error al subir uno o más documentos');
+        return throwError(() => err);
+      })
+    );
   }
 
-  get mensajeConfirmar(): string {
-    return `¿Estás seguro que querés eliminar la novedad "${this.novedadAEliminar?.titulo ?? ''}"? Esta acción no se puede deshacer.`;
-  }
-
-  private finalizarGuardado(): void {
-    const mensaje = this.novedadEditando ? 'Novedad actualizada correctamente' : 'Novedad creada correctamente';
-    this.cargarNovedades();
-    this.modalOpen = false;
-    this.novedadEditando = null;
-    toast.success(mensaje);
-  }
-
-  private sincronizarTarea(novedadId: number, payload: Partial<Novedad>): void {
+  private sincronizarTarea$(novedadId: number, payload: NovedadPayloadConDocumentos): Observable<any> {
     const tareaExistente = this.novedadEditando?.tarea;
     const tareaPayload   = payload.tarea;
 
     if (tareaPayload) {
       const estadoPendiente = this.estadoTareaOptions.find(e => e.label === 'Pendiente');
       const estadoCumplido  = this.estadoTareaOptions.find(e => e.label === 'Cumplido');
+
       const estadoId = tareaPayload.cumplida
         ? Number(estadoCumplido?.value)
         : Number(estadoPendiente?.value);
@@ -224,17 +323,35 @@ export class Novedades implements OnInit {
       };
 
       if (tareaExistente?.id) {
-        this.http.put(`${environment.apiUrl}/tarea/${tareaExistente.id}`, body)
-          .subscribe({ next: () => this.finalizarGuardado() });
-      } else {
-        this.http.post(`${environment.apiUrl}/insertarTarea`, body)
-          .subscribe({ next: () => this.finalizarGuardado() });
+        return this.http.put<any>(`${environment.apiUrl}/tarea/${tareaExistente.id}`, body);
       }
-    } else if (tareaExistente?.id) {
-      this.http.delete(`${environment.apiUrl}/tarea/${tareaExistente.id}`)
-        .subscribe({ next: () => this.finalizarGuardado() });
-    } else {
-      this.finalizarGuardado();
+
+      return this.http.post<any>(`${environment.apiUrl}/insertarTarea`, body);
     }
+
+    if (tareaExistente?.id) {
+      return this.http.delete<any>(`${environment.apiUrl}/tarea/${tareaExistente.id}`);
+    }
+
+    return of(null);
+  }
+
+  volver(): void {
+    this.router.navigate(['/gestion-expedientes']);
+  }
+
+  get mensajeConfirmar(): string {
+    return `¿Estás seguro que querés eliminar la novedad "${this.novedadAEliminar?.titulo ?? ''}"? Esta acción no se puede deshacer.`;
+  }
+
+  private finalizarGuardado(): void {
+    const mensaje = this.novedadEditando
+      ? 'Novedad actualizada correctamente'
+      : 'Novedad creada correctamente';
+
+    this.cargarNovedades();
+    this.modalOpen = false;
+    this.novedadEditando = null;
+    toast.success(mensaje);
   }
 }
