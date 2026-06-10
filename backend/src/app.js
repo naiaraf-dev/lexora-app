@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
+const documentosRoutes = require('./routes/documentos.routes');
+const tareasRoutes = require('./routes/tareas.routes');
 
 const app = express();
 
@@ -10,6 +12,9 @@ const novedadesRouter   = require('./routes/novedades.routes');
 
 app.use(cors());
 app.use(express.json());
+app.use('/api', documentosRoutes);
+app.use('/api', tareasRoutes);
+
 
 /*
     PRUEBA DE CONEXIÓN
@@ -19,7 +24,12 @@ app.get('/api/health', async (req, res) => {
         const pool = await conectarBD();
 
         const resultado = await pool.request().query(`
-            SELECT DB_NAME() AS baseDatos, SYSDATETIME() AS fechaHora
+            SELECT 
+                DB_NAME() AS baseDatos,
+                SYSTEM_USER AS systemUser,
+                USER_NAME() AS databaseUser,
+                SUSER_SNAME() AS loginName,
+                SYSDATETIME() AS fechaHora
         `);
 
         res.json({
@@ -33,7 +43,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
 /*
     Expedientes y novedades
 */
