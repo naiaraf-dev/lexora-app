@@ -2,11 +2,14 @@ const express = require('express');
 const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
+const logsRoutes = require('./routes/logs.routes');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/logs', logsRoutes);
 
 /*
     PRUEBA DE CONEXIÓN
