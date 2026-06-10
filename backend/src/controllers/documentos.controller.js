@@ -45,24 +45,10 @@ async function descargarDocumento(req, res) {
 
         const resultado = await documentosService.obtenerUrlDescargaDocumento(iddocumento);
 
-        console.log('========== DEBUG DESCARGA DOCUMENTO ==========');
-        console.log('ID documento:', iddocumento);
-        console.log('Documento BD:', resultado.documento);
-        console.log('Storage key:', resultado.documento.storage_key);
-        console.log('URL Cloudinary generada:', resultado.url);
-
         const response = await fetch(resultado.url);
-
-        console.log('Cloudinary response ok:', response.ok);
-        console.log('Cloudinary response status:', response.status);
-        console.log('Cloudinary response statusText:', response.statusText);
-        console.log('Cloudinary content-type:', response.headers.get('content-type'));
 
         if (!response.ok) {
             const textoError = await response.text();
-
-            console.log('Cloudinary error body:', textoError);
-            console.log('==============================================');
 
             return res.status(500).json({
                 mensaje: 'No se pudo obtener el archivo desde Cloudinary',
@@ -72,8 +58,6 @@ async function descargarDocumento(req, res) {
                 detalle: textoError
             });
         }
-
-        console.log('==============================================');
 
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);

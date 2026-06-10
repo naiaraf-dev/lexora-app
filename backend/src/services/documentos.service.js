@@ -223,11 +223,6 @@ async function obtenerUrlDescargaDocumento(idDocumento) {
     }
 
     const url = obtenerUrlDocumentoCloudinary(documento.storage_key);
-    console.log('========== DEBUG SERVICE DESCARGA ==========');
-    console.log('Documento encontrado:', documento);
-    console.log('Storage key usado:', documento.storage_key);
-    console.log('URL generada:', url);
-    console.log('===========================================');
 
     return {
         documento,
@@ -324,11 +319,14 @@ async function modificarDocumento(idDocumento, datos, file) {
     let resultadoCloudinaryNuevo = null;
     let resultadoCloudinaryAnterior = null;
 
+    const { tipo_documento } = datos;
+
     const datosActualizacion = {
         descripcion,
         fecha_documento: fecha_documento || null,
         expediente: Number(idexpediente),
-        novedad: novedad ? Number(novedad) : null
+        novedad: novedad ? Number(novedad) : null,
+        tipo_documento: tipo_documento ? Number(tipo_documento) : undefined
     };
 
     if (file) {

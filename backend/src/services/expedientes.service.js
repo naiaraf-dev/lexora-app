@@ -12,7 +12,7 @@ async function listar(filtros) {
     const data = registros.map(r => ({
         id:                        r.id,
         numeroInterno:            `${r.id}/${new Date(r.fecha_inicio).getFullYear()}`,
-        numeroExpedienteJudicial:  r.numero_expediente_judicial,
+        numeroExpedienteJudicial:  r.numeroExpedienteJudicial,
         caratula:                  r.caratula,
         area:                      r.area,
         fechaInicio:               r.fecha_inicio,

@@ -162,7 +162,14 @@
                 <!-- Fecha vencimiento + hora -->
                 <div class="grid grid-cols-2 gap-3">
                     <app-ui-date-input label="Fecha de vencimiento" [(model)]="tareaForm.fechaVencimiento"></app-ui-date-input>
-                    <app-ui-input label="Hora (opcional)" placeholder="--:--" [(model)]="tareaForm.hora"></app-ui-input>
+                    <div class="flex flex-col gap-1">
+                    <label class="text-xs font-medium text-text-primary/60">Hora (opcional)</label>
+                        <input
+                            type="time"
+                            [(ngModel)]="tareaForm.hora"
+                            class="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        />
+                    </div>
                 </div>
 
                 <!-- Responsable -->

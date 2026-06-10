@@ -219,6 +219,11 @@ export class Documentos implements OnInit {
     const fd = new FormData();
     fd.append('idexpediente', String(this.expedienteId));
 
+    if (changes.tipo) {
+      const tipoId = this.tipoIdMap[changes.tipo];
+      if (tipoId) fd.append('tipo_documento', String(tipoId));
+    }
+
     if (changes.descripcion) {
       fd.append('descripcion', changes.descripcion);
     }

@@ -265,6 +265,9 @@ async function modificarDocumento(idDocumento, datos) {
     request.input('fecha_documento', sql.DateTime2, datos.fecha_documento || null);
     request.input('expediente', sql.Int, datos.expediente);
     request.input('novedad', sql.Int, datos.novedad || null);
+    if (datos.tipo_documento) {
+        request.input('tipo_documento', sql.Int, datos.tipo_documento);
+    }
 
     let camposArchivo = '';
 
@@ -285,6 +288,7 @@ async function modificarDocumento(idDocumento, datos) {
             fecha_documento = @fecha_documento,
             expediente = @expediente,
             novedad = @novedad,
+            ${datos.tipo_documento ? 'tipo_documento = @tipo_documento,' : ''}
             ${camposArchivo}
             fecha_ultima_modificacion = SYSDATETIME()
         OUTPUT INSERTED.*

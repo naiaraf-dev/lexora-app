@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
@@ -16,6 +19,9 @@ import { toast } from 'ngx-sonner';
 export class DatosGenerales implements OnInit {
 
   form!: FormGroup;
+  private http = inject(HttpClient);
+  private cdr  = inject(ChangeDetectorRef);
+  private expedienteId!: number;
 
   constructor(
     private fb: FormBuilder,
@@ -24,16 +30,74 @@ export class DatosGenerales implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // 🔴 MOCK — reemplazar por ExpedientesService.getById(id) y patchValue con la respuesta
+    this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
+
     this.form = this.fb.group({
-      numero:      [{ value: 'EXP-2025-1001', disabled: true }],
-      caratula:    ['García c/ López s/ Daños y perjuicios', Validators.required],
-      area:        ['CIVIL', Validators.required],
-      tipo:        ['DEMANDA_CIVIL', Validators.required],
-      clienteId:   ['2'],
-      rolCliente:  [''],
-      estado:      ['EN_TRAMITE'],
-      descripcion: [''],
+      numero:               [{ value: '', disabled: true }],
+      caratula:             ['', Validators.required],
+      area:                 ['', Validators.required],
+      tipo:                 ['', Validators.required],
+      clienteId:            [''],
+      rolCliente:           [''],
+      estado:               [''],
+      descripcion:          [''],
+      fuero:                [''],
+      juzgado:              [''],
+      secretaria:           [''],
+      jurisdiccion:         [''],
+      causaPJNId:           [''],
+      instancia:            [''],
+      abogadoResponsable:   [''],
+      abogadoSecundario:    [''],
+      contraparte:          [''],
+      abogadoContraparte:   [''],
+      fechaInicio:          [''],
+      fechaUltimaActuacion: [''],
+      fechaProcesalProximo: [''],
+      prioridad:            [''],
+      origenCaso:           [''],
+    });
+
+    forkJoin({
+      expediente: this.http.get<any>(`${environment.apiUrl}/expedientes/${this.expedienteId}`),
+      tipos:      this.http.get<any[]>(`${environment.apiUrl}/enums/tipoexpediente`),
+      estados:    this.http.get<any[]>(`${environment.apiUrl}/enums/estadoexpediente`),
+      prioridades:this.http.get<any[]>(`${environment.apiUrl}/enums/prioridad`),
+      roles:      this.http.get<any[]>(`${environment.apiUrl}/enums/rolcliente`),
+    }).subscribe({
+      next: ({ expediente, tipos, estados, prioridades, roles }) => {
+        this.tipoOptions     = tipos.map(t => ({ value: String(t.id), label: t.nombre }));
+        this.estadoOptions   = estados.map(e => ({ value: String(e.id), label: e.nombre }));
+        this.prioridadOptions= prioridades.map(p => ({ value: String(p.id), label: p.nombre }));
+        this.rolOptions      = roles.map(r => ({ value: String(r.id), label: r.nombre }));
+
+        this.form.patchValue({
+          numero:               expediente.numeroInterno,
+          caratula:             expediente.caratula,
+          area:                 expediente.area,
+          tipo:                 String(expediente.tipo?.id ?? ''),
+          clienteId:            String(expediente.cliente?.id ?? ''),
+          estado:               String(expediente.estado?.id ?? ''),
+          descripcion:          expediente.descripcion ?? '',
+          fuero:                expediente.area ?? '',
+          juzgado:              expediente.juzgado ?? '',
+          secretaria:           expediente.secretaria ?? '',
+          jurisdiccion:         expediente.jurisdiccion ?? '',
+          causaPJNId:           expediente.numeroExpedienteJudicial ?? '',
+          instancia:            expediente.instancia ?? '',
+          contraparte:          expediente.contraparte ?? '',
+          abogadoContraparte:   expediente.abogadoContraparte ?? '',
+          abogadoResponsable:   String(expediente.usuarioPrincipal?.id ?? ''),
+          abogadoSecundario:    String(expediente.usuarioSecundario?.id ?? ''),
+          fechaInicio:          expediente.fechaInicio ? expediente.fechaInicio.slice(0, 10) : '',
+          fechaUltimaActuacion: expediente.fechaUltActuacion ? expediente.fechaUltActuacion.slice(0, 10) : '',
+          fechaProcesalProximo: expediente.fechaProcesalProxima ? expediente.fechaProcesalProxima.slice(0, 10) : '',
+          prioridad:            String(expediente.prioridad?.id ?? ''),
+          origenCaso:           expediente.origenCaso ?? '',
+        });
+        this.cdr.detectChanges();
+      },
+      error: () => toast.error('Error al cargar el expediente'),
     });
   }
 
@@ -54,41 +118,10 @@ export class DatosGenerales implements OnInit {
     { value: 'SOCIETARIO',      label: 'Societario'      },
   ];
 
-  tipoOptions = [
-    { value: 'OFICIO',            label: 'Oficios'                             },
-    { value: 'CARTA_DOC',         label: 'Carta Documento'                     },
-    { value: 'MEDIACION',         label: 'Mediaciones'                         },
-    { value: 'BENEFICIO_LITIGAR', label: 'Beneficios de litigar sin gastos'    },
-    { value: 'COBRO_CANON',       label: 'Cobro de Cánones'                    },
-    { value: 'RECLAMO_CONTRAT',   label: 'Reclamo a Contratista / Proveedor'   },
-    { value: 'LANZAMIENTO',       label: 'Lanzamientos'                        },
-    { value: 'RECUPERO',          label: 'Recuperos'                           },
-    { value: 'EJECUCION_GAR',     label: 'Ejecución de Pólizas'                },
-    { value: 'DEMANDA_CIVIL',     label: 'Demanda Civil'                       },
-    { value: 'DEMANDA_LABORAL',   label: 'Demanda Laboral'                     },
-    { value: 'DEFENSA_CIVIL',     label: 'Defensas Civiles'                    },
-    { value: 'SECLOS',            label: 'SECLO'                               },
-    { value: 'CONSIGNACION',      label: 'Consignaciones'                      },
-    { value: 'DESAFUERO',         label: 'Desafueros'                          },
-    { value: 'QUERELLA',          label: 'Querellas'                           },
-    { value: 'DEFENSA_PENAL',     label: 'Defensas Penales'                    },
-    { value: 'CARTA_SUCESO',      label: 'Cartas Suceso'                       },
-    { value: 'OTRAS',             label: 'Otras presentaciones / gestiones'    },
-  ];
-
-  rolOptions = [
-    { value: 'ACTOR',      label: 'Actor'      },
-    { value: 'DEMANDADO',  label: 'Demandado'  },
-    { value: 'QUERELLANTE',label: 'Querellante'},
-    { value: 'IMPUTADO',   label: 'Imputado'   },
-    { value: 'TERCERO',    label: 'Tercero'    },
-  ];
-
-  estadoOptions = [
-    { value: 'EN_TRAMITE', label: 'En trámite'  },
-    { value: 'FINALIZADO', label: 'Finalizado'  },
-    { value: 'ARCHIVADO',  label: 'Archivado'   },
-  ];
+  tipoOptions:      { value: string; label: string }[] = [];
+  estadoOptions:    { value: string; label: string }[] = [];
+  prioridadOptions: { value: string; label: string }[] = [];
+  rolOptions:       { value: string; label: string }[] = [];
 
   jurisdiccionOptions = [
     { value: 'NACIONAL',   label: 'Nacional'    },
@@ -173,12 +206,6 @@ export class DatosGenerales implements OnInit {
     { value: '4', label: 'Sánchez, Laura'        },
   ];
 
-  prioridadOptions = [
-    { value: 'BAJA',   label: 'Baja'   },
-    { value: 'MEDIA',  label: 'Media'  },
-    { value: 'ALTA',   label: 'Alta'   },
-  ];
-
   // 🔴 MOCK — reemplazar por ClientesService
   clienteOptions = [
     { value: '1', label: 'Acme S.A.'              },
@@ -194,24 +221,45 @@ export class DatosGenerales implements OnInit {
   guardando = false;
   
   guardar(): void {
+    if (!this.form.valid) {
+      toast.error('Completá los campos obligatorios');
+      return;
+    }
+
     this.guardando = true;
+    const v = this.form.getRawValue();
 
-    // 🔴 MOCK — reemplazar por:
-    // const id = this.route.snapshot.paramMap.get('id')!;
-    // this.expedientesService.update(id, form.value).subscribe({
-    //   next: () => {
-    //     this.guardando = false;
-    //     toast.success('Expediente actualizado correctamente');
-    //   },
-    //   error: () => {
-    //     this.guardando = false;
-    //     toast.error('No se pudo guardar. Intentá de nuevo.');
-    //   },
-    // });
-
-    setTimeout(() => {
-      this.guardando = false;
-      toast.success('Expediente actualizado correctamente');
-    }, 800);
+    this.http.put(`${environment.apiUrl}/expedientes/${this.expedienteId}`, {
+      caratula:                   v.caratula,
+      area:                       v.area,
+      tipo_expediente:            Number(v.tipo),
+      estado_expediente:          Number(v.estado),
+      cliente:                    v.clienteId ? Number(v.clienteId) : null,
+      descripcion:                v.descripcion || null,
+      fuero:                      v.fuero || null,
+      juzgado:                    v.juzgado || null,
+      secretaria:                 v.secretaria || null,
+      jurisdiccion:               v.jurisdiccion || null,
+      numero_expediente_judicial: v.causaPJNId || null,
+      instancia:                  v.instancia || null,
+      contraparte:                v.contraparte || null,
+      abogado_contraparte:        v.abogadoContraparte || null,
+      usuario_principal:          v.abogadoResponsable ? Number(v.abogadoResponsable) : null,
+      usuario_secundario:         v.abogadoSecundario ? Number(v.abogadoSecundario) : null,
+      fecha_inicio:               v.fechaInicio || null,
+      fecha_ult_actuacion:        v.fechaUltimaActuacion || null,
+      fecha_procesal_proximo:     v.fechaProcesalProximo || null,
+      prioridad:                  v.prioridad ? Number(v.prioridad) : null,
+      origen_caso:                v.origenCaso || null,
+    }).subscribe({
+      next: () => {
+        this.guardando = false;
+        toast.success('Expediente actualizado correctamente');
+      },
+      error: () => {
+        this.guardando = false;
+        toast.error('No se pudo guardar. Intentá de nuevo.');
+      },
+    });
   }
 }
