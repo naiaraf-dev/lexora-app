@@ -9,11 +9,16 @@ function limpiarNombreArchivo(nombre) {
 
 function subirDocumentoACloudinary(file, carpeta = 'lexora/documentos') {
     return new Promise((resolve, reject) => {
-        const extension = path.extname(file.originalname); // .pdf, .docx, .png
-        const nombreBase = path.basename(file.originalname, extension);
+        const nombreOriginal = file.originalname
+            ? Buffer.from(file.originalname, 'latin1').toString('utf8')
+            : `archivo_${Date.now()}`;
+
+        const extension = path.extname(nombreOriginal) || '';
+        const nombreBase = extension
+            ? path.basename(nombreOriginal, extension)
+            : nombreOriginal;
 
         const nombreLimpio = limpiarNombreArchivo(nombreBase);
-
         const publicId = `${Date.now()}_${nombreLimpio}${extension}`;
 
         const uploadStream = cloudinary.uploader.upload_stream(
@@ -23,10 +28,7 @@ function subirDocumentoACloudinary(file, carpeta = 'lexora/documentos') {
                 resource_type: 'raw'
             },
             (error, result) => {
-                if (error) {
-                    return reject(error);
-                }
-
+                if (error) return reject(error);
                 resolve(result);
             }
         );

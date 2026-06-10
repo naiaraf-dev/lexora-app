@@ -100,7 +100,7 @@
             </div>
 
             <!-- Responsable -->
-            <app-ui-input label="Responsable" placeholder="Seleccionar..." [(model)]="tareaForm.responsable"></app-ui-input>
+            <app-ui-select label="Responsable" [options]="usuarioOptions" [(model)]="tareaForm.responsable"></app-ui-select>
 
             <!-- Descripción / instrucciones -->
             <app-ui-input label="Descripción / Instrucciones" placeholder="Ej: Presentar escrito antes del vencimiento." [(model)]="tareaForm.descripcionInstrucciones"></app-ui-input>

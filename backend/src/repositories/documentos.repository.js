@@ -21,7 +21,7 @@ async function obtenerDocumentos(filtros) {
             e.caratula AS nombre_expediente,
 
             d.novedad,
-            n.descripcion AS descripcion_novedad,
+            n.titulo AS titulo_novedad,
 
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,
@@ -68,9 +68,9 @@ async function obtenerDocumentos(filtros) {
         request.input('fechaUltimaModificacion', sql.DateTime2, filtros.fechaUltimaModificacion);
     }
 
-    if (filtros.activo !== undefined) {
-        query += ` AND d.activo = @activo`;
-        request.input('activo', sql.Bit, filtros.activo);
+    if (filtros.expediente) {
+        query += ` AND d.expediente = @expediente`;
+        request.input('expediente', sql.Int, Number(filtros.expediente));
     }
 
     query += ` ORDER BY d.fecha_creacion DESC`;
@@ -97,7 +97,7 @@ async function obtenerTodosLosDocumentos() {
             e.caratula AS nombre_expediente,
 
             d.novedad,
-            n.descripcion AS descripcion_novedad,
+            n.titulo AS titulo_novedad,
 
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,

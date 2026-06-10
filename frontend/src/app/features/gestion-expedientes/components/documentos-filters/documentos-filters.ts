@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 
@@ -18,14 +18,8 @@ export class DocumentosFilters {
 
   filters: DocumentoFilterState = { nombre: '', tipo: '' };
 
-  tipoOptions = [
-    { value: 'ESCRITO',   label: 'Escrito' },
-    { value: 'CONTRATO',  label: 'Contrato' },
-    { value: 'OFICIO',    label: 'Oficio' },
-    { value: 'PERICIAL',  label: 'Pericial' },
-    { value: 'SENTENCIA', label: 'Sentencia' },
-    { value: 'OTRO',      label: 'Otro' },
-  ];
+  // Opciones de tipo de documento (pueden venir del padre o cargarse acá)
+  @Input() tipoOptions: { value: string; label: string }[] = [];
 
   limpiar() {
     this.filters = { nombre: '', tipo: '' };

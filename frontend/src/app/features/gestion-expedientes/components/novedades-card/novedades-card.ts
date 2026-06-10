@@ -7,7 +7,8 @@ export interface TareaAsociada {
   fechaVencimiento: string; // ISO
   hora?: string;
   prioridad: string;
-  responsable: string;
+  responsable: string;        // id para el select al editar
+  responsableNombre: string;  // nombre para mostrar en la card
   descripcionInstrucciones: string;
   cumplida: boolean;
 

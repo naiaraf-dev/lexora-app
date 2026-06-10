@@ -171,8 +171,12 @@ async function subirEInsertarDocumento(datos, file) {
 
     const resultadoCloudinary = await subirDocumentoACloudinary(file);
 
+    const nombreArchivo = file.originalname
+        ? Buffer.from(file.originalname, 'latin1').toString('utf8')
+        : `archivo_${Date.now()}`;
+
     const documento = {
-        nombre_archivo: file.originalname,
+        nombre_archivo: nombreArchivo,
         descripcion,
         fecha_documento: fecha_documento || null,
         storage_key: resultadoCloudinary.public_id,

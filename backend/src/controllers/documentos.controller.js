@@ -1,11 +1,10 @@
 const documentosService = require('../services/documentos.service');
 
 async function obtenerDocumentos(req, res) {
-    console.log('Endpoint ejecutado: GET /api/documento');
-
     try {
         const filtros = {
             iddocumento: req.query.iddocumento ? Number(req.query.iddocumento) : undefined,
+            expediente: req.query.expediente ? Number(req.query.expediente) : undefined,
             nombreExpediente: req.query.nombreExpediente,
             tipoDocumento: req.query.tipoDocumento,
             fechaCreacion: req.query.fechaCreacion,
@@ -26,8 +25,6 @@ async function obtenerDocumentos(req, res) {
 }
 
 async function subirDocumento(req, res) {
-    console.log('Endpoint ejecutado: POST /api/subirDocumento');
-
     try {
         const documentoInsertado = await documentosService.subirEInsertarDocumento(req.body, req.file);
 
@@ -43,8 +40,6 @@ async function subirDocumento(req, res) {
 }
 
 async function obtenerTodosLosDocumentos(req, res) {
-    console.log('Endpoint ejecutado: GET /api/documentos');
-
     try {
         const documentos = await documentosService.obtenerTodosLosDocumentos();
 
@@ -58,8 +53,6 @@ async function obtenerTodosLosDocumentos(req, res) {
 }
 
 async function insertarDocumento(req, res) {
-    console.log('Endpoint ejecutado: POST /api/insertarDocumento');
-
     try {
         const documentoInsertado = await documentosService.insertarDocumento(req.body);
 
@@ -75,8 +68,6 @@ async function insertarDocumento(req, res) {
 }
 
 async function eliminarDocumento(req, res) {
-    console.log('Endpoint ejecutado: DELETE /api/documento/:iddocumento');
-
     try {
         const { iddocumento } = req.params;
 
@@ -96,8 +87,6 @@ async function eliminarDocumento(req, res) {
 }
 
 async function modificarDocumento(req, res) {
-    console.log('Endpoint ejecutado: PUT /api/documento/:iddocumento');
-
     try {
         const { iddocumento } = req.params;
 

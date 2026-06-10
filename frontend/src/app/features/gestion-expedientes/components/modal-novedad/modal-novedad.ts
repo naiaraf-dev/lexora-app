@@ -22,6 +22,7 @@ export class ModalNovedad implements OnChanges {
   @Input() prioridadOptions: { value: string; label: string }[] = [];
   @Output() cerrar  = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<Partial<Novedad>>();
+  @Input() usuarioOptions: { value: string; label: string }[] = [];
 
   guardando = false;
   crearTarea = true; // checkbox "Crear tarea / plazo asociado"
@@ -68,7 +69,7 @@ export class ModalNovedad implements OnChanges {
           prioridad:               this.novedad.tarea.prioridad,
           fechaVencimiento:        this.novedad.tarea.fechaVencimiento,
           hora:                    this.novedad.tarea.hora ?? '',
-          responsable:             this.novedad.tarea.responsable,
+          responsable:             this.novedad.tarea.responsable ?? '',
           descripcionInstrucciones: this.novedad.tarea.descripcionInstrucciones,
         };
       } else {
@@ -118,16 +119,19 @@ export class ModalNovedad implements OnChanges {
     //   });
     // }
 
+    const usuarioSeleccionado = this.usuarioOptions.find(u => u.value === this.tareaForm.responsable);
+
     const tarea: TareaAsociada | undefined = this.crearTarea && this.tareaForm.titulo
       ? {
-          id:                      crypto.randomUUID(),
-          titulo:                  this.tareaForm.titulo,
-          prioridad:               this.tareaForm.prioridad as any,
-          fechaVencimiento:        this.tareaForm.fechaVencimiento,
-          hora:                    this.tareaForm.hora,
-          responsable:             this.tareaForm.responsable,
+          id:                       crypto.randomUUID(),
+          titulo:                   this.tareaForm.titulo,
+          prioridad:                this.tareaForm.prioridad as any,
+          fechaVencimiento:         this.tareaForm.fechaVencimiento,
+          hora:                     this.tareaForm.hora,
+          responsable:              this.tareaForm.responsable,
+          responsableNombre:        usuarioSeleccionado?.label ?? '—',
           descripcionInstrucciones: this.tareaForm.descripcionInstrucciones,
-          cumplida:                false,
+          cumplida:                 false,
         }
       : undefined;
 

@@ -12,7 +12,7 @@
       <app-ui-select label="Tipo de documento" [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
       <app-ui-date-input label="Fecha del documento" [(model)]="form.fechaDocumento"></app-ui-date-input>
     </div>
-    <app-ui-input label="Relacionado con" placeholder="Seleccionar..." [(model)]="form.relacionadoCon"></app-ui-input>
+    <app-ui-select label="Relacionado con (opcional)" [(model)]="form.relacionadoId" [options]="novedadOpciones"></app-ui-select>
     <div class="flex flex-col gap-1">
       <label class="text-xs font-medium text-text-primary/60">Descripción</label>
       <textarea

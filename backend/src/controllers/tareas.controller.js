@@ -1,8 +1,6 @@
 const tareasService = require('../services/tareas.service');
 
 async function obtenerTareas(req, res) {
-    console.log('Endpoint ejecutado: GET /api/tarea');
-
     try {
         const filtros = {
             idtarea: req.query.idtarea ? Number(req.query.idtarea) : undefined,
@@ -34,8 +32,6 @@ async function obtenerTareas(req, res) {
 }
 
 async function obtenerTodasLasTareas(req, res) {
-    console.log('Endpoint ejecutado: GET /api/tareas');
-
     try {
         const tareas = await tareasService.obtenerTodasLasTareas();
 
@@ -49,8 +45,6 @@ async function obtenerTodasLasTareas(req, res) {
 }
 
 async function insertarTarea(req, res) {
-    console.log('Endpoint ejecutado: POST /api/insertarTarea');
-
     try {
         const tareaInsertada = await tareasService.insertarTarea(req.body);
 
@@ -66,8 +60,6 @@ async function insertarTarea(req, res) {
 }
 
 async function modificarTarea(req, res) {
-    console.log('Endpoint ejecutado: PUT /api/tarea/:idtarea');
-
     try {
         const { idtarea } = req.params;
 
@@ -85,8 +77,6 @@ async function modificarTarea(req, res) {
 }
 
 async function eliminarTarea(req, res) {
-    console.log('Endpoint ejecutado: DELETE /api/tarea/:idtarea');
-
     try {
         const { idtarea } = req.params;
 

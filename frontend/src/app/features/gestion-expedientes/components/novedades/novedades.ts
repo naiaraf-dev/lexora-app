@@ -30,31 +30,51 @@ export class Novedades implements OnInit {
   }
 
   private cargarNovedades(): void {
-    console.log('cargando novedades para expediente:', this.expedienteId);
-      this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
-          .subscribe({
-              next: (res) => {
-                console.log('novedades recibidas:', res);
-                  this.allNovedades = res.map(n => ({
-                      id:             String(n.id),
-                      tipo:           n.tipoNovedad ? String(n.tipoNovedad.id) : '', 
-                      tipoLabel:      n.tipoNovedad?.nombre ?? 'Observación',
-                      fechaActuacion: n.fecha,
-                      titulo:         n.titulo,
-                      descripcion:    n.descripcion ?? '',
-                      responsable:    n.usuarioCreacion?.nombre ?? '—',
-                      // TODO: mapear archivos cuando se implemente endpoint correspondiente en el backend.
-                      archivos: (n.archivos ?? []).map((a: any) => ({
-                        nombre: a.nombre,
-                        url:    a.url ?? '#',
-                      })),
-                      // TODO: mapear tarea asociada cuando se implemente endpoint correspondiente en el backend
-                      tarea:          undefined,
-                  }));
-                  this.filteredNovedades = [...this.allNovedades];
-                  this.cdr.detectChanges();
-              }
+    this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
+      .subscribe({
+        next: (novedades) => {
+          // Para cada novedad traemos su tarea asociada si existe
+          const tareaRequests = novedades.map(n =>
+            this.http.get<any[]>(`${environment.apiUrl}/tarea?novedad=${n.id}`)
+          );
+
+          Promise.all(
+            tareaRequests.map((req, i) =>
+              new Promise<any>(resolve => {
+                req.subscribe({
+                  next: (tareas) => resolve({ novedad: novedades[i], tarea: tareas[0] ?? null }),
+                  error: ()      => resolve({ novedad: novedades[i], tarea: null }),
+                });
+              })
+            )
+          ).then(results => {
+            this.allNovedades = results.map(({ novedad: n, tarea: t }) => ({
+              id:             String(n.id),
+              tipo:           n.tipoNovedad ? String(n.tipoNovedad.id) : '',
+              tipoLabel:      n.tipoNovedad?.nombre ?? 'Observación',
+              fechaActuacion: n.fecha,
+              titulo:         n.titulo,
+              descripcion:    n.descripcion ?? '',
+              responsable:    n.usuarioCreacion?.nombre ?? '—',
+              archivos:       [],
+              tarea: t ? {
+                id:                       String(t.id),
+                titulo:                   t.titulo,
+                prioridad:                t.prioridad ? String(t.prioridad) : '',
+                fechaVencimiento:         t.fecha_vencimiento ?? '',
+                responsableNombre:        t.nombre_usuario_completado
+                                            ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
+                                            : '—',
+                responsable:              t.usuario_completado ? String(t.usuario_completado) : '',
+                descripcionInstrucciones: t.descripcion ?? '',
+                cumplida:                 t.nombre_estado_tarea === 'Cumplido',
+              } : undefined,
+            }));
+            this.filteredNovedades = [...this.allNovedades];
+            this.cdr.detectChanges();
           });
+        }
+      });
   }
 
   private cargarCatalogos(): void {
@@ -68,6 +88,16 @@ export class Novedades implements OnInit {
         this.prioridadOptions = res.map(p => ({ value: String(p.id), label: p.nombre }));
       }
     });
+    this.http.get<any[]>(`${environment.apiUrl}/enums/estadotarea`).subscribe({
+      next: (res) => {
+        this.estadoTareaOptions = res.map(e => ({ value: String(e.id), label: e.nombre }));
+      }
+    });
+    this.http.get<any[]>(`${environment.apiUrl}/usuarios`).subscribe({
+      next: (res) => {
+        this.usuarioOptions = res.map(u => ({ value: String(u.id), label: `${u.nombre} ${u.apellido}` }));
+      }
+    });
   }
 
   allNovedades: Novedad[] = [];
@@ -75,6 +105,8 @@ export class Novedades implements OnInit {
 
   tipoNovedadOptions: { value: string; label: string }[] = [];
   prioridadOptions:   { value: string; label: string }[] = [];
+  estadoTareaOptions: { value: string; label: string }[] = [];
+  usuarioOptions:     { value: string; label: string }[] = [];
 
   modalOpen = false;
   novedadEditando: Novedad | null = null;
@@ -134,15 +166,10 @@ export class Novedades implements OnInit {
         fecha_novedad: payload.fechaActuacion,
         tipo_novedad:  payload.tipo ? Number(payload.tipo) : null,
       }).subscribe({
-        next: () => {
-          this.cargarNovedades();
-          this.modalOpen = false;
-          this.novedadEditando = null;
-          toast.success('Novedad actualizada correctamente');
-        }
+        next: () => this.sincronizarTarea(Number(this.novedadEditando!.id), payload)
       });
     } else {
-      this.http.post(`${environment.apiUrl}/novedades`, {
+      this.http.post<any>(`${environment.apiUrl}/novedades`, {
         expediente:       this.expedienteId,
         titulo:           payload.titulo,
         descripcion:      payload.descripcion,
@@ -151,12 +178,7 @@ export class Novedades implements OnInit {
         tipo_novedad:     payload.tipo ? Number(payload.tipo) : null,
         usuario_creacion: 1,
       }).subscribe({
-        next: () => {
-          this.cargarNovedades();
-          this.modalOpen = false;
-          this.novedadEditando = null;
-          toast.success('Novedad creada correctamente');
-        }
+        next: (novedadCreada) => this.sincronizarTarea(novedadCreada.id, payload)
       });
     }
   }
@@ -167,5 +189,52 @@ export class Novedades implements OnInit {
 
   get mensajeConfirmar(): string {
     return `¿Estás seguro que querés eliminar la novedad "${this.novedadAEliminar?.titulo ?? ''}"? Esta acción no se puede deshacer.`;
+  }
+
+  private finalizarGuardado(): void {
+    const mensaje = this.novedadEditando ? 'Novedad actualizada correctamente' : 'Novedad creada correctamente';
+    this.cargarNovedades();
+    this.modalOpen = false;
+    this.novedadEditando = null;
+    toast.success(mensaje);
+  }
+
+  private sincronizarTarea(novedadId: number, payload: Partial<Novedad>): void {
+    const tareaExistente = this.novedadEditando?.tarea;
+    const tareaPayload   = payload.tarea;
+
+    if (tareaPayload) {
+      const estadoPendiente = this.estadoTareaOptions.find(e => e.label === 'Pendiente');
+      const estadoCumplido  = this.estadoTareaOptions.find(e => e.label === 'Cumplido');
+      const estadoId = tareaPayload.cumplida
+        ? Number(estadoCumplido?.value)
+        : Number(estadoPendiente?.value);
+
+      const body = {
+        titulo:             tareaPayload.titulo,
+        descripcion:        tareaPayload.descripcionInstrucciones ?? '',
+        expediente:         this.expedienteId,
+        novedad:            novedadId,
+        usuario_creacion:   1,
+        usuario_completado: tareaPayload.responsable ? Number(tareaPayload.responsable) : null,
+        prioridad:          Number(tareaPayload.prioridad),
+        estado_tarea:       estadoId,
+        fecha_vencimiento:  tareaPayload.fechaVencimiento || null,
+        activo:             true,
+      };
+
+      if (tareaExistente?.id) {
+        this.http.put(`${environment.apiUrl}/tarea/${tareaExistente.id}`, body)
+          .subscribe({ next: () => this.finalizarGuardado() });
+      } else {
+        this.http.post(`${environment.apiUrl}/insertarTarea`, body)
+          .subscribe({ next: () => this.finalizarGuardado() });
+      }
+    } else if (tareaExistente?.id) {
+      this.http.delete(`${environment.apiUrl}/tarea/${tareaExistente.id}`)
+        .subscribe({ next: () => this.finalizarGuardado() });
+    } else {
+      this.finalizarGuardado();
+    }
   }
 }
