@@ -1,44 +1,60 @@
 const sql = require('mssql');
-const { conectarDB } = require('../config/db.config');
+const { conectarBD } = require('../config/db');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
-async function registerUser(username, email, password) {
+async function registerUser(name, lastName, email, password) {
     const hashedPassword = await hashPassword(password);
-    try {
-        const pool = await conectarDB();
-        if(await findUserByEmail(email)) {
-            throw new Error('Email already in use');
-        }
-        const result = await pool.request()
-            .input('Username', sql.VarChar, username)
-            .input('Email', sql.VarChar, email)
-            .input('Password', sql.VarChar, hashedPassword)
-            .query('INSERT INTO Users (Username, Email, Password) VALUES (@Username, @Email, @Password)');
-        return result;
-    } catch (error) {
-        throw error;
+    const pool = await conectarBD();
+    if (await findUserByEmail(email)) {
+        throw new Error('Email already in use');
     }
+    const result = await pool.request()
+        .input('nombre', sql.NVarChar, name)
+        .input('apellido', sql.NVarChar, lastName)
+        .input('email', sql.NVarChar, email)
+        .input('password_hash', sql.NVarChar, hashedPassword)
+        .query('INSERT INTO usuario (nombre, apellido, email, password_hash) VALUES (@nombre, @apellido, @email, @password_hash)');
+    return result;
 }
 
 async function loginUser(email, password) {
-    try {
-        const user = await findUserByEmail(email);
-        if (!user) {
-            throw new Error('User not found');
-        }
-        const isPasswordValid = await comparePassword(password, user.Password);
-        if (!isPasswordValid) {
-            throw new Error('Invalid password');
-        }
-        return user;
-    } catch (error) {
-        throw error;
-    }
+    const user = await findUserByEmail(email);
+    if (!user) throw new Error('User not found');
+    const isPasswordValid = await comparePassword(password, user.password_hash);
+    if (!isPasswordValid) throw new Error('Invalid password');
+    return user;
 }
 
 async function logoutUser() {
-    // Implement logout logic if needed (e.g., token invalidation)
     return;
+}
+
+async function saveResetToken(email, token, expiresAt) {
+    const pool = await conectarBD();
+    const result = await pool.request()
+        .input('email', sql.NVarChar, email)
+        .input('token', sql.NVarChar(64), token)
+        .input('expires', sql.DateTime2, expiresAt)
+        .query('UPDATE usuario SET password_token = @token, password_token_expires = @expires WHERE email = @email');
+    if (result.rowsAffected[0] === 0) throw new Error('Email not found');
+}
+
+async function findUserByResetToken(token) {
+    const pool = await conectarBD();
+    const result = await pool.request()
+        .input('token', sql.NVarChar(64), token)
+        .input('now', sql.DateTime2, new Date())
+        .query('SELECT * FROM usuario WHERE password_token = @token AND password_token_expires > @now');
+    return result.recordset[0];
+}
+
+async function updatePasswordAndClearToken(userId, newPasswordHash) {
+    const pool = await conectarBD();
+    await pool.request()
+        .input('id', sql.Int, userId)
+        .input('hash', sql.NVarChar(sql.MAX), newPasswordHash)
+        .query('UPDATE usuario SET password_hash = @hash, password_token = NULL, password_token_expires = NULL WHERE id = @id');
 }
 
 async function comparePassword(password, hashedPassword) {
@@ -46,25 +62,24 @@ async function comparePassword(password, hashedPassword) {
 }
 
 async function hashPassword(password) {
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-    return hashedPassword;
+    return await bcrypt.hash(password, 10);
 }
 
 async function findUserByEmail(email) {
-    try {
-        const pool = await conectarDB();
-        const result = await pool.request()
-            .input('Email', sql.VarChar, email)
-            .query('SELECT * FROM Users WHERE Email = @Email');
-        return result.recordset[0];
-    } catch (error) {
-        throw error;
-    }
+    const pool = await conectarBD();
+    const result = await pool.request()
+        .input('email', sql.NVarChar, email)
+        .query('SELECT * FROM usuario WHERE email = @email');
+    return result.recordset[0];
 }
 
 module.exports = {
     registerUser,
     loginUser,
+    logoutUser,
+    saveResetToken,
+    findUserByResetToken,
+    updatePasswordAndClearToken,
+    hashPassword,
     findUserByEmail
 };

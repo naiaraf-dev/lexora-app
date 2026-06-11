@@ -103,6 +103,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/pages/forgot-pass/forgot-pass').then((m) => m.ForgotPass),
   },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/pages/reset-password/reset-password').then((m) => m.ResetPassword),
+  },
 
   // fallback
   {

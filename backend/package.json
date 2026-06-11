@@ -17,7 +17,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mssql": "^12.5.5"
+    "mssql": "^12.5.5",
+    "nodemailer": "^8.0.11"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
