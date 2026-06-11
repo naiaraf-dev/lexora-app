@@ -79,7 +79,7 @@ export class DatosGenerales implements OnInit {
           clienteId:            String(expediente.cliente?.id ?? ''),
           estado:               String(expediente.estado?.id ?? ''),
           descripcion:          expediente.descripcion ?? '',
-          fuero:                expediente.area ?? '',
+          fuero:                expediente.fuero ?? '',
           juzgado:              expediente.juzgado ?? '',
           secretaria:           expediente.secretaria ?? '',
           jurisdiccion:         expediente.jurisdiccion ?? '',
