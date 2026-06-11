@@ -234,33 +234,14 @@
   </div>
 </app-ui-modal>
 
-<app-ui-modal [open]="deleteModalAbierto()" (cerrar)="cerrarDeleteModal()">
-  <div slot="titulo">
-    <h2 class="text-lg font-bold text-text-primary">Eliminar cuenta</h2>
-  </div>
-
-  <div slot="cuerpo">
-    <p class="text-sm text-text-primary/70 leading-relaxed">
-      ¿Está seguro de que desea eliminar su cuenta? Esta acción es permanente y no se puede
-      deshacer. Se eliminarán todos los datos asociados a ella.
-    </p>
-  </div>
-
-  <div slot="footer" class="flex justify-end gap-3">
-    <button
-      (click)="cerrarDeleteModal()"
-      class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-200 text-text-primary/70 hover:bg-gray-50 transition"
-    >
-      Cancelar
-    </button>
-    <button
-      (click)="confirmarEliminar()"
-      class="px-5 py-2 bg-danger text-white text-sm font-medium rounded-lg hover:bg-danger/90 transition"
-    >
-      Eliminar cuenta
-    </button>
-  </div>
-</app-ui-modal>
+<app-ui-confirm-modal
+  [open]="deleteModalAbierto()"
+  titulo="Eliminar cuenta"
+  mensaje="¿Está seguro de que desea eliminar su cuenta? Esta acción es permanente y no se puede deshacer. Se eliminarán todos los datos asociados a ella."
+  labelConfirmar="Eliminar cuenta"
+  (confirmar)="confirmarEliminar()"
+  (cancelar)="cerrarDeleteModal()"
+></app-ui-confirm-modal>
 
 @if (toast(); as t) {
   <div

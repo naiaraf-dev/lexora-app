@@ -14,6 +14,7 @@ import { Documento } from '../documentos-table/documentos-table';
 })
 export class ModalDocAlta {
   @Input() novedadOpciones: { value: string; label: string }[] = [];
+  @Input() tipoOptions: { value: string; label: string }[] = [];
   @Output() cerrar  = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<Partial<Documento>>();
 
@@ -30,15 +31,6 @@ export class ModalDocAlta {
     archivo: null as File | null,
   };
 
-  tipoOptions = [
-    { value: 'ESCRITO',   label: 'Escrito' },
-    { value: 'CONTRATO',  label: 'Contrato' },
-    { value: 'OFICIO',    label: 'Oficio' },
-    { value: 'PERICIAL',  label: 'Pericial' },
-    { value: 'SENTENCIA', label: 'Sentencia' },
-    { value: 'OTRO',      label: 'Otro' },
-  ];
-
   abrir() { this.open = true; }
 
   onFileChange(event: Event) {
@@ -53,13 +45,9 @@ export class ModalDocAlta {
   }
 
   submit() {
-    this.guardando = true;
-    setTimeout(() => {
-      this.guardando = false;
-      this.guardar.emit({ ...this.form });
-      this.open = false;
-      this.resetForm();
-    }, 800);
+    this.guardar.emit({ ...this.form });
+    this.open = false;
+    this.resetForm();
   }
 
   cerrarModal() { 

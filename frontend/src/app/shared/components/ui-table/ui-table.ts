@@ -31,4 +31,8 @@ export class UiTable {
   onAction(type: TableAction, row: any) {
     this.action.emit({ type, row });
   }
+
+  getValue(row: any, key: string): any {
+    return key.split('.').reduce((obj, k) => obj?.[k], row);
+  }
 }

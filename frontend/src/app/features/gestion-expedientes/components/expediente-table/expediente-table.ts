@@ -2,28 +2,27 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
 import { Router } from '@angular/router';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
-import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { CommonModule } from '@angular/common';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
 export interface Expediente {
-  id: string;
-  numero: string;
-  causa: string;
+  id: number;
+  numeroInterno: string;
+  numeroExpedienteJudicial?: string;
   caratula: string;
-  clienteNombre: string;  // para mostrar en la grilla
-  clienteIds: string[];   // para filtrar
   area: string;
-  tipo: string;           // el code (ej: 'DEMANDA_CIVIL')
-  tipoLabel: string;      // el label para mostrar en la grilla
-  estado: 'EN_TRAMITE' | 'FINALIZADO' | 'ARCHIVADO';
   fechaInicio: string;
   ultimaActualizacion: string;
+  tipo: { id: number; nombre: string };
+  estado: { id: number; nombre: string };
+  cliente?: { id: number; nombre: string };
+  usuarioPrincipal?: { id: number; nombre: string };
 }
 
 @Component({
   selector: 'app-expediente-table',
   standalone: true,
-  imports: [UiTable, UiPagination, UiModal, CommonModule],
+  imports: [UiTable, UiPagination, UiConfirmModal, CommonModule],
   templateUrl: './expediente-table.html',
 })
 export class ExpedienteTable {
@@ -62,24 +61,15 @@ export class ExpedienteTable {
   onPageChange(page: number): void { this.pageChange.emit(page); }
 
   columns: TableColumn[] = [
-    { key: 'numero',              label: 'N° Expediente',      type: 'text' },
-    { key: 'causa',               label: 'N° Causa',           type: 'text' },
-    { key: 'caratula',            label: 'Carátula',           type: 'text' },
-    { key: 'clienteNombre',       label: 'Cliente',            type: 'text' },
-    { key: 'area',                label: 'Área',               type: 'text' },
-    { key: 'tipoLabel',           label: 'Tipo de Expediente', type: 'text' },
-    {
-      key: 'estado',
-      label: 'Estado',
-      type: 'badge',
-      badgeConfig: {
-        EN_TRAMITE: { label: 'En trámite', classes: 'bg-info/10 text-info',       dot: 'bg-info' },
-        FINALIZADO: { label: 'Finalizado', classes: 'bg-success/10 text-success', dot: 'bg-success' },
-        ARCHIVADO:  { label: 'Archivado',  classes: 'bg-gray-100 text-gray-500',  dot: 'bg-gray-400' },
-      }
-    },
-    { key: 'fechaInicio',         label: 'Fecha Inicio',       type: 'date' },
-    { key: 'ultimaActualizacion', label: 'Últ. actualización', type: 'date' },
+    { key: 'numeroInterno',           label: 'N° Expediente',      type: 'text' },
+    { key: 'numeroExpedienteJudicial',label: 'N° Causa',           type: 'text' },
+    { key: 'caratula',                label: 'Carátula',           type: 'text' },
+    { key: 'cliente.nombre',          label: 'Cliente',            type: 'text' },
+    { key: 'area',                    label: 'Área',               type: 'text' },
+    { key: 'tipo.nombre',             label: 'Tipo de Expediente', type: 'text' },
+    { key: 'estado.nombre',           label: 'Estado',             type: 'text' },
+    { key: 'fechaInicio',             label: 'Fecha Inicio',       type: 'date' },
+    { key: 'ultimaActualizacion',     label: 'Últ. actualización', type: 'date' },
     {
       key: 'acciones',
       label: 'Acciones',
@@ -87,4 +77,8 @@ export class ExpedienteTable {
       getActions: () => ['view', 'edit', 'delete']
     },
   ];
+
+  get mensajeConfirmarEliminar(): string {
+    return `¿Estás seguro que querés eliminar el expediente "${this.expedienteAEliminar?.numeroInterno}"? Esta acción no se puede deshacer.`;
+  }
 }

@@ -2,6 +2,7 @@
 
     <!-- Filtros -->
     <app-novedades-filter
+        [tipoOptions]="tipoNovedadOptions"
         (filtersChange)="onFiltersChange($event)"
         (nuevaNovedad)="abrirAlta()"
     ></app-novedades-filter>
@@ -9,18 +10,27 @@
     <!-- Timeline -->
     <div class="px-2">
         @if (novedadesOrdenadas.length === 0) {
-        <div class="text-center py-16 text-text-primary/40">No hay novedades</div>
+            <div class="text-center py-16 text-text-primary/40">No hay novedades</div>
         }
 
         @for (novedad of novedadesOrdenadas; track novedad.id; let i = $index) {
-        <app-novedades-card
-            [novedad]="novedad"
-            [numero]="novedadesOrdenadas.length - i"
-            (editar)="onEditar($event)"
-            (eliminar)="onEliminar($event)"
-        ></app-novedades-card>
+            <app-novedades-card
+                [novedad]="novedad"
+                [numero]="novedadesOrdenadas.length - i"
+                (editar)="onEditar($event)"
+                (eliminar)="onEliminar($event)"
+            ></app-novedades-card>
         }
     </div>
+
+    <app-ui-confirm-modal
+        [open]="confirmEliminarOpen"
+        titulo="Eliminar novedad"
+        [mensaje]="mensajeConfirmar"
+        labelConfirmar="Eliminar"
+        (confirmar)="confirmarEliminar()"
+        (cancelar)="confirmEliminarOpen = false; novedadAEliminar = null"
+    ></app-ui-confirm-modal>
 
 </div>
 
@@ -28,6 +38,10 @@
 <app-modal-novedad
     [open]="modalOpen"
     [novedad]="novedadEditando"
+    [tipoOptions]="tipoNovedadOptions"
+    [prioridadOptions]="prioridadOptions"
+    [usuarioOptions]="usuarioOptions"
+    [tipoDocumentoOptions]="tipoDocumentoOptions"
     (cerrar)="modalOpen = false"
     (guardar)="onGuardar($event)"
 ></app-modal-novedad>

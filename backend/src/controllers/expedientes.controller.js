@@ -1,0 +1,83 @@
+const service = require('../services/expedientes.service');
+
+async function listar(req, res) {
+    try {
+        const filtros = {
+            numero:    req.query.numero,
+            causa:     req.query.causa,
+            caratula:  req.query.caratula,
+            area:      req.query.area,
+            tipo:      req.query.tipo,
+            estado:    req.query.estado,
+            clienteId: req.query.clienteId,
+            pagina:    req.query.pagina    ? Number(req.query.pagina)    : 1,
+            pageSize:  req.query.pageSize  ? Number(req.query.pageSize)  : 25,
+        };
+
+        const resultado = await service.listar(filtros);
+        res.json(resultado);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al listar expedientes',
+            error:   error.message,
+        });
+    }
+}
+
+async function obtener(req, res) {
+    try {
+        const { id } = req.params;
+        const expediente = await service.obtener(Number(id));
+
+        if (!expediente) {
+            return res.status(404).json({ mensaje: 'Expediente no encontrado' });
+        }
+
+        res.json(expediente);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al obtener expediente',
+            error:   error.message,
+        });
+    }
+}
+
+async function crear(req, res) {
+    try {
+        const expediente = await service.crear(req.body);
+        res.status(201).json(expediente);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al crear expediente',
+            error:   error.message,
+        });
+    }
+}
+
+async function actualizar(req, res) {
+    try {
+        const { id } = req.params;
+        const expediente = await service.actualizar(Number(id), req.body);
+        res.json(expediente);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al actualizar expediente',
+            error:   error.message,
+        });
+    }
+}
+
+async function eliminar(req, res) {
+    try {
+        const { id } = req.params;
+        await service.eliminar(Number(id));
+        res.json({ mensaje: 'Expediente eliminado correctamente' });
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al eliminar expediente',
+            error:   error.message,
+        });
+    }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar };

@@ -55,7 +55,9 @@ export class DocumentosTable {
         OFICIO:    { label: 'Oficio',    classes: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' },
         PERICIAL:  { label: 'Pericial',  classes: 'bg-amber-100 text-amber-600',   dot: 'bg-amber-500' },
         SENTENCIA: { label: 'Sentencia', classes: 'bg-rose-100 text-rose-600',     dot: 'bg-rose-500' },
-        OTRO:      { label: 'Otro',      classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400' },
+        NOTIFICACION: { label: 'Notificación', classes: 'bg-orange-100 text-orange-600', dot: 'bg-orange-500' },
+        PODER:        { label: 'Poder',        classes: 'bg-teal-100 text-teal-600',     dot: 'bg-teal-500'   },
+        OTRO:         { label: 'Otro',         classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400'   },
       }
     },
     { key: 'fechaDocumento', label: 'Fecha del documento',  type: 'date' },
