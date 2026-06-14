@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
+const authRoutes     = require('./routes/auth.routes');
 const clientesRoutes = require('./routes/clientes.routes');
 
 const app = express();
@@ -9,7 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/clientes', clientesRoutes);
+// Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
+app.use(authRoutes);
+app.use(clientesRoutes);
 
 /*
     PRUEBA DE CONEXIÓN

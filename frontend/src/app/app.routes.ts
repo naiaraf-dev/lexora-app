@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { MainLayout } from './shared/layout/main-layout/main-layout';
 import { PageLayout } from './shared/layout/page-layout/page-layout';
+import { authGuard } from './core/guards/auth-guard';
 
 export const routes: Routes = [
-  // Layout con sidebar
+  // Layout con sidebar — protegido por authGuard
   {
     path: '',
     component: MainLayout,
+    canActivate: [authGuard],
     children: [
       {
         path: 'gestion-expedientes',
@@ -46,10 +48,11 @@ export const routes: Routes = [
     ],
   },
 
-  // Layout sin sidebar (detalle / edición)
+  // Layout sin sidebar (detalle / edición) — protegido por authGuard
   {
     path: '',
     component: PageLayout,
+    canActivate: [authGuard],
     children: [
       {
         path: 'gestion-expedientes/:id',

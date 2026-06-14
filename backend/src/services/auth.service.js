@@ -1,13 +1,22 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const authRepository = require('../repositories/auth.repository');
 const { sendPasswordResetEmail } = require('./email.service');
 
-async function register(username, email, password) {
-    return await authRepository.registerUser(username, email, password);
+const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
+
+async function register(nombre, apellido, email, password) {
+    return await authRepository.registerUser(nombre, apellido, email, password);
 }
 
 async function login(email, password) {
-    return await authRepository.loginUser(email, password);
+    const user = await authRepository.loginUser(email, password);
+    const token = jwt.sign(
+        { id: user.id, nombre: user.nombre, apellido: user.apellido, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+    return { token };
 }
 
 async function logout() {
@@ -19,7 +28,7 @@ async function forgotPassword(email) {
     if (!user) throw new Error('Email not found');
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await authRepository.saveResetToken(email, token, expiresAt);
     await sendPasswordResetEmail(email, token);
@@ -33,10 +42,4 @@ async function resetPassword(token, newPassword) {
     await authRepository.updatePasswordAndClearToken(user.id, newHash);
 }
 
-module.exports = {
-    register,
-    login,
-    logout,
-    forgotPassword,
-    resetPassword
-};
+module.exports = { register, login, logout, forgotPassword, resetPassword };
