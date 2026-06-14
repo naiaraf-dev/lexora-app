@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
 
-router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
+router.post('/api/auth/register', authController.register);
+router.post('/api/auth/login', authController.login);
+router.post('/api/auth/logout', authController.logout);
+router.post('/api/auth/forgot-password', authController.forgotPassword);
+router.post('/api/auth/reset-password', authController.resetPassword);
 
 module.exports = router;
