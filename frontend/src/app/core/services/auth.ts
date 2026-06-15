@@ -32,7 +32,7 @@ export class Auth {
   login(email: string, password: string) {
     return this.http
       .post<{ message: string; token: string }>(
-        `${environment.apiUrl}/api/auth/login`,
+        `${environment.apiUrl}/auth/login`,
         { email, password }
       )
       .pipe(
@@ -47,25 +47,25 @@ export class Auth {
       );
   }
 
-  /** POST /api/auth/register — { nombre, apellido, email, password } */
-  register(nombre: string, apellido: string, email: string, password: string) {
+  /** POST /api/auth/register — { nombre, apellido, email, password, confirmPassword, matricula } */
+  register(nombre: string, apellido: string, email: string, password: string, confirmPassword: string, matricula?: string) {
     return this.http.post<{ message: string }>(
-      `${environment.apiUrl}/api/auth/register`,
-      { nombre, apellido, email, password }
+      `${environment.apiUrl}/auth/register`,
+      { nombre, apellido, email, password, confirmPassword, matricula }
     );
   }
 
   /** POST /api/auth/forgot-password — { email } */
   forgotPassword(email: string) {
     return this.http.post<{ message: string }>(
-      `${environment.apiUrl}/api/auth/forgot-password`,
+      `${environment.apiUrl}/auth/forgot-password`,
       { email }
     );
   }
 
   /** POST /api/auth/logout */
   logout(): void {
-    this.http.post(`${environment.apiUrl}/api/auth/logout`, {}).subscribe();
+    this.http.post(`${environment.apiUrl}/auth/logout`, {}).subscribe();
     this.storage.clear();
     this._currentUser.set(null);
     this.router.navigate(['/login']);

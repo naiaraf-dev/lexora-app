@@ -3,7 +3,7 @@ const { conectarBD } = require('../config/db');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
-async function registerUser(name, lastName, email, password) {
+async function registerUser(name, lastName, email, password, matricula) {
     const hashedPassword = await hashPassword(password);
     const pool = await conectarBD();
     if (await findUserByEmail(email)) {
@@ -14,7 +14,9 @@ async function registerUser(name, lastName, email, password) {
         .input('apellido', sql.NVarChar, lastName)
         .input('email', sql.NVarChar, email)
         .input('password_hash', sql.NVarChar, hashedPassword)
-        .query('INSERT INTO usuario (nombre, apellido, email, password_hash) VALUES (@nombre, @apellido, @email, @password_hash)');
+        .input('rol_usuario', sql.Int, 1)
+        .input('matricula', sql.NVarChar, matricula)
+        .query('INSERT INTO usuario (nombre, apellido, email, password_hash, matricula, rol_usuario) VALUES (@nombre, @apellido, @email, @password_hash, @matricula, @rol_usuario)');
     return result;
 }
 

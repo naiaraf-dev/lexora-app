@@ -5,8 +5,8 @@ const { sendPasswordResetEmail } = require('./email.service');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
 
-async function register(nombre, apellido, email, password) {
-    return await authRepository.registerUser(nombre, apellido, email, password);
+async function register(nombre, apellido, email, password, matricula) {
+    return await authRepository.registerUser(nombre, apellido, email, password, matricula);
 }
 
 async function login(email, password) {

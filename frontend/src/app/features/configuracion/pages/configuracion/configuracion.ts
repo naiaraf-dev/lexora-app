@@ -14,7 +14,6 @@ import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/u
 import { toast } from 'ngx-sonner';
 
 type Tab = 'perfil' | 'seguridad';
-type ToastTipo = 'success' | 'error';
 
 const TAMANO_MAX_MB = 5;
 
@@ -37,9 +36,6 @@ export class ConfiguracionView implements OnInit {
     `${this.perfil.nombre.charAt(0)}${this.perfil.apellido.charAt(0)}`.toUpperCase()
   );
 
-  // Toast / feedback
-  toast = signal<{ tipo: ToastTipo; texto: string } | null>(null);
-
   // Modal cambiar contraseña
   passwordModalAbierto = signal(false);
   passwordActual = '';
@@ -55,11 +51,20 @@ export class ConfiguracionView implements OnInit {
   constructor(private config: Configuracion, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    this.perfil = this.config.getPerfil();
     const tab = this.route.snapshot.queryParamMap.get('tab');
-    if (tab === 'seguridad' || tab === 'perfil') {
-      this.tab.set(tab);
-    }
+    if (tab === 'seguridad' || tab === 'perfil') this.tab.set(tab);
+
+    this.config.getPerfil().subscribe({
+      next: (res) => {
+        this.perfil = {
+          nombre:    res.nombre,
+          apellido:  res.apellido,
+          matricula: res.matricula ?? '',
+          email:     res.email,
+          avatarUrl: res.avatar_url ?? '',
+        };
+      }
+    });
   }
 
   // Perfil
@@ -87,7 +92,6 @@ export class ConfiguracionView implements OnInit {
 
   guardarPerfil() {
     const parsed = perfilSchema.safeParse(this.perfil);
-
     if (!parsed.success) {
       const fieldErrors = z.flattenError(parsed.error).fieldErrors;
       const errores: PerfilErrores = {};
@@ -95,19 +99,38 @@ export class ConfiguracionView implements OnInit {
         errores[campo] = fieldErrors[campo]?.[0];
       });
       this.perfilErrors.set(errores);
-      this.mostrarToast('error', 'Revise los campos marcados del formulario.');
+      toast.error('Revise los campos marcados del formulario.');
       return;
     }
 
     this.perfilErrors.set({});
-    this.perfil = { ...this.perfil, ...parsed.data };
-    const res = this.config.guardarPerfil(this.perfil);
-    this.mostrarToast(res.ok ? 'success' : 'error', res.mensaje ?? '');
-    this.editando.set(false);
+    this.config.guardarPerfil({
+      nombre:    this.perfil.nombre,
+      apellido:  this.perfil.apellido,
+      matricula: this.perfil.matricula,
+      email:     this.perfil.email,
+      avatar_url: this.perfil.avatarUrl,
+    }).subscribe({
+      next: () => {
+        toast.success('Perfil actualizado correctamente.');
+        this.editando.set(false);
+      },
+      error: () => toast.error('Error al guardar el perfil.')
+    });
   }
 
   cancelarPerfil() {
-    this.perfil = this.config.getPerfil();
+    this.config.getPerfil().subscribe({
+      next: (res) => {
+        this.perfil = {
+          nombre:    res.nombre,
+          apellido:  res.apellido,
+          matricula: res.matricula ?? '',
+          email:     res.email,
+          avatarUrl: res.avatar_url ?? '',
+        };
+      }
+    });
     this.imagenError.set('');
     this.perfilErrors.set({});
     this.editando.set(false);
@@ -126,7 +149,6 @@ export class ConfiguracionView implements OnInit {
 
   guardarPassword() {
     this.passwordError.set('');
-
     if (!this.passwordActual || !this.passwordNueva || !this.passwordConfirmar) {
       this.passwordError.set('Complete todos los campos.');
       return;
@@ -140,14 +162,15 @@ export class ConfiguracionView implements OnInit {
       return;
     }
 
-    const res = this.config.cambiarPassword(this.passwordActual, this.passwordNueva);
-    if (!res.ok) {
-      this.passwordError.set(res.mensaje ?? 'No se pudo cambiar la contraseña.');
-      return;
-    }
-
-    this.cerrarPasswordModal();
-    this.mostrarToast('success', res.mensaje ?? '');
+    this.config.cambiarPassword(this.passwordActual, this.passwordNueva).subscribe({
+      next: () => {
+        this.cerrarPasswordModal();
+        toast.success('Contraseña actualizada correctamente.');
+      },
+      error: (err) => {
+        this.passwordError.set(err.error?.message || 'La contraseña actual no es correcta.');
+      }
+    });
   }
 
   private resetPasswordForm() {
@@ -167,14 +190,17 @@ export class ConfiguracionView implements OnInit {
   }
 
   confirmarEliminar() {
-    const res = this.config.eliminarCuenta();
-    this.cerrarDeleteModal();
-    this.mostrarToast(res.ok ? 'success' : 'error', res.mensaje ?? '');
+    this.config.eliminarCuenta().subscribe({
+      next: () => {
+        this.cerrarDeleteModal();
+        toast.success('Cuenta eliminada.');
+        this.auth.logout();
+      },
+      error: () => {
+        this.cerrarDeleteModal();
+        toast.error('Error al eliminar la cuenta.');
+      }
+    });
   }
 
-  // Toast
-  private mostrarToast(tipo: ToastTipo, texto: string) {
-    if (tipo === 'success') toast.success(texto);
-    else toast.error(texto);
-  }
 }

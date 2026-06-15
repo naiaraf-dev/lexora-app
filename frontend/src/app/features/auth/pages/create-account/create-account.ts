@@ -48,8 +48,8 @@ export class CreateAccount {
     this.errors.set({});
     this.loading.set(true);
 
-    this.authService.register(this.nombre, this.apellido, this.email, this.password).subscribe({
-      next: () => this.router.navigate(['/login']),
+    this.authService.register(this.nombre, this.apellido, this.email, this.password, this.confirmPassword, this.matricula).subscribe({
+      next: () => this.router.navigate(['/gestion-expedientes']),
       error: (err) => {
         this.loading.set(false);
         this.errors.set({ email: err.error?.message || 'Error al registrar el usuario.' });
