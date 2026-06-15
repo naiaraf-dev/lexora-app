@@ -6,6 +6,7 @@ const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
 const authRoutes     = require('./routes/auth.routes');
 const clientesRoutes = require('./routes/clientes.routes');
+const usuariosRoutes = require('./routes/usuarios.routes');
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.use('/api', tareasRoutes);
 // Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
 app.use(authRoutes);
 app.use(clientesRoutes);
+
+app.use('/api/usuarios', usuariosRoutes);
 
 /*
     PRUEBA DE CONEXIÓN
