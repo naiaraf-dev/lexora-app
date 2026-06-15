@@ -1,12 +1,14 @@
 import { Routes } from '@angular/router';
 import { MainLayout } from './shared/layout/main-layout/main-layout';
 import { PageLayout } from './shared/layout/page-layout/page-layout';
+import { authGuard } from './core/guards/auth-guard';
 
 export const routes: Routes = [
-  // Layout con sidebar
+  // Layout con sidebar — protegido por authGuard
   {
     path: '',
     component: MainLayout,
+    canActivate: [authGuard],
     children: [
       {
         path: 'gestion-expedientes',
@@ -52,10 +54,11 @@ export const routes: Routes = [
     ],
   },
 
-  // Layout sin sidebar (detalle / edición)
+  // Layout sin sidebar (detalle / edición) — protegido por authGuard
   {
     path: '',
     component: PageLayout,
+    canActivate: [authGuard],
     children: [
       {
         path: 'gestion-expedientes/:id',
@@ -108,6 +111,11 @@ export const routes: Routes = [
     path: 'forgot-password',
     loadComponent: () =>
       import('./features/auth/pages/forgot-pass/forgot-pass').then((m) => m.ForgotPass),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/pages/reset-password/reset-password').then((m) => m.ResetPassword),
   },
 
   // fallback
