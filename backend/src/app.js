@@ -6,6 +6,7 @@ const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
 const authRoutes     = require('./routes/auth.routes');
 const clientesRoutes = require('./routes/clientes.routes');
+const authMiddleware = require('./middlewares/auth.middleware');
 const usuariosRoutes = require('./routes/usuarios.routes');
 
 const app = express();
@@ -23,7 +24,7 @@ app.use('/api', tareasRoutes);
 app.use(authRoutes);
 app.use(clientesRoutes);
 
-app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*
     PRUEBA DE CONEXIÓN

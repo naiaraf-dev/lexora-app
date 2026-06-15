@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { z } from 'zod';
@@ -12,6 +12,9 @@ import { perfilSchema, PerfilErrores } from '../../models/configuracion.schema';
 
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 import { toast } from 'ngx-sonner';
+import { environment } from '../../../../../environments/environment.prod';
+import { HttpClient } from '@angular/common/http';
+import { Auth } from '../../../../core/services/auth';
 
 type Tab = 'perfil' | 'seguridad';
 
@@ -47,6 +50,9 @@ export class ConfiguracionView implements OnInit {
   deleteModalAbierto = signal(false);
 
   editando = signal(false);
+  private http = inject(HttpClient);
+  private auth = inject(Auth);
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private config: Configuracion, private route: ActivatedRoute) {}
 
@@ -61,8 +67,9 @@ export class ConfiguracionView implements OnInit {
           apellido:  res.apellido,
           matricula: res.matricula ?? '',
           email:     res.email,
-          avatarUrl: res.avatar_url ?? '',
+          avatarUrl: res.avatarUrl ?? '',
         };
+        this.cdr.detectChanges();
       }
     });
   }
@@ -84,9 +91,17 @@ export class ConfiguracionView implements OnInit {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => (this.perfil.avatarUrl = reader.result as string);
-    reader.readAsDataURL(file);
+    const formData = new FormData();
+    formData.append('imagen', file);
+
+    this.http.put(`${environment.apiUrl}/usuarios/profile/image`, formData).subscribe({
+      next: (res: any) => {
+        this.perfil.avatarUrl = res.avatarUrl ?? '';
+        toast.success('Imagen actualizada correctamente.');
+      },
+      error: () => this.imagenError.set('Error al subir la imagen.')
+    });
+
     input.value = '';
   }
 
@@ -109,7 +124,6 @@ export class ConfiguracionView implements OnInit {
       apellido:  this.perfil.apellido,
       matricula: this.perfil.matricula,
       email:     this.perfil.email,
-      avatar_url: this.perfil.avatarUrl,
     }).subscribe({
       next: () => {
         toast.success('Perfil actualizado correctamente.');
@@ -134,6 +148,7 @@ export class ConfiguracionView implements OnInit {
     this.imagenError.set('');
     this.perfilErrors.set({});
     this.editando.set(false);
+    this.cdr.detectChanges();
   }
 
   // Contraseña
@@ -168,7 +183,7 @@ export class ConfiguracionView implements OnInit {
         toast.success('Contraseña actualizada correctamente.');
       },
       error: (err) => {
-        this.passwordError.set(err.error?.message || 'La contraseña actual no es correcta.');
+        this.passwordError.set(err.error?.mensaje || 'La contraseña actual no es correcta.');
       }
     });
   }

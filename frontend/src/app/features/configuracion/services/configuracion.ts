@@ -16,24 +16,21 @@ export class Configuracion {
   }
 
   getPerfil(): Observable<any> {
-    const id = this.auth.currentUser()?.id;
-    return this.http.get(`${environment.apiUrl}/usuarios/${id}`);
+    return this.http.get(`${environment.apiUrl}/usuarios/profile`);
   }
 
   guardarPerfil(datos: any): Observable<any> {
-    const id = this.auth.currentUser()?.id;
-    return this.http.put(`${environment.apiUrl}/usuarios/${id}`, datos);
+    return this.http.put(`${environment.apiUrl}/usuarios/profile`, datos);
   }
 
   cambiarPassword(actual: string, nueva: string): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/auth/change-password`, {
-      passwordActual: actual,
-      passwordNueva:  nueva,
+    return this.http.put(`${environment.apiUrl}/usuarios/change-password`, {
+      actual,
+      nueva,
     });
   }
 
   eliminarCuenta(): Observable<any> {
-    const id = this.auth.currentUser()?.id;
-    return this.http.delete(`${environment.apiUrl}/usuarios/${id}`);
+    return this.http.delete(`${environment.apiUrl}/usuarios/profile`);
   }
 }
