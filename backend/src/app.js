@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
+const logsRoutes = require('./routes/logs.routes');
 const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
 const authRoutes     = require('./routes/auth.routes');
@@ -16,6 +17,8 @@ const novedadesRouter   = require('./routes/novedades.routes');
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/logs', logsRoutes);
 app.use('/api', documentosRoutes);
 app.use('/api', tareasRoutes);
 
