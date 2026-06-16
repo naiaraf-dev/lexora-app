@@ -10,5 +10,6 @@ router.put('/profile', controller.actualizarPerfil);
 router.put('/profile/image', upload.single('imagen'), controller.actualizarImagen);
 router.put('/change-password', controller.cambiarPassword);
 router.delete('/profile', controller.eliminarCuenta);
+router.get('/', controller.getAll);
 
 module.exports = router;

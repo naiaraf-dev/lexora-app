@@ -167,24 +167,6 @@ export class ModalNovedad implements OnChanges {
 
     this.guardando = true;
 
-    // 🗓️ AGENDA — cuando se integre el módulo de agenda, además del emit de guardar,
-    // acá se deberá llamar al AgendaService para crear/actualizar el evento correspondiente:
-    //
-    // if (this.crearTarea && this.tareaForm.titulo) {
-    //   this.agendaService.crearEvento({
-    //     titulo: this.tareaForm.titulo,
-    //     fechaVencimiento: this.tareaForm.fechaVencimiento,
-    //     hora: this.tareaForm.hora,
-    //     prioridad: this.tareaForm.prioridad,
-    //     responsable: this.tareaForm.responsable,
-    //     instrucciones: this.tareaForm.descripcionInstrucciones,
-    //     expedienteId: <id del expediente actual>,
-    //     novedadId: <id de la novedad>,
-    //   }).subscribe(evento => {
-    //     tarea.agendaEventId = evento.id;
-    //   });
-    // }
-
     const usuarioSeleccionado = this.usuarioOptions.find(u => u.value === this.tareaForm.responsable);
 
     const tarea: TareaAsociada | undefined = this.crearTarea && this.tareaForm.titulo

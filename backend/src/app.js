@@ -24,6 +24,9 @@ app.use('/api', tareasRoutes);
 app.use(authRoutes);
 app.use(clientesRoutes);
 
+const usuariosController = require('./controllers/usuarios.controller');
+app.get('/api/usuarios', usuariosController.getAll);
+
 app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*

@@ -64,12 +64,21 @@ export class DatosGenerales implements OnInit {
       estados:    this.http.get<any[]>(`${environment.apiUrl}/enums/estadoexpediente`),
       prioridades:this.http.get<any[]>(`${environment.apiUrl}/enums/prioridad`),
       roles:      this.http.get<any[]>(`${environment.apiUrl}/enums/rolcliente`),
+      usuarios:   this.http.get<any[]>(`${environment.apiUrl}/usuarios`),
+      clientes:   this.http.get<any[]>(`${environment.apiUrl}/clientes`),
     }).subscribe({
-      next: ({ expediente, tipos, estados, prioridades, roles }) => {
-        this.tipoOptions     = tipos.map(t => ({ value: String(t.id), label: t.nombre }));
-        this.estadoOptions   = estados.map(e => ({ value: String(e.id), label: e.nombre }));
-        this.prioridadOptions= prioridades.map(p => ({ value: String(p.id), label: p.nombre }));
-        this.rolOptions      = roles.map(r => ({ value: String(r.id), label: r.nombre }));
+      next: ({ expediente, tipos, estados, prioridades, roles, usuarios, clientes }) => {
+        this.tipoOptions      = tipos.map(t => ({ value: String(t.id), label: t.nombre }));
+        this.estadoOptions    = estados.map(e => ({ value: String(e.id), label: e.nombre }));
+        this.prioridadOptions = prioridades.map(p => ({ value: String(p.id), label: p.nombre }));
+        this.rolOptions       = roles.map(r => ({ value: String(r.id), label: r.nombre }));
+        this.abogadoOptions  = usuarios.map(u => ({ value: String(u.id), label: `${u.apellido}, ${u.nombre}` }));
+        this.clienteOptions  = clientes.map(c => ({
+          value: String(c.id),
+          label: c.tipo_cliente === 2
+            ? (c.nombre ?? '')
+            : `${c.apellido ?? ''}, ${c.nombre ?? ''}`.trim(),
+        }));
 
         this.form.patchValue({
           numero:               expediente.numeroInterno,
@@ -92,8 +101,9 @@ export class DatosGenerales implements OnInit {
           fechaInicio:          expediente.fechaInicio ? expediente.fechaInicio.slice(0, 10) : '',
           fechaUltimaActuacion: expediente.fechaUltActuacion ? expediente.fechaUltActuacion.slice(0, 10) : '',
           fechaProcesalProximo: expediente.fechaProcesalProxima ? expediente.fechaProcesalProxima.slice(0, 10) : '',
-          prioridad:            String(expediente.prioridad?.id ?? ''),
-          origenCaso:           expediente.origenCaso ?? '',
+          prioridad:   String(expediente.prioridad?.id ?? ''),
+          origenCaso:  expediente.origenCaso ?? '',
+          rolCliente:  String(expediente.rolCliente?.id ?? ''),
         });
         this.cdr.detectChanges();
       },
@@ -199,20 +209,9 @@ export class DatosGenerales implements OnInit {
     { value: 'CORTE',     label: 'Corte Suprema'  },
   ];
 
-  abogadoOptions = [
-    { value: '1', label: 'García, Juan Carlos'    },
-    { value: '2', label: 'López, Ana María'      },
-    { value: '3', label: 'Pérez, Carlos Eduardo' },
-    { value: '4', label: 'Sánchez, Laura'        },
-  ];
+  abogadoOptions: { value: string; label: string }[] = [];
 
-  // 🔴 MOCK — reemplazar por ClientesService
-  clienteOptions = [
-    { value: '1', label: 'Acme S.A.'              },
-    { value: '2', label: 'García, Juan Carlos'    },
-    { value: '3', label: 'López Hnos. S.R.L.'     },
-    { value: '4', label: 'Rodríguez, María Elena' },
-  ];
+  clienteOptions: { value: string; label: string }[] = [];
 
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
@@ -251,6 +250,7 @@ export class DatosGenerales implements OnInit {
       fecha_procesal_proximo:     v.fechaProcesalProximo || null,
       prioridad:                  v.prioridad ? Number(v.prioridad) : null,
       origen_caso:                v.origenCaso || null,
+      rol_cliente:                v.rolCliente ? Number(v.rolCliente) : null,
     }).subscribe({
       next: () => {
         this.guardando = false;

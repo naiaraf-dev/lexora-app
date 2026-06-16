@@ -13,10 +13,10 @@ async function obtenerTareas(filtros) {
             t.fecha_creacion,
             t.fecha_ultima_modificacion,
             t.fecha_vencimiento,
-            t.activo,
 
             t.expediente,
             e.caratula AS nombre_expediente,
+            ISNULL(c.nombre, '') + ' ' + ISNULL(c.apellido, '') AS nombre_cliente,
 
             t.novedad,
             n.titulo AS titulo_novedad,
@@ -32,11 +32,13 @@ async function obtenerTareas(filtros) {
             t.prioridad,
             p.nombre AS nombre_prioridad,
 
+            t.hora,
             t.estado_tarea,
             et.nombre AS nombre_estado_tarea
 
         FROM tarea t
         INNER JOIN expediente e ON t.expediente = e.id
+        LEFT JOIN cliente c ON c.id = e.cliente
         LEFT JOIN novedad n ON t.novedad = n.id
         INNER JOIN usuario uc ON t.usuario_creacion = uc.id
         LEFT JOIN usuario ucomp ON t.usuario_completado = ucomp.id
@@ -103,11 +105,6 @@ async function obtenerTareas(filtros) {
     if (filtros.fechaVencimiento) {
         query += ` AND CONVERT(date, t.fecha_vencimiento) = CONVERT(date, @fechaVencimiento)`;
         request.input('fechaVencimiento', sql.DateTime2, filtros.fechaVencimiento);
-    }
-
-    if (filtros.activo !== undefined) {
-        query += ` AND t.activo = @activo`;
-        request.input('activo', sql.Bit, filtros.activo);
     }
 
     query += ` ORDER BY t.fecha_creacion DESC`;
@@ -217,7 +214,7 @@ async function insertarTarea(tarea) {
         .input('estado_tarea', sql.Int, tarea.estado_tarea)
         .input('fecha_vencimiento', sql.DateTime2, tarea.fecha_vencimiento || null)
         .input('titulo', sql.NVarChar(200), tarea.titulo)
-        .input('activo', sql.Bit, tarea.activo)
+        .input('hora', sql.NVarChar(5), tarea.hora || null)
         .query(`
             INSERT INTO tarea (
                 expediente,
@@ -229,7 +226,7 @@ async function insertarTarea(tarea) {
                 estado_tarea,
                 fecha_vencimiento,
                 titulo,
-                activo
+                hora
             )
             OUTPUT INSERTED.*
             VALUES (
@@ -242,7 +239,7 @@ async function insertarTarea(tarea) {
                 @estado_tarea,
                 @fecha_vencimiento,
                 @titulo,
-                @activo
+                @hora
             )
         `);
 
@@ -262,7 +259,7 @@ async function modificarTarea(idTarea, tarea) {
         .input('estado_tarea', sql.Int, tarea.estado_tarea)
         .input('fecha_vencimiento', sql.DateTime2, tarea.fecha_vencimiento || null)
         .input('titulo', sql.NVarChar(200), tarea.titulo)
-        .input('activo', sql.Bit, tarea.activo)
+        .input('hora', sql.NVarChar(5), tarea.hora || null)
         .query(`
             UPDATE tarea
             SET
@@ -274,7 +271,7 @@ async function modificarTarea(idTarea, tarea) {
                 estado_tarea = @estado_tarea,
                 fecha_vencimiento = @fecha_vencimiento,
                 titulo = @titulo,
-                activo = @activo,
+                hora = @hora,
                 fecha_ultima_modificacion = SYSDATETIME()
             OUTPUT INSERTED.*
             WHERE id = @idTarea

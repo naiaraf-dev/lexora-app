@@ -13,6 +13,17 @@ async function getById(id) {
     return res.recordset[0] ?? null;
 }
 
+async function getAll() {
+    const pool = await conectarBD();
+    const res = await pool.request().query(`
+        SELECT id, nombre, apellido, email, matricula, rol_usuario
+        FROM usuario
+        WHERE activo = 1
+        ORDER BY apellido, nombre
+    `);
+    return res.recordset;
+}
+
 async function actualizar(id, data) {
     const pool = await conectarBD();
     const req = pool.request().input('id', sql.Int, id);
@@ -60,4 +71,4 @@ async function eliminar(id) {
         .query('UPDATE usuario SET activo = 0 WHERE id = @id');
 }
 
-module.exports = { getById, actualizar, actualizarImagen, cambiarPassword, eliminar };
+module.exports = { getById, getAll, actualizar, actualizarImagen, cambiarPassword, eliminar };

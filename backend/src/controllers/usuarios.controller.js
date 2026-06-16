@@ -73,4 +73,16 @@ async function eliminarCuenta(req, res) {
     }
 }
 
-module.exports = { getPerfil, actualizarPerfil, actualizarImagen, cambiarPassword, eliminarCuenta };
+async function getAll(req, res) {
+    try {
+        const usuarios = await service.getAll();
+        res.json(usuarios);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al obtener usuarios',
+            error: error.message,
+        });
+    }
+}
+
+module.exports = { getPerfil, actualizarPerfil, actualizarImagen, cambiarPassword, eliminarCuenta, getAll };

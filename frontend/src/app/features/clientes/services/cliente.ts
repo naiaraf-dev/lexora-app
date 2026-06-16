@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 export type TipoCliente   = 'Persona Física' | 'Persona Jurídica';
@@ -53,12 +53,30 @@ export class ClienteService {
     this.cargarClientes();
   }
 
+  /** GET /api/enums/tipocliente */
+  cargarTiposCliente(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(`${environment.apiUrl}/enums/tipocliente`);
+  }
+
   /** GET /api/clientes */
   cargarClientes(): void {
-    this.http.get<any[]>(`${environment.apiUrl}/api/clientes`).subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/clientes`).subscribe({
       next: (data) => this.clientesSubject.next(data.map(c => this.mapFromBackend(c))),
-      error: (err) => console.error('Error al obtener clientes:', err),
     });
+  }
+
+  /** GET /api/expedientes?clienteId=:id */
+  cargarExpedientesDeCliente(clienteId: number): Observable<ExpedienteCliente[]> {
+    return this.http.get<any>(`${environment.apiUrl}/expedientes?clienteId=${clienteId}`).pipe(
+      map((res: any) => {
+        return (res.data ?? []).map((e: any) => ({
+          numero:      `${e.id}/${new Date(e.fechaInicio).getFullYear()}`,
+          tipo:        e.tipo?.nombre ?? '',
+          estado:      e.estado?.nombre ?? '',
+          fechaInicio: e.fechaInicio ? e.fechaInicio.substring(0, 10) : '',
+        }));
+      })
+    );
   }
 
   obtenerClientes(): Cliente[] {
@@ -66,19 +84,13 @@ export class ClienteService {
   }
 
   /** POST /api/clientes */
-  agregarCliente(cliente: Omit<Cliente, 'id' | 'fechaAlta' | 'expedientes'>): void {
-    this.http.post<any>(`${environment.apiUrl}/api/clientes`, this.mapToBackend(cliente as Cliente)).subscribe({
-      next: () => this.cargarClientes(),
-      error: (err) => console.error('Error al crear cliente:', err),
-    });
+  agregarCliente(cliente: Omit<Cliente, 'id' | 'fechaAlta' | 'expedientes'>): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/clientes`, this.mapToBackend(cliente as Cliente));
   }
 
   /** PUT /api/clientes/:id */
-  actualizarCliente(cliente: Cliente): void {
-    this.http.put<any>(`${environment.apiUrl}/api/clientes/${cliente.id}`, this.mapToBackend(cliente)).subscribe({
-      next: () => this.cargarClientes(),
-      error: (err) => console.error('Error al actualizar cliente:', err),
-    });
+  actualizarCliente(cliente: Cliente): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/clientes/${cliente.id}`, this.mapToBackend(cliente));
   }
 
   // Mapeo BD → modelo frontend

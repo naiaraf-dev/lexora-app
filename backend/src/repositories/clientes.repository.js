@@ -7,7 +7,7 @@ async function getAll() {
         SELECT id, nombre, apellido, email, telefono, dni, cuit, activo,
                direccion, observaciones, fecha_carga, fecha_nacimiento,
                fecha_ultima_modificacion, tipo_cliente, rol_cliente
-        FROM clientes
+        FROM cliente
         ORDER BY apellido, nombre
     `);
     return result.recordset;
@@ -21,7 +21,7 @@ async function getById(id) {
             SELECT id, nombre, apellido, email, telefono, dni, cuit, activo,
                    direccion, observaciones, fecha_carga, fecha_nacimiento,
                    fecha_ultima_modificacion, tipo_cliente, rol_cliente
-            FROM clientes
+            FROM cliente
             WHERE id = @id
         `);
     return result.recordset[0];
@@ -46,13 +46,13 @@ async function create(datos) {
         .input('tipo_cliente', sql.Int, tipo_cliente ?? null)
         .input('rol_cliente', sql.Int, rol_cliente ?? null)
         .query(`
-            INSERT INTO clientes (nombre, apellido, email, telefono, dni, cuit, activo,
-                                  direccion, observaciones, fecha_carga, fecha_nacimiento,
-                                  tipo_cliente, rol_cliente)
+            INSERT INTO cliente (nombre, apellido, email, telefono, dni, cuit, activo,
+                                    direccion, observaciones, fecha_carga, fecha_nacimiento,
+                                    tipo_cliente, rol_cliente, fecha_ultima_modificacion)
             OUTPUT INSERTED.*
             VALUES (@nombre, @apellido, @email, @telefono, @dni, @cuit, @activo,
                     @direccion, @observaciones, SYSDATETIME(), @fecha_nacimiento,
-                    @tipo_cliente, @rol_cliente)
+                    @tipo_cliente, @rol_cliente, SYSDATETIME())
         `);
     return result.recordset[0];
 }
@@ -77,7 +77,7 @@ async function update(id, datos) {
         .input('tipo_cliente', sql.Int, tipo_cliente ?? null)
         .input('rol_cliente', sql.Int, rol_cliente ?? null)
         .query(`
-            UPDATE clientes
+            UPDATE cliente
             SET nombre = @nombre,
                 apellido = @apellido,
                 email = @email,

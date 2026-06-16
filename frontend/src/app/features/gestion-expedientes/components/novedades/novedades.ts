@@ -11,6 +11,7 @@ import { ModalNovedad, NovedadPayloadConDocumentos } from '../modal-novedad/moda
 import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
+import { Storage } from '../../../../core/services/storage';
 
 @Component({
   selector: 'app-novedades',
@@ -19,11 +20,13 @@ import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/u
   templateUrl: './novedades.html',
 })
 export class Novedades implements OnInit {
-  private router = inject(Router);
-  private route  = inject(ActivatedRoute);
-  private http   = inject(HttpClient);
-  private cdr    = inject(ChangeDetectorRef);
+  private router  = inject(Router);
+  private route   = inject(ActivatedRoute);
+  private http    = inject(HttpClient);
+  private cdr     = inject(ChangeDetectorRef);
+  private storage = inject(Storage);
   private expedienteId!: number;
+  private usuarioId!: number;
 
   allNovedades: Novedad[] = [];
   filteredNovedades: Novedad[] = [];
@@ -44,8 +47,21 @@ export class Novedades implements OnInit {
 
   ngOnInit(): void {
     this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
+    this.usuarioId = this.obtenerUsuarioIdDelToken();
+    console.log('[novedades] usuarioId:', this.usuarioId);
+    console.log('[novedades] token:', this.storage.getToken());
     this.cargarNovedades();
     this.cargarCatalogos();
+  }
+
+  private obtenerUsuarioIdDelToken(): number {
+    try {
+      const token = this.storage.getToken() ?? '';
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return Number(payload.id);
+    } catch {
+      return 0;
+    }
   }
 
   private cargarNovedades(): void {
@@ -87,6 +103,7 @@ export class Novedades implements OnInit {
               titulo:                   t.titulo,
               prioridad:                t.prioridad ? String(t.prioridad) : '',
               fechaVencimiento:         t.fecha_vencimiento ?? '',
+              hora:                     t.hora ?? '',
               responsableNombre:        t.nombre_usuario_completado
                                           ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
                                           : '—',
@@ -237,6 +254,7 @@ export class Novedades implements OnInit {
           toast.success('Novedad eliminada');
           this.confirmEliminarOpen = false;
           this.novedadAEliminar = null;
+          this.cdr.detectChanges();
         },
         error: () => toast.error('Error al eliminar la novedad'),
       });
@@ -274,7 +292,7 @@ export class Novedades implements OnInit {
         fecha_novedad:    payload.fechaActuacion,
         es_procesal:      false,
         tipo_novedad:     payload.tipo ? Number(payload.tipo) : null,
-        usuario_creacion: 1,
+        usuario_creacion: this.usuarioId,
       }).subscribe({
         next: (novedadCreada) => {
           const novedadId = Number(novedadCreada.id);
@@ -308,7 +326,7 @@ export class Novedades implements OnInit {
       fd.append('archivo',          doc.archivo);
       fd.append('expediente',       String(this.expedienteId));
       fd.append('tipo_documento',   String(tipoDocumentoId));
-      fd.append('usuario_creacion', '1');
+      fd.append('usuario_creacion', String(this.usuarioId));
       fd.append('novedad',          String(novedadId));
 
       if (doc.descripcion) {
@@ -347,18 +365,18 @@ export class Novedades implements OnInit {
         descripcion:        tareaPayload.descripcionInstrucciones ?? '',
         expediente:         this.expedienteId,
         novedad:            novedadId,
-        usuario_creacion:   1,
+        usuario_creacion:   this.usuarioId,
         usuario_completado: tareaPayload.responsable ? Number(tareaPayload.responsable) : null,
         prioridad:          Number(tareaPayload.prioridad),
         estado_tarea:       estadoId,
         fecha_vencimiento:  tareaPayload.fechaVencimiento || null,
-        activo:             true,
+        hora:               tareaPayload.hora?.trim() || null,
       };
 
       if (tareaExistente?.id) {
         return this.http.put<any>(`${environment.apiUrl}/tarea/${tareaExistente.id}`, body);
       }
-
+      console.log('[sincronizarTarea] body:', JSON.stringify(body));
       return this.http.post<any>(`${environment.apiUrl}/insertarTarea`, body);
     }
 
@@ -382,9 +400,9 @@ export class Novedades implements OnInit {
       ? 'Novedad actualizada correctamente'
       : 'Novedad creada correctamente';
 
-    this.cargarNovedades();
     this.modalOpen = false;
     this.novedadEditando = null;
     toast.success(mensaje);
+    setTimeout(() => this.cargarNovedades(), 0);
   }
 }

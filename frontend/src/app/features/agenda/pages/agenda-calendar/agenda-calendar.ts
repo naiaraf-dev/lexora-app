@@ -7,6 +7,7 @@ import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-table';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
+import { toast } from 'ngx-sonner';
 
 interface DiaCalendario {
   numero: number;
@@ -31,9 +32,6 @@ export class AgendaCalendar implements OnInit {
   mesActual = new Date().getMonth();
   anioActual = new Date().getFullYear();
 
-  mensajeExito = '';
-  mensajeError = '';
-  cargandoTareas = false;
   marcandoCumplida = false;
   desmarcandoCumplida = false;
 
@@ -102,7 +100,7 @@ export class AgendaCalendar implements OnInit {
         Pendiente: { label: 'Pendiente', classes: 'bg-warning/10 text-warning', dot: 'bg-warning' },
         'En curso': { label: 'En curso', classes: 'bg-info/10 text-info', dot: 'bg-info' },
         Vencida: { label: 'Vencida', classes: 'bg-danger/10 text-danger', dot: 'bg-danger' },
-        Cumplida: { label: 'Cumplida', classes: 'bg-success/10 text-success', dot: 'bg-success' },
+        Cumplido: { label: 'Cumplido', classes: 'bg-success/10 text-success', dot: 'bg-success' },
       },
     },
     {
@@ -110,7 +108,7 @@ export class AgendaCalendar implements OnInit {
       label: 'Acciones',
       type: 'actions',
       getActions: (row: TareaAgenda) =>
-        row.estado !== 'Cumplida' ? ['view', 'complete'] : ['view'],
+        row.estado !== 'Cumplido' ? ['view', 'complete'] : ['view'],
     },
   ];
 
@@ -131,9 +129,10 @@ export class AgendaCalendar implements OnInit {
     this.cargarDatosIniciales();
   }
 
+  cargandoTareas = false;
+
   cargarDatosIniciales(): void {
     this.cargandoTareas = true;
-    this.mensajeError = '';
 
     this.agendaService.obtenerEstadosTarea().subscribe({
       next: () => {
@@ -143,18 +142,16 @@ export class AgendaCalendar implements OnInit {
             this.aplicarFiltros();
             this.cdr.detectChanges();
           },
-          error: (error) => {
+          error: () => {
             this.cargandoTareas = false;
-            this.mensajeError = 'Error al cargar tareas';
-            console.error('Error al cargar tareas', error);
+            toast.error('Error al cargar tareas');
             this.cdr.detectChanges();
           },
         });
       },
-      error: (error) => {
+      error: () => {
         this.cargandoTareas = false;
-        this.mensajeError = 'Error al cargar estados de tarea';
-        console.error('Error al cargar estados de tarea', error);
+        toast.error('Error al cargar estados de tarea');
         this.cdr.detectChanges();
       },
     });
@@ -206,7 +203,7 @@ export class AgendaCalendar implements OnInit {
       const coincideEstado =
         (this.mostrarPendientes && (tarea.estado === 'Pendiente' || tarea.estado === 'En curso')) ||
         (this.mostrarVencidas && tarea.estado === 'Vencida') ||
-        (this.mostrarCumplidas && tarea.estado === 'Cumplida');
+        (this.mostrarCumplidas && tarea.estado === 'Cumplido');
 
       return coincidePrioridad && coincideExpediente && coincideCliente && coincideEstado;
     });
@@ -285,42 +282,20 @@ export class AgendaCalendar implements OnInit {
   marcarCumplida(tarea: TareaAgenda): void {
     if (this.marcandoCumplida) return;
 
-    this.mensajeExito = '';
-    this.mensajeError = '';
     this.marcandoCumplida = true;
 
     this.agendaService.marcarCumplida(tarea.id).subscribe({
       next: () => {
         this.marcandoCumplida = false;
         this.tareaSeleccionada = null;
-
         this.aplicarFiltros();
-
-        this.mensajeExito = 'Tarea marcada como cumplida correctamente';
-
+        toast.success('Tarea marcada como cumplida correctamente');
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.mensajeExito = '';
-          this.cdr.detectChanges();
-        }, 3000);
       },
       error: (error) => {
         this.marcandoCumplida = false;
-
-        this.mensajeError =
-          error?.error?.mensaje ||
-          error?.message ||
-          'Error al marcar la tarea como cumplida';
-
-        console.error('Error al marcar tarea como cumplida', error);
-
+        toast.error(error?.error?.mensaje || error?.message || 'Error al marcar la tarea como cumplida');
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.mensajeError = '';
-          this.cdr.detectChanges();
-        }, 4000);
       },
     });
   }
@@ -328,42 +303,20 @@ export class AgendaCalendar implements OnInit {
   desmarcarCumplida(tarea: TareaAgenda): void {
     if (this.desmarcandoCumplida) return;
 
-    this.mensajeExito = '';
-    this.mensajeError = '';
     this.desmarcandoCumplida = true;
 
     this.agendaService.desmarcarCumplida(tarea.id).subscribe({
       next: () => {
         this.desmarcandoCumplida = false;
         this.tareaSeleccionada = null;
-
         this.aplicarFiltros();
-
-        this.mensajeExito = 'Tarea marcada como pendiente correctamente';
-
+        toast.success('Tarea marcada como pendiente correctamente');
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.mensajeExito = '';
-          this.cdr.detectChanges();
-        }, 3000);
       },
       error: (error) => {
         this.desmarcandoCumplida = false;
-
-        this.mensajeError =
-          error?.error?.mensaje ||
-          error?.message ||
-          'Error al desmarcar la tarea';
-
-        console.error('Error al desmarcar tarea', error);
-
+        toast.error(error?.error?.mensaje || error?.message || 'Error al desmarcar la tarea');
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.mensajeError = '';
-          this.cdr.detectChanges();
-        }, 4000);
       },
     });
   }

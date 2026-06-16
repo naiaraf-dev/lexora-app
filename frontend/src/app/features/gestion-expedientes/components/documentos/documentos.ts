@@ -97,18 +97,14 @@ export class Documentos implements OnInit {
     this.http.get<any[]>(`${environment.apiUrl}/enums/tipodocumento`).subscribe({
       next: (res) => {
         this.tipoDocumentoOptions = res.map(t => ({
-          value: this.normalizarTipoDocumento(t.nombre),
+          value: t.nombre.toUpperCase().replace(/\s+/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
           label: t.nombre,
         }));
-
         this.tipoIdMap = Object.fromEntries(
-          res.map(t => [
-            this.normalizarTipoDocumento(t.nombre),
-            Number(t.id),
-          ])
+          res.map(t => [t.nombre.toUpperCase().replace(/\s+/g, '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''), t.id])
         );
-      },
-      error: () => toast.error('Error al cargar tipos de documento'),
+        this.cdr.detectChanges();
+      }
     });
   }
 

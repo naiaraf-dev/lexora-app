@@ -12,10 +12,6 @@ export interface TareaAsociada {
   responsableNombre: string;  // nombre para mostrar en la card
   descripcionInstrucciones: string;
   cumplida: boolean;
-
-  // 🗓️ AGENDA — estos campos se usarán para sincronizar con el módulo de agenda
-  // cuando se integre. La tarea se crea acá y se consume allá.
-  // agendaEventId?: string;  // ID del evento creado en la agenda (a poblar al conectar)
 }
 
 export interface ArchivoNovedad {

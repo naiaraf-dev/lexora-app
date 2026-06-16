@@ -66,4 +66,8 @@ async function eliminarCuenta(id) {
     await repo.eliminar(id);
 }
 
-module.exports = { getPerfil, actualizarPerfil, actualizarImagen, cambiarPassword, eliminarCuenta };
+async function getAll() {
+    return repo.getAll();
+}
+
+module.exports = { getPerfil, actualizarPerfil, actualizarImagen, cambiarPassword, eliminarCuenta, getAll };

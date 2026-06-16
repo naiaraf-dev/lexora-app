@@ -1,10 +1,9 @@
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, Output, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Cliente, TipoCliente } from '../../services/cliente';
+import { Cliente, TipoCliente, ClienteService } from '../../services/cliente';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
-import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiBadge, BadgeConfig } from '../../../../shared/components/ui-badge/ui-badge';
 
@@ -15,6 +14,9 @@ import { UiBadge, BadgeConfig } from '../../../../shared/components/ui-badge/ui-
   templateUrl: './cliente-modal.html',
 })
 export class ClienteModal implements OnChanges {
+  private clienteService = inject(ClienteService);
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() visible = false;
   @Input() modo: 'crear' | 'editar' | 'ver' = 'crear';
   @Input() cliente: Cliente | null = null;
@@ -37,6 +39,12 @@ export class ClienteModal implements OnChanges {
   ngOnChanges(): void {
     if (this.cliente) {
       this.formCliente = structuredClone(this.cliente);
+      if (this.modo === 'ver' && this.cliente.id) {
+        this.clienteService.cargarExpedientesDeCliente(this.cliente.id).subscribe(expedientes => {
+          this.formCliente = { ...this.formCliente, expedientes };
+          this.cdr.detectChanges();
+        });
+      }
     } else {
       this.formCliente = this.crearClienteVacio();
     }
