@@ -86,7 +86,9 @@ async function getById(id) {
                 up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre,
                 us.id                           AS usuarioSecundarioId,
                 us.nombre + ' ' + us.apellido   AS usuarioSecundarioNombre,
-                p.nombre                        AS prioridadNombre
+                p.nombre                        AS prioridadNombre,
+                rc.id                           AS rolClienteId,
+                rc.nombre                       AS rolClienteNombre
             FROM expediente e
             LEFT JOIN tipoexpediente   te  ON te.id  = e.tipo_expediente
             LEFT JOIN estadoexpediente ee  ON ee.id  = e.estado_expediente
@@ -94,6 +96,7 @@ async function getById(id) {
             LEFT JOIN usuario          up  ON up.id  = e.usuario_principal
             LEFT JOIN usuario          us  ON us.id  = e.usuario_secundario
             LEFT JOIN prioridad        p   ON p.id   = e.prioridad
+            LEFT JOIN rolcliente       rc  ON rc.id  = e.rol_cliente
             WHERE e.id = @id AND e.activo = 1
         `);
 
@@ -111,6 +114,7 @@ async function crear(data) {
         .input('usuario_creacion',            sql.Int,               data.usuario_creacion)
         .input('usuario_ultima_modificacion', sql.Int,               data.usuario_creacion)
         .input('cliente',                     sql.Int,               data.cliente)
+        .input('rol_cliente',                 sql.Int,               data.rol_cliente ?? null)
         .input('area',                        sql.NVarChar(100),     data.area)
         .input('caratula',                    sql.NVarChar(500),     data.caratula)
         .input('fecha_inicio',                sql.DateTime,          data.fecha_inicio             ?? new Date())
@@ -133,7 +137,7 @@ async function crear(data) {
             INSERT INTO expediente (
                 tipo_expediente, estado_expediente, usuario_principal, usuario_secundario,
                 usuario_creacion, usuario_ultima_modificacion,
-                cliente, area, caratula, fecha_inicio, fecha_ult_actuacion,
+                cliente, rol_cliente, area, caratula, fecha_inicio, fecha_ult_actuacion,
                 descripcion, fuero, juzgado, secretaria, jurisdiccion,
                 numero_expediente_judicial, instancia, contraparte,
                 abogado_contraparte, fecha_estimada_cierre, fecha_procesal_proximo,
@@ -144,7 +148,7 @@ async function crear(data) {
             VALUES (
                 @tipo_expediente, @estado_expediente, @usuario_principal, @usuario_secundario,
                 @usuario_creacion, @usuario_ultima_modificacion,
-                @cliente, @area, @caratula, @fecha_inicio, @fecha_ult_actuacion,
+                @cliente, @rol_cliente, @area, @caratula, @fecha_inicio, @fecha_ult_actuacion,
                 @descripcion, @fuero, @juzgado, @secretaria, @jurisdiccion,
                 @numero_expediente_judicial, @instancia, @contraparte,
                 @abogado_contraparte, @fecha_estimada_cierre, @fecha_procesal_proximo,
@@ -175,6 +179,7 @@ async function actualizar(id, data) {
     agregarCampo('usuario_principal',         sql.Int,               data.usuario_principal);
     agregarCampo('usuario_secundario',        sql.Int,               data.usuario_secundario);
     agregarCampo('cliente',                   sql.Int,               data.cliente);
+    agregarCampo('rol_cliente',               sql.Int,               data.rol_cliente ?? null);
     agregarCampo('area',                      sql.NVarChar(100),     data.area);
     agregarCampo('caratula',                  sql.NVarChar(500),     data.caratula);
     agregarCampo('fecha_inicio',              sql.DateTime,          data.fecha_inicio);

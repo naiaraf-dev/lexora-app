@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, map, Observable, switchMap, tap } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 
-export type EstadoTarea = 'Pendiente' | 'Vencida' | 'Cumplida' | 'En curso';
+export type EstadoTarea = 'Pendiente' | 'Vencida' | 'Cumplido' | 'En curso';
 export type PrioridadTarea = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 
 export interface TareaAgenda {
@@ -16,7 +16,7 @@ export interface TareaAgenda {
   usuarioCompletadoId: number | null;
 
   fecha: string; // YYYY-MM-DD
-  hora?: string;
+  hora: string;  // HH:mm
 
   fechaCreacion: string;
   fechaUltimaModificacion: string | null;
@@ -33,8 +33,6 @@ export interface TareaAgenda {
 
   prioridad: PrioridadTarea;
   estado: EstadoTarea;
-
-  activo: boolean;
 }
 
 interface TareaBackend {
@@ -44,7 +42,6 @@ interface TareaBackend {
   fecha_creacion: string;
   fecha_ultima_modificacion: string | null;
   fecha_vencimiento: string | null;
-  activo: boolean;
 
   expediente: number;
   nombre_expediente: string;
@@ -65,6 +62,8 @@ interface TareaBackend {
 
   estado_tarea: number;
   nombre_estado_tarea: EstadoTarea;
+  hora: string | null;
+  nombre_cliente: string | null;
 }
 
 interface EstadoTareaEnum {
@@ -130,7 +129,6 @@ export class AgendaService {
     usuarioCompletado?: number;
     fechaCreacion?: string;
     fechaVencimiento?: string;
-    activo?: boolean;
   }): Observable<TareaAgenda[]> {
     let params = new HttpParams();
 
@@ -156,7 +154,7 @@ export class AgendaService {
     prioridad: number;
     estado_tarea: number;
     fecha_vencimiento?: string | null;
-    activo?: boolean;
+    hora: string | null;
   }): Observable<TareaAgenda[]> {
     return this.http.post(`${this.apiUrl}/insertarTarea`, tarea).pipe(
       switchMap(() => this.cargarTareas())
@@ -174,7 +172,7 @@ export class AgendaService {
       prioridad: number;
       estado_tarea: number;
       fecha_vencimiento?: string | null;
-      activo?: boolean;
+      hora?: string | null;
     }
   ): Observable<TareaAgenda[]> {
     return this.http.put(`${this.apiUrl}/tarea/${id}`, tarea).pipe(
@@ -195,10 +193,10 @@ export class AgendaService {
       throw new Error(`No existe una tarea cargada con id ${id}`);
     }
 
-    const estadoCumplida = this.estadosTarea.find((estado) => estado.nombre === 'Cumplida');
+    const estadoCumplida = this.estadosTarea.find((estado) => estado.nombre === 'Cumplido');
 
     if (!estadoCumplida) {
-      throw new Error('No se encontró el estado "Cumplida". Revisá la tabla estadotarea.');
+      throw new Error('No se encontró el estado "Cumplido". Revisá la tabla estadotarea.');
     }
 
     return this.modificarTarea(id, {
@@ -210,7 +208,7 @@ export class AgendaService {
       prioridad: tarea.prioridadId,
       estado_tarea: estadoCumplida.id,
       fecha_vencimiento: tarea.fecha,
-      activo: tarea.activo,
+      hora: tarea.hora || null,
     });
   }
 
@@ -236,7 +234,7 @@ export class AgendaService {
       prioridad: tarea.prioridadId,
       estado_tarea: estadoPendiente.id,
       fecha_vencimiento: tarea.fecha,
-      activo: tarea.activo,
+      hora: tarea.hora || null,
     });
   }
 
@@ -258,7 +256,7 @@ export class AgendaService {
       usuarioCompletadoId: tarea.usuario_completado,
 
       fecha,
-      hora: '',
+      hora: tarea.hora ?? '',
 
       fechaCreacion: tarea.fecha_creacion.substring(0, 10),
       fechaUltimaModificacion: tarea.fecha_ultima_modificacion
@@ -271,7 +269,7 @@ export class AgendaService {
       expediente: tarea.nombre_expediente || String(tarea.expediente),
       novedad: tarea.titulo_novedad || 'Sin novedad',
 
-      cliente: '',
+      cliente: tarea.nombre_cliente || '',
       responsable: `${tarea.nombre_usuario_creacion || ''} ${tarea.apellido_usuario_creacion || ''}`.trim(),
 
       usuarioCompletado: tarea.usuario_completado
@@ -282,13 +280,11 @@ export class AgendaService {
 
       prioridad: tarea.nombre_prioridad,
       estado: estadoCalculado,
-
-      activo: tarea.activo,
     };
   }
 
   private calcularEstado(estadoBackend: EstadoTarea, fecha: string): EstadoTarea {
-    if (estadoBackend === 'Cumplida') return 'Cumplida';
+    if (estadoBackend === 'Cumplido') return 'Cumplido';
     if (estadoBackend === 'En curso') return 'En curso';
 
     const hoy = new Date();

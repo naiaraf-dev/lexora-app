@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, map, Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
-export type TipoCliente = 'Persona Física' | 'Persona Jurídica';
+export type TipoCliente   = 'Persona Física' | 'Persona Jurídica';
 export type EstadoCliente = 'Activo' | 'Inactivo';
 
 export interface ExpedienteCliente {
@@ -36,126 +38,99 @@ export interface Cliente {
   expedientes: ExpedienteCliente[];
 }
 
-@Injectable({
-  providedIn: 'root',
-})
-export class ClienteService {
-  // TODO: reemplazar por llamada HTTP al backend cuando esté disponible
-  private clientesSubject = new BehaviorSubject<Cliente[]>([
-    {
-      id: 1,
-      tipo: 'Persona Física',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      dni: '27-12345678-1',
-      email: 'jperez@gmail.com',
-      telefono: '1112345678',
-      direccion: 'Av. Corrientes 1234, CABA',
-      estado: 'Activo',
-      fechaAlta: '12/03/2025',
-      expedientes: [
-        {
-          numero: '1234/2024',
-          tipo: 'Civil',
-          estado: 'En trámite',
-          fechaInicio: '12/03/2023',
-        },
-        {
-          numero: '4321/2025',
-          tipo: 'Sucesión',
-          estado: 'En trámite',
-          fechaInicio: '15/01/2024',
-        },
-      ],
-    },
-    {
-      id: 2,
-      tipo: 'Persona Física',
-      nombre: 'Ana',
-      apellido: 'Gómez',
-      dni: '21-87654321-7',
-      email: 'agomez@gmail.com',
-      telefono: '1187654321',
-      direccion: 'Av. Santa Fe 2222, CABA',
-      estado: 'Inactivo',
-      fechaAlta: '09/11/2024',
-      expedientes: [
-        {
-          numero: '9081/2024',
-          tipo: 'Laboral',
-          estado: 'En trámite',
-          fechaInicio: '09/11/2024',
-        },
-      ],
-    },
-    {
-      id: 3,
-      tipo: 'Persona Física',
-      nombre: 'Laura',
-      apellido: 'Fernández',
-      dni: '18-13243557-3',
-      email: 'lauraf@gmail.com',
-      telefono: '1124354657',
-      direccion: 'Uruguay 800, CABA',
-      estado: 'Activo',
-      fechaAlta: '23/01/2025',
-      expedientes: [
-        {
-          numero: '7782/2025',
-          tipo: 'Familia',
-          estado: 'En trámite',
-          fechaInicio: '23/01/2025',
-        },
-      ],
-    },
-    {
-      id: 4,
-      tipo: 'Persona Jurídica',
-      razonSocial: 'LQNET S.A.',
-      cuit: '30-86756453-1',
-      email: 'lqnetsa@gmail.com',
-      telefono: '1186756453',
-      direccion: 'Lavalle 1000, CABA',
-      estado: 'Activo',
-      fechaAlta: '02/09/2025',
-      expedientes: [
-        {
-          numero: '5521/2025',
-          tipo: 'Comercial',
-          estado: 'En trámite',
-          fechaInicio: '02/09/2025',
-        },
-      ],
-    },
-  ]);
+// tipo_cliente en BD: 1 = Persona Física, 2 = Persona Jurídica
+const TIPO_FISICA   = 1;
+const TIPO_JURIDICA = 2;
 
+@Injectable({ providedIn: 'root' })
+export class ClienteService {
+  private http = inject(HttpClient);
+
+  private clientesSubject = new BehaviorSubject<Cliente[]>([]);
   clientes$ = this.clientesSubject.asObservable();
+
+  constructor() {
+    this.cargarClientes();
+  }
+
+  /** GET /api/enums/tipocliente */
+  cargarTiposCliente(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(`${environment.apiUrl}/enums/tipocliente`);
+  }
+
+  /** GET /api/clientes */
+  cargarClientes(): void {
+    this.http.get<any[]>(`${environment.apiUrl}/clientes`).subscribe({
+      next: (data) => this.clientesSubject.next(data.map(c => this.mapFromBackend(c))),
+    });
+  }
+
+  /** GET /api/expedientes?clienteId=:id */
+  cargarExpedientesDeCliente(clienteId: number): Observable<ExpedienteCliente[]> {
+    return this.http.get<any>(`${environment.apiUrl}/expedientes?clienteId=${clienteId}`).pipe(
+      map((res: any) => {
+        return (res.data ?? []).map((e: any) => ({
+          numero:      `${e.id}/${new Date(e.fechaInicio).getFullYear()}`,
+          tipo:        e.tipo?.nombre ?? '',
+          estado:      e.estado?.nombre ?? '',
+          fechaInicio: e.fechaInicio ? e.fechaInicio.substring(0, 10) : '',
+        }));
+      })
+    );
+  }
 
   obtenerClientes(): Cliente[] {
     return this.clientesSubject.value;
   }
 
-  agregarCliente(cliente: Omit<Cliente, 'id' | 'fechaAlta' | 'expedientes'>): void {
-    const nuevoCliente: Cliente = {
-      ...cliente,
-      id: Date.now(),
-      fechaAlta: new Date().toLocaleDateString('es-AR'),
-      expedientes: [],
+  /** POST /api/clientes */
+  agregarCliente(cliente: Omit<Cliente, 'id' | 'fechaAlta' | 'expedientes'>): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/clientes`, this.mapToBackend(cliente as Cliente));
+  }
+
+  /** PUT /api/clientes/:id */
+  actualizarCliente(cliente: Cliente): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/clientes/${cliente.id}`, this.mapToBackend(cliente));
+  }
+
+  // Mapeo BD → modelo frontend
+  private mapFromBackend(c: any): Cliente {
+    const esJuridica = c.tipo_cliente === TIPO_JURIDICA;
+    return {
+      id:              c.id,
+      tipo:            esJuridica ? 'Persona Jurídica' : 'Persona Física',
+      nombre:          esJuridica ? undefined : (c.nombre ?? ''),
+      apellido:        esJuridica ? undefined : (c.apellido ?? ''),
+      razonSocial:     esJuridica ? (c.nombre ?? '') : undefined,
+      dni:             c.dni ?? undefined,
+      cuit:            c.cuit ?? undefined,
+      email:           c.email ?? '',
+      telefono:        c.telefono ?? '',
+      direccion:       c.direccion ?? '',
+      fechaNacimiento: c.fecha_nacimiento ? c.fecha_nacimiento.substring(0, 10) : undefined,
+      observaciones:   c.observaciones ?? undefined,
+      estado:          c.activo ? 'Activo' : 'Inactivo',
+      fechaAlta:       c.fecha_carga ? new Date(c.fecha_carga).toLocaleDateString('es-AR') : '',
+      expedientes:     [],
     };
-
-    this.clientesSubject.next([...this.clientesSubject.value, nuevoCliente]);
   }
 
-  actualizarCliente(clienteActualizado: Cliente): void {
-    const clientes = this.clientesSubject.value.map((cliente) =>
-      cliente.id === clienteActualizado.id ? clienteActualizado : cliente
-    );
-
-    this.clientesSubject.next(clientes);
-  }
-
-  eliminarCliente(id: number): void {
-    const clientes = this.clientesSubject.value.filter((cliente) => cliente.id !== id);
-    this.clientesSubject.next(clientes);
+  // Mapeo modelo frontend → body para el backend
+  private mapToBackend(c: Partial<Cliente>): object {
+    const esJuridica = c.tipo === 'Persona Jurídica';
+    return {
+      nombre:           esJuridica ? (c.razonSocial ?? '') : (c.nombre ?? ''),
+      apellido:         esJuridica ? '' : (c.apellido ?? ''),
+      email:            c.email ?? null,
+      telefono:         c.telefono ?? null,
+      dni:              c.dni ?? null,
+      cuit:             c.cuit ?? null,
+      activo:           c.estado === 'Activo',
+      direccion:        c.direccion ?? null,
+      observaciones:    c.observaciones ?? null,
+      fecha_nacimiento: c.fechaNacimiento ?? null,
+      tipo_cliente:     esJuridica ? TIPO_JURIDICA : TIPO_FISICA,
+      rol_cliente:      null,
+    };
   }
 }

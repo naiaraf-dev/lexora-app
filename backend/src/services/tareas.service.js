@@ -94,7 +94,7 @@ async function insertarTarea(datos) {
         prioridad,
         estado_tarea,
         fecha_vencimiento,
-        activo
+        hora,
     } = datos;
 
     if (!titulo || !titulo.trim()) {
@@ -113,7 +113,7 @@ async function insertarTarea(datos) {
         prioridad: Number(prioridad),
         estado_tarea: Number(estado_tarea),
         fecha_vencimiento: fecha_vencimiento || null,
-        activo: activo === undefined ? true : activo === true || activo === 'true' || activo === '1'
+        hora: hora || null
     };
 
     return await tareasRepository.insertarTarea(tarea);
@@ -139,7 +139,7 @@ async function modificarTarea(idTarea, datos) {
         prioridad,
         estado_tarea,
         fecha_vencimiento,
-        activo
+        hora,
     } = datos;
 
     if (!titulo || !titulo.trim()) {
@@ -157,7 +157,7 @@ async function modificarTarea(idTarea, datos) {
         prioridad: Number(prioridad),
         estado_tarea: Number(estado_tarea),
         fecha_vencimiento: fecha_vencimiento || null,
-        activo: activo === undefined ? true : activo === true || activo === 'true' || activo === '1'
+        hora: hora || null
     };
 
     return await tareasRepository.modificarTarea(Number(idTarea), tarea);

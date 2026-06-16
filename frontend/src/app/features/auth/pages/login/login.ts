@@ -1,12 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
+import { z } from 'zod';
 import { AuthLayout } from '../../components/auth-layout/auth-layout';
 import { AuthCard } from '../../components/auth-card/auth-card';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
-import { z } from 'zod';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { loginSchema, LoginErrors } from '../../models/auth.schema';
+import { Auth } from '../../../../core/services/auth';
 
 @Component({
   selector: 'app-login',
@@ -15,9 +16,12 @@ import { loginSchema, LoginErrors } from '../../models/auth.schema';
   templateUrl: './login.html',
 })
 export class Login {
+  private authService = inject(Auth);
+  private router      = inject(Router);
+
   username = '';
   password = '';
-  loading = signal(false);
+  loading  = signal(false);
   errors   = signal<LoginErrors>({});
 
   onSubmit() {
@@ -29,7 +33,14 @@ export class Login {
     }
     this.errors.set({});
     this.loading.set(true);
-    // TODO: conectar con AuthService
-    setTimeout(() => this.loading.set(false), 1500);
+
+    // El campo "username" del form se usa como email en el backend
+    this.authService.login(this.username, this.password).subscribe({
+      next: () => this.router.navigate(['/']),
+      error: (err) => {
+        this.loading.set(false);
+        this.errors.set({ password: err.error?.message || 'Credenciales incorrectas.' });
+      },
+    });
   }
 }

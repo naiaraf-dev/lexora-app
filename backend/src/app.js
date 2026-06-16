@@ -4,6 +4,10 @@ const cors = require('cors');
 const { sql, conectarBD } = require('./config/db');
 const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
+const authRoutes     = require('./routes/auth.routes');
+const clientesRoutes = require('./routes/clientes.routes');
+const authMiddleware = require('./middlewares/auth.middleware');
+const usuariosRoutes = require('./routes/usuarios.routes');
 
 const app = express();
 
@@ -15,6 +19,15 @@ app.use(express.json());
 app.use('/api', documentosRoutes);
 app.use('/api', tareasRoutes);
 
+
+// Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
+app.use(authRoutes);
+app.use(clientesRoutes);
+
+const usuariosController = require('./controllers/usuarios.controller');
+app.get('/api/usuarios', usuariosController.getAll);
+
+app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*
     PRUEBA DE CONEXIÓN

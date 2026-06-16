@@ -24,6 +24,7 @@ async function obtenerTareas(req, res) {
 
         res.json(tareas);
     } catch (error) {
+        console.error('ERROR obtener tareas:', error.message);
         res.status(500).json({
             mensaje: 'Error al obtener tarea/s',
             error: error.message
@@ -37,6 +38,7 @@ async function obtenerTodasLasTareas(req, res) {
 
         res.json(tareas);
     } catch (error) {
+        console.error('ERROR obtener todas las tareas:', error.message);
         res.status(500).json({
             mensaje: 'Error al obtener todas las tareas',
             error: error.message
@@ -53,6 +55,7 @@ async function insertarTarea(req, res) {
             tarea: tareaInsertada
         });
     } catch (error) {
+        console.error('ERROR insertar tarea:', error.message);
         res.status(error.statusCode || 500).json({
             mensaje: error.message || 'Error al insertar tarea'
         });
@@ -70,6 +73,7 @@ async function modificarTarea(req, res) {
             tarea: tareaModificada
         });
     } catch (error) {
+        console.error('ERROR modificar tarea:', error.message);
         res.status(error.statusCode || 500).json({
             mensaje: error.message || 'Error al modificar tarea'
         });
@@ -87,6 +91,7 @@ async function eliminarTarea(req, res) {
             tarea: tareaEliminada
         });
     } catch (error) {
+        console.error('ERROR eliminar tarea:', error.message);
         res.status(error.statusCode || 500).json({
             mensaje: error.message || 'Error al eliminar tarea'
         });

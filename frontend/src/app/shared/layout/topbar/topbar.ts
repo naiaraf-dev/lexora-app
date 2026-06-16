@@ -1,6 +1,7 @@
-import { Component, signal, HostListener, ElementRef } from '@angular/core';
+import { Component, signal, computed, inject, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Auth } from '../../../core/services/auth';
 
 @Component({
   selector: 'app-topbar',
@@ -9,29 +10,23 @@ import { RouterModule } from '@angular/router';
   templateUrl: './topbar.html',
 })
 export class Topbar {
-  dropdownOpen = signal(false);
-  darkMode = signal(false);
+  private authService = inject(Auth);
 
-  // Usuario mock — reemplazar con servicio de auth
-  user = {
-    name: 'John Smith',
-    email: 'john@practical-ui.com',
-    avatarUrl: '', // se llenará desde el perfil del usuario
-  };
+  dropdownOpen = signal(false);
+  darkMode     = signal(false);
+
+  get user() {
+    const u = this.authService.currentUser();
+    if (!u) return { name: 'Usuario', email: '', avatarUrl: '' };
+    const name = u.apellido ? `${u.nombre} ${u.apellido}` : u.nombre;
+    return { name, email: u.email, avatarUrl: '' };
+  }
 
   constructor(private elRef: ElementRef) {}
 
-  toggleDropdown() {
-    this.dropdownOpen.set(!this.dropdownOpen());
-  }
-
-  toggleDarkMode() {
-    this.darkMode.set(!this.darkMode());
-  }
-
-  closeDropdown() {
-    this.dropdownOpen.set(false);
-  }
+  toggleDropdown() { this.dropdownOpen.set(!this.dropdownOpen()); }
+  toggleDarkMode()  { this.darkMode.set(!this.darkMode()); }
+  closeDropdown()   { this.dropdownOpen.set(false); }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {
@@ -51,6 +46,6 @@ export class Topbar {
 
   onLogout() {
     this.dropdownOpen.set(false);
-    // lógica de logout acá
+    this.authService.logout();
   }
 }

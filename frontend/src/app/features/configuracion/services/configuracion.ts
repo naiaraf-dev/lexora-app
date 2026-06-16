@@ -1,41 +1,36 @@
-import { Injectable } from '@angular/core';
-import { PerfilUsuario, ResultadoAccion } from '../models/configuracion.model';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { Auth } from '../../../core/services/auth';
+import { environment } from '../../../../environments/environment';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class Configuracion {
-  // Mock — reemplazar con llamadas al backend / servicio de auth
-  private perfil: PerfilUsuario = {
-    nombre: 'Dr. John',
-    apellido: 'Smith',
-    matricula: 'T° 45 - F° 123 - C.A.B.A.',
-    email: 'john.smith@gmail.com',
-    avatarUrl: '',
-  };
+  private http   = inject(HttpClient);
+  private auth   = inject(Auth);
+  private router = inject(Router);
 
-  // Contraseña simulada para validar el cambio
-  private passwordActual = 'lexora123';
-
-  getPerfil(): PerfilUsuario {
-    return { ...this.perfil };
+  getUsuarioActual() {
+    return this.auth.currentUser();
   }
 
-  guardarPerfil(perfil: PerfilUsuario): ResultadoAccion {
-    this.perfil = { ...perfil };
-    return { ok: true, mensaje: 'Los datos del perfil se guardaron correctamente.' };
+  getPerfil(): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/usuarios/profile`);
   }
 
-  cambiarPassword(actual: string, nueva: string): ResultadoAccion {
-    if (actual !== this.passwordActual) {
-      return { ok: false, mensaje: 'La contraseña actual no es correcta.' };
-    }
-    this.passwordActual = nueva;
-    return { ok: true, mensaje: 'La contraseña se actualizó correctamente.' };
+  guardarPerfil(datos: any): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/usuarios/profile`, datos);
   }
 
-  eliminarCuenta(): ResultadoAccion {
-    // Mock — acá iría la baja real de la cuenta
-    return { ok: true, mensaje: 'La cuenta fue eliminada.' };
+  cambiarPassword(actual: string, nueva: string): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/usuarios/change-password`, {
+      actual,
+      nueva,
+    });
+  }
+
+  eliminarCuenta(): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/usuarios/profile`);
   }
 }

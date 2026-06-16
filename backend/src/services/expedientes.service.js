@@ -48,6 +48,10 @@ async function obtener(id) {
         numeroExpedienteJudicial:  r.numero_expediente_judicial,
         caratula:                  r.caratula,
         area:                      r.area,
+        rolCliente: r.rolClienteId ? {
+            id:     r.rolClienteId,
+            nombre: r.rolClienteNombre,
+        } : null,
         descripcion:               r.descripcion,
         juzgado:                   r.juzgado,
         fuero:                     r.fuero,

@@ -1,12 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { z } from 'zod';
 import { AuthLayout } from '../../components/auth-layout/auth-layout';
 import { AuthCard } from '../../components/auth-card/auth-card';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { registerSchema, RegisterErrors } from '../../models/auth.schema';
+import { Auth } from '../../../../core/services/auth';
 
 @Component({
   selector: 'app-create-account',
@@ -15,6 +16,9 @@ import { registerSchema, RegisterErrors } from '../../models/auth.schema';
   templateUrl: './create-account.html',
 })
 export class CreateAccount {
+  private authService = inject(Auth);
+  private router      = inject(Router);
+
   nombre          = '';
   apellido        = '';
   matricula       = '';
@@ -43,6 +47,13 @@ export class CreateAccount {
     }
     this.errors.set({});
     this.loading.set(true);
-    setTimeout(() => this.loading.set(false), 1500);
+
+    this.authService.register(this.nombre, this.apellido, this.email, this.password, this.confirmPassword, this.matricula).subscribe({
+      next: () => this.router.navigate(['/gestion-expedientes']),
+      error: (err) => {
+        this.loading.set(false);
+        this.errors.set({ email: err.error?.message || 'Error al registrar el usuario.' });
+      },
+    });
   }
 }

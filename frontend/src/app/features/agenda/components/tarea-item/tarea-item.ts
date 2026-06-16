@@ -14,7 +14,7 @@ export class TareaItem {
 
   obtenerColorEstado(): string {
     if (this.tarea.estado === 'Vencida') return 'bg-red-500';
-    if (this.tarea.estado === 'Cumplida') return 'bg-green-500';
+    if (this.tarea.estado === 'Cumplido') return 'bg-green-500';
     if (this.tarea.estado === 'En curso') return 'bg-blue-500';
     return 'bg-yellow-400';
   }
