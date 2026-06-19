@@ -1,6 +1,7 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 
 interface StatCard {
   icon: 'folder' | 'clock' | 'alert' | 'check';
@@ -51,6 +52,16 @@ interface Vencimiento {
   vencida: boolean;
 }
 
+interface IndicadoresResponse {
+  stats: any[];
+  estados: any[];
+  areas: any[];
+  tiposExpediente: any[];
+  evolucion: any[];
+  abogados: any[];
+  vencimientos: any[];
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -59,61 +70,16 @@ interface Vencimiento {
 })
 export class Dashboard implements OnInit {
 
-  stats: StatCard[] = [
-    { icon: 'folder', value: 197, label: 'Expedientes totales',  color: 'primary'  },
-    { icon: 'clock',  value: 34,  label: 'Tareas pendientes',    color: 'warning'  },
-    { icon: 'alert',  value: 7,   label: 'Tareas vencidas',      color: 'danger'   },
-    { icon: 'check',  value: 156, label: 'Tareas cumplidas',     color: 'success'  },
-  ];
+  private http = inject(HttpClient);
+  private cdr = inject(ChangeDetectorRef);
 
-  estadoSlices: EstadoSlice[] = [
-    { label: 'En trámite',            count: 68,  color: '#2B3A52' },
-    { label: 'Paralizado',            count: 24,  color: '#E8A838' },
-    { label: 'Sentencia favorable',   count: 32,  color: '#48BB78' },
-    { label: 'Sentencia desfavorable',count: 18,  color: '#F56565' },
-    { label: 'Archivado',             count: 55,  color: '#A0AEC0' },
-  ];
-
-  areaSlices: AreaSlice[] = [
-    { label: 'Civil',      count: 55,  color: '#2B3A52' },
-    { label: 'Laboral',    count: 42,  color: '#48BB78' },
-    { label: 'Penal',      count: 28,  color: '#F56565' },
-    { label: 'Comercial',  count: 35,  color: '#E8A838' },
-    { label: 'Sucesión',   count: 20,  color: '#B7791F' },
-    { label: 'Familia',    count: 17,  color: '#9F7AEA' },
-  ];
-
-  tipoSlices: TipoSlice[] = [
-    { label: 'Cobro de cánones',      count: 55,  color: '#2B3A52' },
-    { label: 'Denuncias',             count: 42,  color: '#48BB78' },
-    { label: 'Querellas',             count: 28,  color: '#F56565' },
-    { label: 'Demandas Penales',      count: 35,  color: '#E8A838' },
-    { label: 'Demandas Civiles',      count: 20,  color: '#B7791F' },
-    { label: 'Carta documento',       count: 17,  color: '#9F7AEA' },
-  ];
-
-  meses: MesData[] = [
-    { mes: 'Jul', nuevos: 8,  cerrados: 6  },
-    { mes: 'Ago', nuevos: 12, cerrados: 9  },
-    { mes: 'Sep', nuevos: 10, cerrados: 11 },
-    { mes: 'Oct', nuevos: 16, cerrados: 8  },
-    { mes: 'Nov', nuevos: 17, cerrados: 14 },
-    { mes: 'Dic', nuevos: 9,  cerrados: 13 },
-    { mes: 'Ene', nuevos: 15, cerrados: 10 },
-    { mes: 'Feb', nuevos: 21, cerrados: 15 },
-  ];
-
-  abogados: AbogadoRow[] = [
-    { nombre: 'Dra. López',     expedientes: 32, pendientes: 8,  vencidas: 2, cumplidas: 5, cumplimiento: 81 },
-    { nombre: 'Dr. García',     expedientes: 28, pendientes: 12, vencidas: 2, cumplidas: 3, cumplimiento: 87 },
-    { nombre: 'Dra. Fernández', expedientes: 25, pendientes: 6,  vencidas: 0, cumplidas: 6, cumplimiento: 92 },
-  ];
-
-  vencimientos: Vencimiento[] = [
-    { tipo: 'warning', titulo: 'Presentar escrito de demanda',      expediente: '1234/2024 - Pérez c/ López',        abogado: 'Dr. Martínez',  fecha: '25/02/2026', vencida: false },
-    { tipo: 'warning', titulo: 'Contestar traslado de documental',  expediente: '4321/2024 - Gómez c/ Banco Nación', abogado: 'Dra. López',    fecha: '26/02/2026', vencida: false },
-    { tipo: 'danger',  titulo: 'Pericia contable - seguimiento',    expediente: '2145/2025 - López c/ Seguros SA',   abogado: 'Dra. Fernández',fecha: '22/02/2026', vencida: true  },
-  ];
+  stats: StatCard[] = [];
+  estadoSlices: EstadoSlice[] = [];
+  areaSlices: AreaSlice[] = [];
+  tipoSlices: TipoSlice[] = [];
+  meses: MesData[] = [];
+  abogados: AbogadoRow[] = [];
+  vencimientos: Vencimiento[] = [];
 
   // ── SVG helpers ──────────────────────────────────────────────────────────
 
@@ -180,5 +146,28 @@ export class Dashboard implements OnInit {
     return lines;
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.cargarIndicadores();
+  }
+
+  private cargarIndicadores(): void {
+    this.http.get<IndicadoresResponse>(`${environment.dashboardApiUrl}/indicadores`).subscribe({
+      next: (data) => {
+        this.stats = data.stats as StatCard[];
+        this.estadoSlices = data.estados as EstadoSlice[];
+        this.areaSlices = data.areas as AreaSlice[];
+        this.tipoSlices = data.tiposExpediente as TipoSlice[];
+        this.meses = data.evolucion as MesData[];
+        this.abogados = data.abogados as AbogadoRow[];
+        this.vencimientos = data.vencimientos.map((v: any) => ({
+          ...v,
+          tipo: v.tipoVencimiento,
+        })) as Vencimiento[];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar indicadores', err);
+      },
+    });
+  }
 }
