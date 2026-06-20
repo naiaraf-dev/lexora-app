@@ -16,8 +16,8 @@ async function registerUser(name, lastName, email, password, matricula) {
         .input('password_hash', sql.NVarChar, hashedPassword)
         .input('rol_usuario', sql.Int, 1)
         .input('matricula', sql.NVarChar, matricula)
-        .query('INSERT INTO usuario (nombre, apellido, email, password_hash, matricula, rol_usuario) VALUES (@nombre, @apellido, @email, @password_hash, @matricula, @rol_usuario)');
-    return result;
+        .query('INSERT INTO usuario (nombre, apellido, email, password_hash, matricula, rol_usuario) OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.apellido, INSERTED.email VALUES (@nombre, @apellido, @email, @password_hash, @matricula, @rol_usuario)');
+    return result.recordset[0];
 }
 
 async function loginUser(email, password) {

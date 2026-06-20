@@ -49,11 +49,22 @@ export class Auth {
 
   /** POST /api/auth/register — { nombre, apellido, email, password, confirmPassword, matricula } */
   register(nombre: string, apellido: string, email: string, password: string, confirmPassword: string, matricula?: string) {
-    return this.http.post<{ message: string }>(
+  return this.http
+    .post<{ message: string; token: string }>(
       `${environment.apiUrl}/auth/register`,
       { nombre, apellido, email, password, confirmPassword, matricula }
+    )
+    .pipe(
+      tap(res => {
+        this.storage.setToken(res.token);
+        const user = this.decodeToken(res.token);
+        if (user) {
+          this._currentUser.set(user);
+          this.storage.setUser(user);
+        }
+      })
     );
-  }
+}
 
   /** POST /api/auth/forgot-password — { email } */
   forgotPassword(email: string) {
