@@ -8,6 +8,7 @@ export interface TableColumn {
   key: string;
   label: string;
   type?: 'text' | 'badge' | 'date' | 'actions';
+  format?: 'date' | 'datetime';
   actions?: TableAction[];
   getActions?: (row: any) => TableAction[];
   badgeConfig?: Record<string, BadgeConfig>;

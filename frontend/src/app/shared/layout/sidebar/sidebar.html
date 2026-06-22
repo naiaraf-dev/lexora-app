@@ -7,23 +7,11 @@
 
   <!-- Logo -->
   <div class="flex items-center justify-center px-4 py-6 min-h-[80px]">
-    <ng-container *ngIf="!collapsed(); else collapsedLogo">
-      <!-- Logo expandido -->
-      <img
-        src="images/lexora_logo.png"
-        alt="Lexora"
-        class="h-12 max-w-[160px] object-contain"
-      />
-    </ng-container>
-
-    <ng-template #collapsedLogo>
-      <!-- Logo colapsado (LX) -->
-      <img
-        src="images/lexora_logo_collapsed.png"
-        alt="LX"
-        class="h-8 max-w-[160px] object-contain"
-      />
-    </ng-template>
+    @if (!collapsed()) {
+      <img src="images/lexora_logo.png" alt="Lexora" class="h-12 max-w-[160px] object-contain" />
+    } @else {
+      <img src="images/lexora_logo_collapsed.png" alt="LX" class="h-8 max-w-[160px] object-contain" />
+    }
   </div>
 
   <!-- Divider -->
@@ -31,51 +19,49 @@
 
   <!-- Nav Items -->
   <nav class="flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
-    <a
-      *ngFor="let item of navItems"
-      [routerLink]="item.future ? null : item.route"
-      routerLinkActive="active"
-      #rla="routerLinkActive"
-      [ngClass]="
-        item.future
-          ? 'text-white/30 cursor-not-allowed'
-          : rla.isActive
-            ? 'bg-primary text-surface border-l-2 hover:bg-hover'
-            : 'text-white/70 hover:text-white hover:bg-white/5'
-      "
-      class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 border-l-2 border-transparent relative group"
-      [title]="collapsed() ? item.label : ''"
-    >
-      <!-- Tooltip (sidebar colapsado) -->
-      @if (collapsed()) {
-        <span class="absolute left-full ml-3 px-2.5 py-1.5 rounded-md bg-gray-900 text-white text-xs whitespace-nowrap
-                     opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 shadow-lg">
-          {{ item.label }}
-          @if (item.future) {
-            <span class="ml-1 text-white/40">(próximamente)</span>
-          }
-        </span>
-      }
-      <!-- Icon -->
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="w-5 h-5 shrink-0"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="1.5"
+    @for (item of navItems; track item.route) {
+      <a
+        [routerLink]="item.future ? null : item.route"
+        routerLinkActive="active"
+        #rla="routerLinkActive"
+        [ngClass]="
+          item.future
+            ? 'text-white/30 cursor-not-allowed'
+            : rla.isActive
+              ? 'bg-primary text-surface border-l-2 hover:bg-hover'
+              : 'text-white/70 hover:text-white hover:bg-white/5'
+        "
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 border-l-2 border-transparent relative group"
+        [title]="collapsed() ? item.label : ''"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
-      </svg>
+        @if (collapsed()) {
+          <span class="absolute left-full ml-3 px-2.5 py-1.5 rounded-md bg-gray-900 text-white text-xs whitespace-nowrap
+                       opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 shadow-lg">
+            {{ item.label }}
+            @if (item.future) {
+              <span class="ml-1 text-white/40">(próximamente)</span>
+            }
+          </span>
+        }
 
-      <!-- Label -->
-      <span
-        *ngIf="!collapsed()"
-        class="text-sm font-medium whitespace-nowrap transition-opacity duration-200"
-      >
-        {{ item.label }}
-      </span>
-    </a>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-5 h-5 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
+        </svg>
+
+        @if (!collapsed()) {
+          <span class="text-sm font-medium whitespace-nowrap transition-opacity duration-200">
+            {{ item.label }}
+          </span>
+        }
+      </a>
+    }
   </nav>
 
   <!-- Collapse Button -->
@@ -95,12 +81,9 @@
     >
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
-    <span
-      *ngIf="!collapsed()"
-      class="text-sm font-medium"
-    >
-      Colapsar
-    </span>
+    @if (!collapsed()) {
+      <span class="text-sm font-medium">Colapsar</span>
+    }
   </button>
 
 </aside>
