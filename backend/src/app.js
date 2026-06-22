@@ -5,6 +5,7 @@ const { sql, conectarBD } = require('./config/db');
 
 const app = express();
 
+const logsRoutes = require('./routes/logs.routes');
 const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
 const authRoutes     = require('./routes/auth.routes');
@@ -69,6 +70,11 @@ app.use('/api', tareasRoutes);
 // Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
 app.use(authRoutes);
 app.use(clientesRoutes);
+
+/*
+    LOG DE SEGURIDAD
+*/
+app.use('/api/logs', logsRoutes);
 
 /*
     TIPO CLIENTE
