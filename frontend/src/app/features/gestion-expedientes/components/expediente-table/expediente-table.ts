@@ -69,7 +69,7 @@ export class ExpedienteTable {
     { key: 'tipo.nombre',             label: 'Tipo de Expediente', type: 'text' },
     { key: 'estado.nombre',           label: 'Estado',             type: 'text' },
     { key: 'fechaInicio',             label: 'Fecha Inicio',       type: 'date' },
-    { key: 'ultimaActualizacion',     label: 'Últ. actualización', type: 'date' },
+    { key: 'ultimaActualizacion',     label: 'Últ. actualización', type: 'date', format: 'datetime' },
     {
       key: 'acciones',
       label: 'Acciones',

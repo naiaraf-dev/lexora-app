@@ -6,7 +6,13 @@ const { sendPasswordResetEmail } = require('./email.service');
 const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
 
 async function register(nombre, apellido, email, password, matricula) {
-    return await authRepository.registerUser(nombre, apellido, email, password, matricula);
+    const user = await authRepository.registerUser(nombre, apellido, email, password, matricula);
+    const token = jwt.sign(
+        { id: user.id, nombre: user.nombre, apellido: user.apellido, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+    return { token };
 }
 
 async function login(email, password) {

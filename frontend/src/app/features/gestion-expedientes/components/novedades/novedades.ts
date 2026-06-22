@@ -48,8 +48,6 @@ export class Novedades implements OnInit {
   ngOnInit(): void {
     this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
     this.usuarioId = this.obtenerUsuarioIdDelToken();
-    console.log('[novedades] usuarioId:', this.usuarioId);
-    console.log('[novedades] token:', this.storage.getToken());
     this.cargarNovedades();
     this.cargarCatalogos();
   }
@@ -376,7 +374,6 @@ export class Novedades implements OnInit {
       if (tareaExistente?.id) {
         return this.http.put<any>(`${environment.apiUrl}/tarea/${tareaExistente.id}`, body);
       }
-      console.log('[sincronizarTarea] body:', JSON.stringify(body));
       return this.http.post<any>(`${environment.apiUrl}/insertarTarea`, body);
     }
 

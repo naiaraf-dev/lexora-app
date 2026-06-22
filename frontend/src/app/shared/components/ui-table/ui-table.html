@@ -42,7 +42,7 @@
                 <!-- DATE -->
                 @if (col.type === 'date') {
                   <span class="text-xs text-text-primary/60">
-                    {{ getValue(row, col.key) | date:'dd/MM/yyyy HH:mm' }}
+                    {{ row[col.key] | date:(col.format === 'datetime' ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy') }}
                   </span>
                 }
 

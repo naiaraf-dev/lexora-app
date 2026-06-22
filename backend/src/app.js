@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 
 const { sql, conectarBD } = require('./config/db');
+
+const app = express();
+
 const logsRoutes = require('./routes/logs.routes');
 const documentosRoutes = require('./routes/documentos.routes');
 const tareasRoutes = require('./routes/tareas.routes');
@@ -9,28 +12,11 @@ const authRoutes     = require('./routes/auth.routes');
 const clientesRoutes = require('./routes/clientes.routes');
 const authMiddleware = require('./middlewares/auth.middleware');
 const usuariosRoutes = require('./routes/usuarios.routes');
-
-const app = express();
-
 const expedientesRouter = require('./routes/expedientes.routes');
 const novedadesRouter   = require('./routes/novedades.routes');
 
 app.use(cors());
 app.use(express.json());
-
-app.use('/api/logs', logsRoutes);
-app.use('/api', documentosRoutes);
-app.use('/api', tareasRoutes);
-
-
-// Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
-app.use(authRoutes);
-app.use(clientesRoutes);
-
-const usuariosController = require('./controllers/usuarios.controller');
-app.get('/api/usuarios', usuariosController.getAll);
-
-app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*
     PRUEBA DE CONEXIÓN
@@ -59,12 +45,36 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
+
 /*
-    Expedientes y novedades
+    USUARIOS
+*/
+app.use('/api/usuarios', authMiddleware, usuariosRoutes);
+
+/*
+    EXPEDIENTES Y NOVEDADES
 */
 
 app.use('/api/expedientes', expedientesRouter);
 app.use('/api/novedades',   novedadesRouter);
+
+/*
+    DOCUMENTOS Y TAREAS
+*/
+app.use('/api', documentosRoutes);
+app.use('/api', tareasRoutes);
+
+/*
+    AUTH Y CLIENTES
+*/
+// Las rutas ya incluyen el path completo (/api/auth/..., /api/clientes/...)
+app.use(authRoutes);
+app.use(clientesRoutes);
+
+/*
+    LOG DE SEGURIDAD
+*/
+app.use('/api/logs', logsRoutes);
 
 /*
     TIPO CLIENTE

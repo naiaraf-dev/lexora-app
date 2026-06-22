@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { MainLayout } from './shared/layout/main-layout/main-layout';
 import { PageLayout } from './shared/layout/page-layout/page-layout';
 import { authGuard } from './core/guards/auth-guard';
+import { noAuthGuard } from './core/guards/no-auth-guard';
 
 export const routes: Routes = [
   // Layout con sidebar — protegido por authGuard
@@ -99,21 +100,25 @@ export const routes: Routes = [
   // Auth (sin layout)
   {
     path: 'login',
+    canActivate: [noAuthGuard],
     loadComponent: () =>
       import('./features/auth/pages/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
+    canActivate: [noAuthGuard],
     loadComponent: () =>
       import('./features/auth/pages/create-account/create-account').then((m) => m.CreateAccount),
   },
   {
     path: 'forgot-password',
+    canActivate: [noAuthGuard],
     loadComponent: () =>
       import('./features/auth/pages/forgot-pass/forgot-pass').then((m) => m.ForgotPass),
   },
   {
     path: 'reset-password',
+    canActivate: [noAuthGuard],
     loadComponent: () =>
       import('./features/auth/pages/reset-password/reset-password').then((m) => m.ResetPassword),
   },
