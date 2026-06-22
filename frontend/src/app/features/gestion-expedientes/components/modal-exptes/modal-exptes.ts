@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { environment } from '../../../../../environments/environment';
+import { Auth } from '../../../../core/services/auth';
 
 interface ExpedienteForm {
   nroCausa: string;
@@ -34,57 +35,70 @@ interface Cliente {
 })
 export class ModalExptes implements OnInit {
   private http = inject(HttpClient);
+  private auth = inject(Auth);
 
   @Input() open = false;
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardarExpediente = new EventEmitter<any>();
-  
+
   clienteSearch = '';
 
   form: ExpedienteForm = this.formVacio();
 
-  clientes:      Cliente[]     = [];
-  tipoOptions:   OpcionEnum[]  = [];
-  estadoOptions: OpcionEnum[]  = [];
+  clientes: Cliente[] = [];
+  tipoOptions: OpcionEnum[] = [];
+  estadoOptions: OpcionEnum[] = [];
 
   areaOptions = [
-    { value: 'CIVIL',          label: 'Civil' },
-    { value: 'LABORAL',        label: 'Laboral' },
-    { value: 'PENAL',          label: 'Penal' },
-    { value: 'COMERCIAL',      label: 'Comercial' },
-    { value: 'FAMILIA',        label: 'Familia' },
+    { value: 'CIVIL', label: 'Civil' },
+    { value: 'LABORAL', label: 'Laboral' },
+    { value: 'PENAL', label: 'Penal' },
+    { value: 'COMERCIAL', label: 'Comercial' },
+    { value: 'FAMILIA', label: 'Familia' },
     { value: 'ADMINISTRATIVO', label: 'Administrativo' },
-    { value: 'TRIBUTARIO',     label: 'Tributario' },
-    { value: 'PREVISIONAL',    label: 'Previsional' },
-    { value: 'INMOBILIARIO',   label: 'Inmobiliario' },
-    { value: 'SOCIETARIO',     label: 'Societario' },
+    { value: 'TRIBUTARIO', label: 'Tributario' },
+    { value: 'PREVISIONAL', label: 'Previsional' },
+    { value: 'INMOBILIARIO', label: 'Inmobiliario' },
+    { value: 'SOCIETARIO', label: 'Societario' },
   ];
 
   ngOnInit(): void {
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/tipoexpediente`).subscribe({
       next: (res) => {
         this.tipoOptions = res;
+      },
+      error: (err) => {
+        console.error('Error cargando tipos de expediente:', err);
       }
     });
 
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/estadoexpediente`).subscribe({
       next: (res) => {
         this.estadoOptions = res;
+
         // Default: primer estado disponible
         if (res.length > 0 && !this.form.estadoId) {
           this.form.estadoId = String(res[0].id);
         }
+      },
+      error: (err) => {
+        console.error('Error cargando estados de expediente:', err);
       }
     });
 
     this.http.get<Cliente[]>(`${environment.apiUrl}/clientes`).subscribe({
-      next: (res) => this.clientes = res
+      next: (res) => {
+        this.clientes = res;
+      },
+      error: (err) => {
+        console.error('Error cargando clientes:', err);
+      }
     });
-
   }
 
   estadoBtnClass(id: number): string {
     const base = 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer';
+
     return this.form.estadoId === String(id)
       ? `${base} border-primary bg-primary/10 text-primary`
       : `${base} border-gray-200 bg-background text-gray-500 hover:border-gray-300`;
@@ -92,7 +106,9 @@ export class ModalExptes implements OnInit {
 
   clientesFiltrados(): Cliente[] {
     const q = this.clienteSearch.toLowerCase().trim();
+
     if (!q) return this.clientes;
+
     return this.clientes.filter(c =>
       `${c.nombre} ${c.apellido}`.toLowerCase().includes(q) ||
       c.cuit.includes(q)
@@ -113,25 +129,41 @@ export class ModalExptes implements OnInit {
   }
 
   formValido(): boolean {
-    return !!(this.form.caratula.trim() && this.form.area && this.form.tipoId && this.form.estadoId);
+    return !!(
+      this.form.caratula.trim() &&
+      this.form.area &&
+      this.form.tipoId &&
+      this.form.estadoId
+    );
   }
 
   guardar(): void {
     if (!this.formValido()) return;
 
+    const usuarioActual = this.auth.currentUser();
+
+    if (!usuarioActual?.id) {
+      console.error('No hay usuario autenticado para crear el expediente.');
+      return;
+    }
+
     const payload = {
       numero_expediente_judicial: this.form.nroCausa || null,
-      caratula:                   this.form.caratula,
-      area:                       this.form.area,
-      tipo_expediente:            Number(this.form.tipoId),
-      estado_expediente:          Number(this.form.estadoId),
-      cliente:                    this.form.clienteId ? Number(this.form.clienteId) : null,
-      // TODO: reemplazar por usuario autenticado real
-      usuario_creacion:           1,
-      usuario_principal:          1,
+      caratula: this.form.caratula,
+      area: this.form.area,
+      tipo_expediente: Number(this.form.tipoId),
+      estado_expediente: Number(this.form.estadoId),
+      cliente: this.form.clienteId ? Number(this.form.clienteId) : null,
+
+      // Usuario real de la sesión iniciada
+      usuario_creacion: usuarioActual.id,
+      usuario_principal: usuarioActual.id,
     };
 
+    console.log('Payload nuevo expediente:', payload);
+
     this.guardarExpediente.emit(payload);
+
     this.form = this.formVacio();
     this.clienteSearch = '';
     this.cerrar.emit();
@@ -145,11 +177,11 @@ export class ModalExptes implements OnInit {
 
   private formVacio(): ExpedienteForm {
     return {
-      nroCausa:  '',
-      caratula:  '',
-      area:      '',
-      tipoId:    '',
-      estadoId:  '',
+      nroCausa: '',
+      caratula: '',
+      area: '',
+      tipoId: '',
+      estadoId: '',
       clienteId: '',
     };
   }
