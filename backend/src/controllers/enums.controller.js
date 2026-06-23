@@ -1,0 +1,46 @@
+const service = require('../services/enums.service');
+
+function obtenerMensajeError(enumName, tipo, fallback) {
+    try {
+        return service.obtenerMensaje(enumName, tipo);
+    } catch {
+        return fallback;
+    }
+}
+
+async function getAll(req, res) {
+    const { enumName } = req.params;
+
+    try {
+        const data = await service.getAll(enumName);
+        res.json(data);
+    } catch (error) {
+        res.status(error.status || 500).json({
+            mensaje: error.status === 404
+                ? error.message
+                : obtenerMensajeError(enumName, 'getError', 'Error al obtener enum'),
+            error: error.message
+        });
+    }
+}
+
+async function create(req, res) {
+    const { enumName } = req.params;
+
+    try {
+        const creado = await service.create(enumName, req.body);
+        res.status(201).json(creado);
+    } catch (error) {
+        res.status(error.status || 500).json({
+            mensaje: error.status === 400 || error.status === 404
+                ? error.message
+                : obtenerMensajeError(enumName, 'createError', 'Error al crear enum'),
+            error: error.message
+        });
+    }
+}
+
+module.exports = {
+    getAll,
+    create
+};

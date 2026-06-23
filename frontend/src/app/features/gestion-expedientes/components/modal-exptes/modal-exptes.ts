@@ -52,49 +52,61 @@ export class ModalExptes implements OnInit {
 
   form: ExpedienteForm = this.formVacio();
 
-  clientes:      Cliente[]     = [];
-  tipoOptions:   OpcionEnum[]  = [];
-  estadoOptions: OpcionEnum[]  = [];
+  clientes: Cliente[] = [];
+  tipoOptions: OpcionEnum[] = [];
+  estadoOptions: OpcionEnum[] = [];
 
   areaOptions = [
-    { value: 'CIVIL',          label: 'Civil' },
-    { value: 'LABORAL',        label: 'Laboral' },
-    { value: 'PENAL',          label: 'Penal' },
-    { value: 'COMERCIAL',      label: 'Comercial' },
-    { value: 'FAMILIA',        label: 'Familia' },
+    { value: 'CIVIL', label: 'Civil' },
+    { value: 'LABORAL', label: 'Laboral' },
+    { value: 'PENAL', label: 'Penal' },
+    { value: 'COMERCIAL', label: 'Comercial' },
+    { value: 'FAMILIA', label: 'Familia' },
     { value: 'ADMINISTRATIVO', label: 'Administrativo' },
-    { value: 'TRIBUTARIO',     label: 'Tributario' },
-    { value: 'PREVISIONAL',    label: 'Previsional' },
-    { value: 'INMOBILIARIO',   label: 'Inmobiliario' },
-    { value: 'SOCIETARIO',     label: 'Societario' },
+    { value: 'TRIBUTARIO', label: 'Tributario' },
+    { value: 'PREVISIONAL', label: 'Previsional' },
+    { value: 'INMOBILIARIO', label: 'Inmobiliario' },
+    { value: 'SOCIETARIO', label: 'Societario' },
   ];
 
   ngOnInit(): void {
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/tipoexpediente`).subscribe({
       next: (res) => {
         this.tipoOptions = res;
+      },
+      error: (err) => {
+        console.error('Error cargando tipos de expediente:', err);
       }
     });
 
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/estadoexpediente`).subscribe({
       next: (res) => {
         this.estadoOptions = res;
+
         // Default: primer estado disponible
         if (res.length > 0 && !this.form.estadoId) {
           this.form.estadoId = String(res[0].id);
         }
+      },
+      error: (err) => {
+        console.error('Error cargando estados de expediente:', err);
       }
     });
 
     this.http.get<Cliente[]>(`${environment.apiUrl}/clientes`).subscribe({
-      next: (res) => this.clientes = res
+      next: (res) => {
+        this.clientes = res;
+      },
+      error: (err) => {
+        console.error('Error cargando clientes:', err);
+      }
     });
-
   }
 
   /** Retorna la clase CSS para el botón de estado según su ID. */
   estadoBtnClass(id: number): string {
     const base = 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer';
+
     return this.form.estadoId === String(id)
       ? `${base} border-primary bg-primary/10 text-primary`
       : `${base} border-gray-200 bg-background text-gray-500 hover:border-gray-300`;
@@ -103,7 +115,9 @@ export class ModalExptes implements OnInit {
   /** Filtra la lista de clientes por nombre, apellido o CUIT según el texto de búsqueda. */
   clientesFiltrados(): Cliente[] {
     const q = this.clienteSearch.toLowerCase().trim();
+
     if (!q) return this.clientes;
+
     return this.clientes.filter(c =>
       `${c.nombre} ${c.apellido}`.toLowerCase().includes(q) ||
       c.cuit.includes(q)
@@ -128,12 +142,24 @@ export class ModalExptes implements OnInit {
 
   /** Valida que los campos obligatorios del alta estén completos antes de habilitar el guardado. */
   formValido(): boolean {
-    return !!(this.form.caratula.trim() && this.form.area && this.form.tipoId && this.form.estadoId);
+    return !!(
+      this.form.caratula.trim() &&
+      this.form.area &&
+      this.form.tipoId &&
+      this.form.estadoId
+    );
   }
 
   /** Construye el payload y lo emite al padre. Requiere usuario autenticado para asignar creador. */
   guardar(): void {
     if (!this.formValido()) return;
+
+    const usuarioActual = this.auth.currentUser();
+
+    if (!usuarioActual?.id) {
+      console.error('No hay usuario autenticado para crear el expediente.');
+      return;
+    }
 
     const payload = {
       numero_expediente_judicial: this.form.nroCausa || null,
@@ -147,6 +173,7 @@ export class ModalExptes implements OnInit {
     };
 
     this.guardarExpediente.emit(payload);
+
     this.form = this.formVacio();
     this.clienteSearch = '';
     this.cerrar.emit();
@@ -162,11 +189,11 @@ export class ModalExptes implements OnInit {
   /** Retorna un objeto vacío con la estructura inicial del formulario de alta. */
   private formVacio(): ExpedienteForm {
     return {
-      nroCausa:  '',
-      caratula:  '',
-      area:      '',
-      tipoId:    '',
-      estadoId:  '',
+      nroCausa: '',
+      caratula: '',
+      area: '',
+      tipoId: '',
+      estadoId: '',
       clienteId: '',
     };
   }
