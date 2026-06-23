@@ -9,6 +9,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { loginSchema, LoginErrors } from '../../models/auth.schema';
 import { Auth } from '../../../../core/services/auth';
 
+/**
+ * Página de inicio de sesión.
+ * Valida credenciales con Zod y delega la autenticación al Auth service.
+ * Redirige a Gestión de Expedientes tras el login exitoso.
+ */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -24,6 +29,7 @@ export class Login {
   loading  = signal(false);
   errors   = signal<LoginErrors>({});
 
+  /** Valida el formulario, llama al service de login y redirige o muestra error de credenciales. */
   onSubmit() {
     const parsed = loginSchema.safeParse({ username: this.username, password: this.password });
     if (!parsed.success) {

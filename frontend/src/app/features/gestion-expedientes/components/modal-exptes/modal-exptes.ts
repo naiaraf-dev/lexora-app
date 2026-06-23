@@ -27,6 +27,12 @@ interface Cliente {
   cuit: string;
 }
 
+/**
+ * Modal de alta de expedientes.
+ * Carga tipos, estados y clientes desde el backend.
+ * Emite el payload completo al componente padre para que lo persista via ExpedientesService.
+ * El usuario autenticado se asigna automáticamente como creador y responsable principal.
+ */
 @Component({
   selector: 'app-modal-exptes',
   standalone: true,
@@ -41,6 +47,7 @@ export class ModalExptes implements OnInit {
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardarExpediente = new EventEmitter<any>();
 
+  /** Texto de búsqueda para filtrar la lista de clientes en el selector. */
   clienteSearch = '';
 
   form: ExpedienteForm = this.formVacio();
@@ -96,6 +103,7 @@ export class ModalExptes implements OnInit {
     });
   }
 
+  /** Retorna la clase CSS para el botón de estado según su ID. */
   estadoBtnClass(id: number): string {
     const base = 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer';
 
@@ -104,6 +112,7 @@ export class ModalExptes implements OnInit {
       : `${base} border-gray-200 bg-background text-gray-500 hover:border-gray-300`;
   }
 
+  /** Filtra la lista de clientes por nombre, apellido o CUIT según el texto de búsqueda. */
   clientesFiltrados(): Cliente[] {
     const q = this.clienteSearch.toLowerCase().trim();
 
@@ -115,19 +124,23 @@ export class ModalExptes implements OnInit {
     );
   }
 
+  /** Retorna true si el cliente con el ID dado es el actualmente seleccionado en el formulario. */
   clienteSeleccionado(id: number): boolean {
     return this.form.clienteId === String(id);
   }
 
+  /** Selecciona o deselecciona un cliente. Solo permite un cliente por expediente. */
   toggleCliente(id: number): void {
     this.form.clienteId = this.clienteSeleccionado(id) ? '' : String(id);
   }
 
+  /** Retorna el nombre completo del cliente seleccionado para mostrarlo como chip en el formulario. */
   nombreClienteSeleccionado(): string {
     const c = this.clientes.find(c => String(c.id) === this.form.clienteId);
     return c ? `${c.nombre} ${c.apellido}` : '';
   }
 
+  /** Valida que los campos obligatorios del alta estén completos antes de habilitar el guardado. */
   formValido(): boolean {
     return !!(
       this.form.caratula.trim() &&
@@ -137,6 +150,7 @@ export class ModalExptes implements OnInit {
     );
   }
 
+  /** Construye el payload y lo emite al padre. Requiere usuario autenticado para asignar creador. */
   guardar(): void {
     if (!this.formValido()) return;
 
@@ -149,18 +163,14 @@ export class ModalExptes implements OnInit {
 
     const payload = {
       numero_expediente_judicial: this.form.nroCausa || null,
-      caratula: this.form.caratula,
-      area: this.form.area,
-      tipo_expediente: Number(this.form.tipoId),
-      estado_expediente: Number(this.form.estadoId),
-      cliente: this.form.clienteId ? Number(this.form.clienteId) : null,
-
-      // Usuario real de la sesión iniciada
-      usuario_creacion: usuarioActual.id,
-      usuario_principal: usuarioActual.id,
+      caratula:                   this.form.caratula,
+      area:                       this.form.area,
+      tipo_expediente:            Number(this.form.tipoId),
+      estado_expediente:          Number(this.form.estadoId),
+      cliente:                    this.form.clienteId ? Number(this.form.clienteId) : null,
+      usuario_creacion:           this.auth.currentUser()?.id ?? 1,
+      usuario_principal:          this.auth.currentUser()?.id ?? 1,
     };
-
-    console.log('Payload nuevo expediente:', payload);
 
     this.guardarExpediente.emit(payload);
 
@@ -169,12 +179,14 @@ export class ModalExptes implements OnInit {
     this.cerrar.emit();
   }
 
+  /** Resetea el formulario y la búsqueda de clientes al cerrar el modal sin guardar. */
   onCerrar(): void {
     this.form = this.formVacio();
     this.clienteSearch = '';
     this.cerrar.emit();
   }
 
+  /** Retorna un objeto vacío con la estructura inicial del formulario de alta. */
   private formVacio(): ExpedienteForm {
     return {
       nroCausa: '',

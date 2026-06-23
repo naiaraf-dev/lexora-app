@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
@@ -8,6 +8,8 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { Novedad, TareaAsociada } from '../novedades-card/novedades-card';
 import { toast } from 'ngx-sonner';
+import { environment } from '../../../../../environments/environment.prod';
+import { HttpClient } from '@angular/common/http';
 
 export interface DocumentoAdjuntoNovedad {
   id: string;
@@ -22,6 +24,12 @@ export type NovedadPayloadConDocumentos = Partial<Novedad> & {
   documentosAdjuntos?: DocumentoAdjuntoNovedad[];
 };
 
+/**
+ * Modal de alta y edición de novedades.
+ * Soporta adjuntar documentos, el cual se refleja en Documentos.
+ * Permite crear una tarea/plazo asociado a la novedad.
+ * Emite el payload completo al padre incluyendo documentos adjuntos y tarea.
+ */
 @Component({
   selector: 'app-modal-novedad',
   standalone: true,
@@ -42,12 +50,18 @@ export class ModalNovedad implements OnChanges {
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<NovedadPayloadConDocumentos>();
 
-  guardando = false;
+  private http = inject(HttpClient);
+
+  guardando = false; // Indica si hay un guardado en curso para deshabilitar el botón y evitar doble envío.
   crearTarea = true; // checkbox "Crear tarea / plazo asociado"
 
+  /** Lista de documentos nuevos seleccionados por el usuario para subir junto a la novedad. */
   documentosAdjuntos: DocumentoAdjuntoNovedad[] = [];
-  archivosExistentes: { nombre: string; url: string }[] = [];
 
+  /** Archivos ya adjuntos a la novedad en edición, cargados desde el backend. */
+  archivosExistentes: { id?: string; nombre: string; url: string }[] = [];
+
+  /** Estado del formulario principal de la novedad (tipo, fecha, título, descripción). */
   form = {
     tipo: '',
     fechaActuacion: '',
@@ -55,8 +69,7 @@ export class ModalNovedad implements OnChanges {
     descripcion: '',
   };
 
-  // Sub-form de tarea
-  // 🗓️ AGENDA — estos campos alimentan la tarea que se sincronizará con la agenda
+  /** Sub-form de la tarea/plazo asociado. Se sincroniza con el módulo de agenda cuando esté disponible. */
   tareaForm = {
     titulo: '',
     prioridad: '',
@@ -66,18 +79,22 @@ export class ModalNovedad implements OnChanges {
     descripcionInstrucciones: '',
   };
 
+  /** Retorna true si el modal fue abierto con una novedad existente (edición) o false si es alta. */
   get modoEdicion(): boolean {
     return !!this.novedad;
   }
 
+  /** Retorna el título del modal según si es modo de edición o alta. */
   get titulo(): string {
     return this.modoEdicion ? 'Editar Novedad' : 'Nueva Novedad';
   }
 
+  /** Retorna el label del botón de guardar según si es modo de edición o alta. */
   get labelGuardar(): string {
     return this.modoEdicion ? 'Guardar cambios' : 'Guardar novedad';
   }
 
+  /** Parchea el formulario con los datos de la novedad al abrir en modo edición, o resetea si es alta. */
   ngOnChanges() {
     if (this.novedad) {
       this.form = {
@@ -111,6 +128,7 @@ export class ModalNovedad implements OnChanges {
     }
   }
 
+  /** Captura los archivos seleccionados desde el input de tipo file y los agrega a documentosAdjuntos. */
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
 
@@ -122,6 +140,7 @@ export class ModalNovedad implements OnChanges {
     input.value = '';
   }
 
+  /** Captura los archivos soltados en la zona de drag & drop y los agrega a documentosAdjuntos. */
   onDrop(event: DragEvent) {
     event.preventDefault();
 
@@ -130,6 +149,7 @@ export class ModalNovedad implements OnChanges {
     }
   }
 
+  /** Crea entradas DocumentoAdjuntoNovedad para cada archivo y los suma a la lista de adjuntos. */
   private agregarDocumentos(files: File[]) {
     const nuevosDocumentos: DocumentoAdjuntoNovedad[] = files.map(file => ({
       id: crypto.randomUUID(),
@@ -146,10 +166,12 @@ export class ModalNovedad implements OnChanges {
     ];
   }
 
+  /** Elimina un documento de la lista de adjuntos nuevos sin afectar los existentes. */
   eliminarDocumentoAdjunto(documento: DocumentoAdjuntoNovedad): void {
     this.documentosAdjuntos = this.documentosAdjuntos.filter(d => d.id !== documento.id);
   }
 
+  /** Valida el formulario, construye el payload con archivos y tarea, y lo emite al padre. */
   submit() {
     if (!this.form.tipo || !this.form.titulo || !this.form.fechaActuacion) {
       toast.error('Completá los campos obligatorios');
@@ -207,11 +229,13 @@ export class ModalNovedad implements OnChanges {
     this.resetForm();
   }
 
+  /** Valida el formulario, construye el payload con archivos y tarea, y lo emite al padre. */
   cerrarModal() {
     this.cerrar.emit();
     this.resetForm();
   }
 
+  /** Resetea todos los campos del formulario, adjuntos, tarea y archivos existentes a su estado inicial. */
   private resetForm() {
     this.form = { tipo: '', fechaActuacion: '', titulo: '', descripcion: '' };
     this.documentosAdjuntos = [];
@@ -220,6 +244,7 @@ export class ModalNovedad implements OnChanges {
     this.archivosExistentes = [];
   }
 
+  /** Resetea únicamente el sub-form de tarea a sus valores vacíos iniciales. */
   private resetTareaForm() {
     this.tareaForm = {
       titulo: '',
@@ -231,8 +256,18 @@ export class ModalNovedad implements OnChanges {
     };
   }
 
-  eliminarArchivoExistente(archivo: { nombre: string; url: string }): void {
-    // TODO: llamar a DELETE /api/documentos/:id cuando esté disponible
-    this.archivosExistentes = this.archivosExistentes.filter(a => a.nombre !== archivo.nombre);
+  /** Elimina un archivo existente de la vista local. */
+  eliminarArchivoExistente(archivo: { id?: string; nombre: string; url: string }): void {
+    if (!archivo.id) {
+      this.archivosExistentes = this.archivosExistentes.filter(a => a.nombre !== archivo.nombre);
+      return;
+    }
+
+    this.http.delete(`${environment.apiUrl}/documento/${archivo.id}`).subscribe({
+      next: () => {
+        this.archivosExistentes = this.archivosExistentes.filter(a => a.id !== archivo.id);
+      },
+      error: () => toast.error('Error al eliminar el archivo')
+    });
   }
 }

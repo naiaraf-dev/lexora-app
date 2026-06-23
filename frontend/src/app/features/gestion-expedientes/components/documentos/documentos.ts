@@ -10,6 +10,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { toast } from 'ngx-sonner';
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
+/**
+ * Sub-página de documentos adjuntos de un expediente.
+ * Carga documentos, novedades (adjunto asociado a una novedad) y tipos de documento desde el backend.
+ * Gestiona el alta (subida de archivo), edición, eliminación y descarga de documentos.
+ */
 @Component({
   selector: 'app-documentos',
   standalone: true,
@@ -23,21 +28,28 @@ export class Documentos implements OnInit {
   private cdr    = inject(ChangeDetectorRef);
   private expedienteId!: number;
 
-  allDocumentos: Documento[] = [];
-  novedadOpciones: { value: string; label: string }[] = [];
-  tipoDocumentoOptions: { value: string; label: string }[] = [];
+  allDocumentos: Documento[] = []; // Lista completa de documentos del expediente cargados desde el backend.
 
+  novedadOpciones: { value: string; label: string }[] = []; // Opciones de novedades del expediente para asociar un documento a una novedad.
+
+  tipoDocumentoOptions: { value: string; label: string }[] = []; // Opciones de tipo de documento cargadas desde /api/enums/tipodocumento.
+
+  /** Mapa de clave normalizada → id numérico del tipo de documento, usado al enviar el POST/PUT. */
   private tipoIdMap: Record<string, number> = {};
 
+  /** Filtros activos aplicados sobre la lista de documentos. */
   activeFilters: DocumentoFilterState = { nombre: '', tipo: '' };
 
   pageSize = 10;
   currentPage = 1;
 
-  modalAltaRef: any;
-  modalEditOpen = false;
+  modalAltaRef: any; // Referencia al modal de alta para poder abrirlo desde el template via abrir().
+  modalEditOpen = false; // Controla la visibilidad del modal de edición.
+
+  /** Documento seleccionado para edición. Null cuando no hay edición activa. */
   selectedDoc: Documento | null = null;
 
+  /** Documento seleccionado para eliminar. Controla la apertura del modal de confirmación. */
   docAEliminar: Documento | null = null;
 
   ngOnInit(): void {
@@ -47,6 +59,7 @@ export class Documentos implements OnInit {
     this.cargarTiposDocumento();
   }
 
+  /** Lista de documentos filtrada según nombre y tipo activos. */
   get filteredDocumentos(): Documento[] {
     const f = this.activeFilters;
 
@@ -56,19 +69,23 @@ export class Documentos implements OnInit {
     );
   }
 
+  /** Total de páginas calculado sobre la lista filtrada. */
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredDocumentos.length / this.pageSize));
   }
 
+  /** Slice de la lista filtrada correspondiente a la página actual. */
   get pagedDocumentos(): Documento[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredDocumentos.slice(start, start + this.pageSize);
   }
 
+  /** Mensaje dinámico del modal de confirmación con el nombre del documento a eliminar. */
   get mensajeConfirmarEliminar(): string {
     return `¿Estás seguro que querés eliminar "${this.docAEliminar?.nombre}"? Esta acción no se puede deshacer.`;
   }
 
+  /** Obtiene los documentos del expediente desde el backend y los mapea al modelo Documento. */
   private cargarDocumentos(): void {
     this.http.get<any[]>(`${environment.apiUrl}/documento?expediente=${this.expedienteId}`)
       .subscribe({
@@ -80,6 +97,7 @@ export class Documentos implements OnInit {
       });
   }
 
+  /** Carga las novedades del expediente para usarlas como opciones en el selector de relación. */
   private cargarNovedadesOpciones(): void {
     this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`)
       .subscribe({
@@ -93,6 +111,7 @@ export class Documentos implements OnInit {
       });
   }
 
+  /** Carga los tipos de documento y construye el mapa de clave normalizada → id. */
   private cargarTiposDocumento(): void {
     this.http.get<any[]>(`${environment.apiUrl}/enums/tipodocumento`).subscribe({
       next: (res) => {
@@ -108,6 +127,7 @@ export class Documentos implements OnInit {
     });
   }
 
+  /** Normaliza el nombre de un tipo de documento a clave sin tildes, espacios ni minúsculas para comparación. */
   private normalizarTipoDocumento(nombre: string): string {
     return nombre
       .toUpperCase()
@@ -116,6 +136,7 @@ export class Documentos implements OnInit {
       .replace(/[\u0300-\u036f]/g, '');
   }
 
+  /** Mapea un objeto crudo del backend al modelo Documento usado en el frontend. */
   private mapDocumento(d: any): Documento {
     return {
       id:             String(d.id),
@@ -134,20 +155,24 @@ export class Documentos implements OnInit {
     };
   }
 
+  /** Actualiza los filtros activos y resetea a la primera página. */
   onFiltersChange(f: DocumentoFilterState): void {
     this.activeFilters = f;
     this.currentPage = 1;
   }
 
+  /** Selecciona el documento a editar y abre el modal de edición. */
   onEdit(doc: Documento): void {
     this.selectedDoc = doc;
     this.modalEditOpen = true;
   }
 
+  /** Selecciona el documento a eliminar y abre el modal de confirmación. */
   onDelete(doc: Documento): void {
     this.docAEliminar = doc;
   }
 
+  /** Llama al endpoint de eliminación y actualiza la lista local si el borrado es exitoso. */
   confirmarEliminar(): void {
     if (!this.docAEliminar) return;
 
@@ -163,6 +188,7 @@ export class Documentos implements OnInit {
       });
   }
 
+  /** Construye el FormData con el archivo y metadata, y lo envía al endpoint de subida. */
   onGuardarAlta(formData: any): void {
     if (!formData.archivo) {
       toast.error('Seleccioná un archivo');
@@ -209,6 +235,7 @@ export class Documentos implements OnInit {
       });
   }
 
+  /** Construye el FormData con los campos editados y lo envía al endpoint de actualización. */
   onGuardarEdit(changes: Partial<Documento>): void {
     if (!this.selectedDoc) return;
 
@@ -244,6 +271,7 @@ export class Documentos implements OnInit {
       });
   }
 
+  /** Abre el documento en una nueva pestaña usando el endpoint de descarga por ID. */
   onDownload(doc: Documento): void {
     if (!doc.id) {
       toast.error('Documento sin ID');
@@ -253,6 +281,7 @@ export class Documentos implements OnInit {
     window.open(`${environment.apiUrl}/documento/${doc.id}/descargar`, '_blank');
   }
 
+  /** Retorna a la página de gestión de expedientes. */
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
   }

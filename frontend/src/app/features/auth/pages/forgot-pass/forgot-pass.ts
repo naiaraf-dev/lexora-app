@@ -9,6 +9,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { forgotSchema, ForgotErrors } from '../../models/auth.schema';
 import { Auth } from '../../../../core/services/auth';
 
+/**
+ * Página de recuperación de contraseña.
+ * Envía el email al backend para generar el link de reset.
+ * Siempre muestra el mensaje de éxito por seguridad, sin revelar si el email existe.
+ */
 @Component({
   selector: 'app-forgot-pass',
   standalone: true,
@@ -23,6 +28,7 @@ export class ForgotPass {
   sent    = signal(false);
   errors  = signal<ForgotErrors>({});
 
+  /** Valida el email con Zod y llama al endpoint de forgot password. Siempre muestra éxito al usuario. */
   onSubmit() {
     const parsed = forgotSchema.safeParse({ email: this.email });
     if (!parsed.success) {

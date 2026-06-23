@@ -9,6 +9,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { registerSchema, RegisterErrors } from '../../models/auth.schema';
 import { Auth } from '../../../../core/services/auth';
 
+/**
+ * Página de registro de nuevos usuarios.
+ * Valida el formulario con Zod antes de enviar al backend.
+ * Redirige a gestión de expedientes tras el registro exitoso.
+ */
 @Component({
   selector: 'app-create-account',
   standalone: true,
@@ -28,6 +33,7 @@ export class CreateAccount {
   loading         = signal(false);
   errors          = signal<RegisterErrors>({});
 
+  /** Valida el formulario, llama al service de registro y redirige o muestra errores. */
   onSubmit() {
     const parsed = registerSchema.safeParse({
       nombre: this.nombre, apellido: this.apellido, matricula: this.matricula,

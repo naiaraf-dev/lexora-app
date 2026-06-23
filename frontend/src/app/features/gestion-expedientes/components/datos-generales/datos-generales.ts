@@ -10,6 +10,12 @@ import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date
 import { PrimaryBtn  } from '../../../../shared/components/primary-btn/primary-btn';
 import { toast } from 'ngx-sonner';
 
+/**
+ * Sub-página de edición de datos generales de un expediente.
+ * Carga en paralelo el expediente y todos los catálogos necesarios (tipos, estados,
+ * prioridades, roles, usuarios, clientes) y parchea el formulario reactivo con los datos actuales.
+ * Al guardar, envía un PUT al endpoint de expedientes con todos los campos editables.
+ */
 @Component({
   selector: 'app-datos-generales',
   standalone: true,
@@ -18,10 +24,10 @@ import { toast } from 'ngx-sonner';
 })
 export class DatosGenerales implements OnInit {
 
-  form!: FormGroup;
+  form!: FormGroup; // Formulario reactivo con todos los campos editables del expediente.
   private http = inject(HttpClient);
   private cdr  = inject(ChangeDetectorRef);
-  private expedienteId!: number;
+  private expedienteId!: number; // ID del expediente extraído del parámetro de ruta del componente padre.
 
   constructor(
     private fb: FormBuilder,
@@ -111,6 +117,7 @@ export class DatosGenerales implements OnInit {
     });
   }
 
+  /** Indica si el formulario cumple con todas las validaciones requeridas. */
   get formValido(): boolean {
     return this.form.valid;
   }
@@ -213,12 +220,15 @@ export class DatosGenerales implements OnInit {
 
   clienteOptions: { value: string; label: string }[] = [];
 
+  // Retorna a la página de gestión de expedientes. Se usa en el botón "Volver" del header.
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
   }
 
+  /** Indica si hay un guardado en curso para deshabilitar el botón y evitar doble envío. */
   guardando = false;
   
+  /** Valida el formulario y envía el PUT con todos los campos del expediente al backend. */
   guardar(): void {
     if (!this.form.valid) {
       toast.error('Completá los campos obligatorios');

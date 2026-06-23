@@ -15,6 +15,11 @@ export interface ExpedienteFilterState {
   clienteId: string;
 }
 
+/**
+ * Componente de filtros del listado de expedientes.
+ * Carga tipos, estados y clientes desde el backend al inicializar.
+ * Emite el estado de filtros al componente padre en cada búsqueda o limpieza.
+ */
 @Component({
   selector: 'app-expediente-filters',
   standalone: true,
@@ -28,6 +33,7 @@ export class ExpedienteFilters implements OnInit {
 
   filtrosAbiertos = signal(true);
 
+  /** Estado actual de los filtros. Se emite al padre en cada cambio. */
   filters: ExpedienteFilterState = {
     numero: '', causa: '', caratula: '', area: '', tipo: '', estado: '', clienteId: '',
   };
@@ -68,10 +74,12 @@ export class ExpedienteFilters implements OnInit {
     setTimeout(() => this.filtersChange.emit({ ...this.filters }));
   }
 
+  /** Emite los filtros actuales al padre para que recargue la lista. */
   buscar(): void {
     this.filtersChange.emit({ ...this.filters });
   }
 
+  /** Resetea todos los filtros a vacío y emite el estado limpio al padre. */
   limpiar(): void {
     this.filters = { numero: '', causa: '', caratula: '', area: '', tipo: '', estado: '', clienteId: '' };
     this.filtersChange.emit({ ...this.filters });
