@@ -107,7 +107,7 @@ interface ExpedienteApi {
   } | null;
 }
 
-// Íconos heroicons outline
+/** Íconos heroicons outline */
 const ICON = {
   doc: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
   building: 'M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21',
@@ -123,6 +123,12 @@ const ICON = {
   target: 'M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418',
 };
 
+/**
+ * Página de vista de detalle de un expediente (modo solo lectura).
+ * Carga en paralelo el expediente, documentos, novedades y tareas.
+ * Arma las secciones de datos generales, judiciales, profesionales,
+ * fechas clave, clasificación, timeline de novedades y panel de tareas.
+ */
 @Component({
   selector: 'app-expediente-view',
   standalone: true,
@@ -136,12 +142,14 @@ export class ExpedienteView implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private ngZone = inject(NgZone);
 
-  cargando = false;
+  cargando = false; // Indica si hay una carga en curso para mostrar el estado de loading en la vista.
   error = '';
   expediente: ExpedienteApi | null = null;
 
+  /** Controla la visibilidad del historial de tareas cumplidas en el panel de tareas. */
   mostrarHistorialTareas = false;
 
+  /** Datos del panel de resumen: estado, próximo vencimiento y conteo de tareas. */
   resumen = {
     estado: '-',
     proximoVencimiento: '-',
@@ -172,6 +180,7 @@ export class ExpedienteView implements OnInit {
     this.cargarExpediente(id);
   }
 
+  /** Carga en paralelo el expediente y sus recursos relacionados usando forkJoin. */
   cargarExpediente(id: number): void {
     this.cargando = true;
     this.error = '';
@@ -292,6 +301,7 @@ export class ExpedienteView implements OnInit {
     });
   }
 
+  /** Mapea los datos del expediente a las secciones visuales de la página. */
   private armarVista(exp: ExpedienteApi): void {
     this.resumen = {
       estado: this.valor(exp.estado?.nombre),
@@ -356,6 +366,7 @@ export class ExpedienteView implements OnInit {
     ];
   }
 
+  /** Normaliza la respuesta del endpoint de documentos al modelo Documento[]. */
   private mapearDocumentos(respuesta: any): Documento[] {
     const registros = this.extraerArray(respuesta);
 
@@ -392,6 +403,7 @@ export class ExpedienteView implements OnInit {
     });
   }
 
+  /** Normaliza la respuesta del endpoint de tareas al modelo Tarea[]. */
   private mapearTareas(respuesta: any): Tarea[] {
     const registros = this.extraerArray(respuesta);
 
@@ -407,6 +419,7 @@ export class ExpedienteView implements OnInit {
     return registros.map((tarea: any) => this.mapearTarea(tarea));
   }
 
+  /** Normaliza la respuesta del endpoint de novedades al modelo Novedad[] y asocia tareas. */
   private mapearNovedades(respuesta: any): Novedad[] {
     const registros = this.extraerArray(respuesta);
 
@@ -467,6 +480,7 @@ export class ExpedienteView implements OnInit {
     });
   }
 
+  /** Normaliza un objeto tarea raw del backend al modelo Tarea interno, tolerando distintos nombres de campo. */
   private mapearTarea(tarea: any): Tarea {
     const estadoNombre =
       tarea.estadoTareaNombre ??
@@ -611,6 +625,7 @@ export class ExpedienteView implements OnInit {
     return tareaMapeada;
   }
 
+  /** Ordena las tareas por fecha de vencimiento ascendente (las más próximas primero). */
   private ordenarTareasPorFecha(tareas: Tarea[]): Tarea[] {
     return [...tareas].sort((a, b) => {
       const fechaA = this.obtenerFechaOrdenTarea(a);
@@ -674,6 +689,7 @@ export class ExpedienteView implements OnInit {
     return 'border-amber-400';
   }
 
+  /** Busca en el array de tareas cargadas la que corresponde a una novedad por su ID. */
   private buscarTareaPorNovedad(novedadId: number | string | undefined): Tarea | undefined {
     if (novedadId === undefined || novedadId === null || novedadId === '') {
       return undefined;
@@ -736,6 +752,7 @@ export class ExpedienteView implements OnInit {
     return this.formatearFecha(exp.fechaVencimiento ?? exp.fechaProcesalProxima);
   }
 
+  /** Determina si una tarea pendiente tiene la fecha de vencimiento anterior a hoy. */
   private tareaEstaVencida(tarea?: Tarea): boolean {
     if (!tarea || tarea.estado === 'Cumplida' || tarea.vencimiento === '-') {
       return false;
@@ -752,6 +769,7 @@ export class ExpedienteView implements OnInit {
     return fecha < hoy;
   }
 
+  /** Parsea una fecha en formato dd/mm/aaaa (string argentino) a Date. Retorna null si el formato es inválido. */
   private parsearFechaArgentina(fecha: string): Date | null {
     if (!fecha) return null;
 
@@ -772,6 +790,7 @@ export class ExpedienteView implements OnInit {
     return new Date(anio, mes, dia);
   }
 
+  /** Parsea fechas en cualquier formato soportado por el constructor Date, incluyendo ISO strings. Retorna null si no es válida. */
   private parsearFechaFlexible(valor: string | Date | null | undefined): Date | null {
     if (!valor) return null;
 
@@ -788,6 +807,7 @@ export class ExpedienteView implements OnInit {
     return fecha;
   }
 
+  /** Retorna las clases Tailwind del badge de tipo de novedad según el nombre del tipo. */
   private obtenerBadgeClasses(tipo: string): string {
     const normalizado = tipo.toLowerCase();
 
@@ -799,6 +819,7 @@ export class ExpedienteView implements OnInit {
     return 'bg-gray-100 text-gray-600';
   }
 
+  /** Retorna las clases Tailwind del punto indicador del timeline según el tipo de novedad. */
   private obtenerDotClasses(tipo: string): string {
     const normalizado = tipo.toLowerCase();
 
@@ -810,6 +831,7 @@ export class ExpedienteView implements OnInit {
     return 'border-gray-400';
   }
 
+  /** Formatea cualquier valor de fecha a string en formato dd/mm/aaaa usando locale es-AR. Retorna '-' si el valor es nulo o inválido. */
   private formatearFecha(valor: string | Date | null | undefined): string {
     if (!valor) return '-';
 
@@ -826,6 +848,7 @@ export class ExpedienteView implements OnInit {
     }).format(fecha);
   }
 
+  /** Convierte un valor a string. Retorna '-' si es null, undefined o string vacío. */
   private valor(valor: string | number | null | undefined): string {
     if (valor === null || valor === undefined || valor === '') {
       return '-';
@@ -834,10 +857,12 @@ export class ExpedienteView implements OnInit {
     return String(valor);
   }
 
+  /** Une nombre y apellido en un solo string, ignorando los valores falsy. */
   private unirNombreApellido(nombre?: string, apellido?: string): string {
     return [nombre, apellido].filter(Boolean).join(' ').trim();
   }
 
+  /** Extrae el array de registros de distintas estructuras de respuesta del backend. */
   private extraerArray(respuesta: any): any[] {
     if (Array.isArray(respuesta)) {
       return respuesta;
@@ -862,6 +887,7 @@ export class ExpedienteView implements OnInit {
     return [];
   }
 
+  /** Abre el documento en una nueva pestaña usando su URL o el endpoint de descarga por ID. */
   descargarDocumento(doc: Documento): void {
     if (doc.urlDescarga) {
       window.open(doc.urlDescarga, '_blank');
@@ -876,6 +902,7 @@ export class ExpedienteView implements OnInit {
     console.warn('El documento no tiene URL de descarga ni ID:', doc);
   }
 
+  /** Descarga el PDF del expediente completo desde el endpoint correspondiente. */
   descargarPdf(): void {
     if (!this.expediente?.id) {
       return;
@@ -884,6 +911,7 @@ export class ExpedienteView implements OnInit {
     window.open(`${environment.apiUrl}/expedientes/${this.expediente.id}/pdf`, '_blank');
   }
 
+  // Retorna a la página de gestión de expedientes. Se usa en el botón "Volver" del header.
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
   }

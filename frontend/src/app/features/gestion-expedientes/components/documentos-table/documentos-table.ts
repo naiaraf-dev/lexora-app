@@ -16,6 +16,11 @@ export interface Documento {
   url: string;
 }
 
+/**
+ * Tabla de documentos con paginación y acciones por fila.
+ * Soporta acciones de descarga, edición y eliminación.
+ * Los badges de tipo se configuran estáticamente según los tipos conocidos.
+ */
 @Component({
   selector: 'app-documentos-table',
   standalone: true,
@@ -23,17 +28,18 @@ export interface Documento {
   templateUrl: './documentos-table.html',
 })
 export class DocumentosTable {
-  @Input() documentos: Documento[] = [];
-  @Input() total = 0;
+  @Input() documentos: Documento[] = []; // Lista de documentos a mostrar en la tabla, ya paginada desde el padre.
+  @Input() total = 0; // Total de documentos filtrados, usado para calcular la paginación.
   @Input() currentPage = 1;
   @Input() totalPages = 1;
 
-  @Output() view     = new EventEmitter<Documento>();
-  @Output() edit     = new EventEmitter<Documento>();
-  @Output() delete   = new EventEmitter<Documento>();
-  @Output() download = new EventEmitter<Documento>();
-  @Output() pageChange = new EventEmitter<number>();
+  @Output() view     = new EventEmitter<Documento>(); // Emite el documento cuando se acciona ver.
+  @Output() edit     = new EventEmitter<Documento>(); // Emite el documento cuando se acciona editar.
+  @Output() delete   = new EventEmitter<Documento>(); // Emite el documento cuando se acciona eliminar.
+  @Output() download = new EventEmitter<Documento>(); // Emite el documento cuando se acciona descargar.
+  @Output() pageChange = new EventEmitter<number>(); // Emite el número de página cuando se cambia la paginación.
 
+  /** Despacha la acción de la fila al output correspondiente según su tipo. */
   onAction(event: { type: TableAction; row: Documento }): void {
     if (event.type === 'view')     this.view.emit(event.row);
     if (event.type === 'edit')     this.edit.emit(event.row);
@@ -41,8 +47,10 @@ export class DocumentosTable {
     if (event.type === 'download') this.download.emit(event.row);
   }
 
+  /** Propaga el cambio de página al componente padre. */
   onPageChange(page: number): void { this.pageChange.emit(page); }
 
+  /** Definición de columnas incluyendo badge de tipo con colores por categoría y acciones disponibles. */
   columns: TableColumn[] = [
     { key: 'nombre',        label: 'Documento',      type: 'text' },
     {

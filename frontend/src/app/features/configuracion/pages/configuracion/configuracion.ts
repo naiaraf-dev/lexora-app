@@ -74,7 +74,7 @@ export class ConfiguracionView implements OnInit {
     });
   }
 
-  // Perfil
+  /** Valida y sube una nueva imagen de perfil via PUT /api/usuarios/profile/image */
   onImagenSeleccionada(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -105,6 +105,7 @@ export class ConfiguracionView implements OnInit {
     input.value = '';
   }
 
+  /** Valida el formulario con Zod y guarda nombre, apellido, matrícula y email via PUT /api/usuarios/profile */
   guardarPerfil() {
     const parsed = perfilSchema.safeParse(this.perfil);
     if (!parsed.success) {
@@ -133,6 +134,7 @@ export class ConfiguracionView implements OnInit {
     });
   }
 
+  /** Cancela la edición del perfil y recarga los datos desde el servidor */
   cancelarPerfil() {
     this.config.getPerfil().subscribe({
       next: (res) => {
@@ -151,17 +153,19 @@ export class ConfiguracionView implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Contraseña
+  /** Resetea el formulario de contraseña y abre el modal */
   abrirPasswordModal() {
     this.resetPasswordForm();
     this.passwordModalAbierto.set(true);
   }
 
+  /** Cierra el modal de contraseña y limpia los campos */
   cerrarPasswordModal() {
     this.passwordModalAbierto.set(false);
     this.resetPasswordForm();
   }
 
+  /** Valida los campos y llama a PUT /api/usuarios/change-password con la contraseña actual y la nueva */
   guardarPassword() {
     this.passwordError.set('');
     if (!this.passwordActual || !this.passwordNueva || !this.passwordConfirmar) {
@@ -188,6 +192,7 @@ export class ConfiguracionView implements OnInit {
     });
   }
 
+  /** Limpia los campos y errores del formulario de contraseña */
   private resetPasswordForm() {
     this.passwordActual = '';
     this.passwordNueva = '';
@@ -195,15 +200,17 @@ export class ConfiguracionView implements OnInit {
     this.passwordError.set('');
   }
 
-  // Eliminar cuenta
+  /** Abre el modal de confirmación para eliminar la cuenta (Baja lógica) */
   abrirDeleteModal() {
     this.deleteModalAbierto.set(true);
   }
 
+  /** Cierra el modal de confirmación */
   cerrarDeleteModal() {
     this.deleteModalAbierto.set(false);
   }
 
+  /** Ejecuta la baja lógica via DELETE /api/usuarios/profile y cierra sesión */
   confirmarEliminar() {
     this.config.eliminarCuenta().subscribe({
       next: () => {

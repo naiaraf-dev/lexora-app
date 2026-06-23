@@ -6,6 +6,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { FormsModule } from '@angular/forms';
 import { Documento } from '../documentos-table/documentos-table';
 
+/**
+ * Modal de edición de un documento existente.
+ * Al recibir el documento via @Input, parchea el formulario con los datos actuales.
+ * Emite los cambios al padre para que construya el FormData y haga el PUT.
+ */
 @Component({
   selector: 'app-modal-doc-edit',
   standalone: true,
@@ -21,8 +26,11 @@ export class ModalDocEdit implements OnChanges {
   @Output() guardar = new EventEmitter<Partial<Documento>>();
 
   guardando = false;
+
+  /** Estado del formulario de edición con los campos modificables del documento. */
   form = { tipo: '', fechaDocumento: '', relacionadoId: '', descripcion: '' };
 
+  /** Parchea el formulario con los datos del documento recibido al abrir el modal. */
   ngOnChanges() {
     if (this.documento) {
       this.form = {
@@ -34,6 +42,7 @@ export class ModalDocEdit implements OnChanges {
     }
   }
 
+  /** Emite los cambios al padre y cierra el modal. */
   submit() {
     this.guardando = true;
     this.guardar.emit({ ...this.form });

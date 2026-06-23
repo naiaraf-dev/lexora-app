@@ -13,6 +13,11 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 import { Storage } from '../../../../core/services/storage';
 
+/**
+ * Sub-página de novedades de un expediente.
+ * Carga novedades, documentos asociados y tareas en paralelo.
+ * Gestiona alta, edición y eliminación de novedades con sus documentos y tareas asociadas.
+ */
 @Component({
   selector: 'app-novedades',
   standalone: true,
@@ -25,10 +30,13 @@ export class Novedades implements OnInit {
   private http    = inject(HttpClient);
   private cdr     = inject(ChangeDetectorRef);
   private storage = inject(Storage);
-  private expedienteId!: number;
-  private usuarioId!: number;
+  private expedienteId!: number; // ID del expediente extraído del parámetro de ruta del componente padre.
+  private usuarioId!: number; // ID del usuario autenticado, extraído del JWT para asignarlo como creador en los POST.
 
+  /** Lista completa de novedades del expediente sin filtrar. */
   allNovedades: Novedad[] = [];
+
+  /** Lista de novedades filtrada según los criterios activos del componente de filtros. */
   filteredNovedades: Novedad[] = [];
 
   tipoNovedadOptions: { value: string; label: string }[] = [];
@@ -37,11 +45,17 @@ export class Novedades implements OnInit {
   usuarioOptions:     { value: string; label: string }[] = [];
 
   tipoDocumentoOptions: { value: string; label: string }[] = [];
+
+  /** Mapa de clave normalizada → id numérico del tipo de documento, usado al subir archivos. */
   private tipoDocumentoIdMap: Record<string, number> = {};
 
+  /** Indica si el modal de creación/edición de novedad está abierto. */
   modalOpen = false;
+
+  /** Nueva novedad en edición. */
   novedadEditando: Novedad | null = null;
 
+  /** Novedad seleccionada para eliminar. Controla la apertura del modal de confirmación. */
   novedadAEliminar: Novedad | null = null;
   confirmEliminarOpen = false;
 
@@ -52,6 +66,7 @@ export class Novedades implements OnInit {
     this.cargarCatalogos();
   }
 
+  /** Decodifica el JWT almacenado y extrae el id del usuario autenticado. */
   private obtenerUsuarioIdDelToken(): number {
     try {
       const token = this.storage.getToken() ?? '';
@@ -62,6 +77,7 @@ export class Novedades implements OnInit {
     }
   }
 
+  /** Carga novedades y documentos en paralelo, luego obtiene la tarea de cada novedad y arma el modelo. */
   private cargarNovedades(): void {
     forkJoin({
       novedades: this.http.get<any[]>(`${environment.apiUrl}/expedientes/${this.expedienteId}/novedades`),
@@ -119,6 +135,7 @@ export class Novedades implements OnInit {
     });
   }
 
+  /** Agrupa la lista plana de documentos en un Map indexado por ID de novedad. */
   private agruparDocumentosPorNovedad(documentos: any[]): Map<string, ArchivoNovedad[]> {
     const documentosPorNovedad = new Map<string, ArchivoNovedad[]>();
 
@@ -143,6 +160,7 @@ export class Novedades implements OnInit {
     return documentosPorNovedad;
   }
 
+  /** Carga todos los enums y catálogos necesarios para los selectores del modal de novedad. */
   private cargarCatalogos(): void {
     this.http.get<any[]>(`${environment.apiUrl}/enums/tiponovedad`).subscribe({
       next: (res) => {
@@ -204,6 +222,7 @@ export class Novedades implements OnInit {
     });
   }
 
+  /** Normaliza el nombre de un tipo de documento a clave sin tildes, espacios ni minúsculas. */
   private normalizarTipoDocumento(nombre: string): string {
     return nombre
       .toUpperCase()
@@ -212,12 +231,14 @@ export class Novedades implements OnInit {
       .replace(/[\u0300-\u036f]/g, '');
   }
 
+  /** Retorna las novedades filtradas ordenadas por fecha descendente (más reciente primero). */
   get novedadesOrdenadas(): Novedad[] {
     return [...this.filteredNovedades].sort(
       (a, b) => new Date(b.fechaActuacion).getTime() - new Date(a.fechaActuacion).getTime()
     );
   }
 
+  /** Maneja los cambios en los filtros de búsqueda. */
   onFiltersChange(f: NovedadFilterState) {
     this.filteredNovedades = this.allNovedades.filter(n =>
       (!f.buscar || n.titulo.toLowerCase().includes(f.buscar.toLowerCase()) ||
@@ -226,21 +247,25 @@ export class Novedades implements OnInit {
     );
   }
 
+  /** Abre el modal para crear una nueva novedad. */
   abrirAlta() {
     this.novedadEditando = null;
     this.modalOpen = true;
   }
 
+  /** Abre el modal para editar una novedad existente. */
   onEditar(novedad: Novedad) {
     this.novedadEditando = novedad;
     this.modalOpen = true;
   }
 
+  /** Abre el modal de confirmación para eliminar una novedad. */
   onEliminar(novedad: Novedad) {
     this.novedadAEliminar = novedad;
     this.confirmEliminarOpen = true;
   }
 
+  /** Confirma la eliminación de una novedad. */
   confirmarEliminar() {
     if (!this.novedadAEliminar) return;
 
@@ -258,6 +283,7 @@ export class Novedades implements OnInit {
       });
   }
 
+  /** Persiste la novedad (POST o PUT), luego sube los documentos adjuntos y sincroniza la tarea. */
   onGuardar(payload: NovedadPayloadConDocumentos) {
     if (this.novedadEditando) {
       const novedadId = Number(this.novedadEditando.id);
@@ -310,6 +336,7 @@ export class Novedades implements OnInit {
     }
   }
 
+  /** Sube en paralelo todos los documentos adjuntos nuevos asociándolos a la novedad creada/editada. */
   private subirDocumentosAdjuntos(novedadId: number, payload: NovedadPayloadConDocumentos): Observable<any> {
     const documentos = payload.documentosAdjuntos ?? [];
 
@@ -346,6 +373,7 @@ export class Novedades implements OnInit {
     );
   }
 
+  /** Crea, actualiza o elimina la tarea asociada a la novedad según el estado del payload. */
   private sincronizarTarea$(novedadId: number, payload: NovedadPayloadConDocumentos): Observable<any> {
     const tareaExistente = this.novedadEditando?.tarea;
     const tareaPayload   = payload.tarea;
@@ -384,14 +412,17 @@ export class Novedades implements OnInit {
     return of(null);
   }
 
+  /** Retorna a la página de gestión de expedientes. */
   volver(): void {
     this.router.navigate(['/gestion-expedientes']);
   }
 
+  /** Mensaje dinámico del modal de confirmación con el título de la novedad a eliminar. */
   get mensajeConfirmar(): string {
     return `¿Estás seguro que querés eliminar la novedad "${this.novedadAEliminar?.titulo ?? ''}"? Esta acción no se puede deshacer.`;
   }
 
+  /** Cierra el modal, muestra el toast de éxito y recarga las novedades tras un guardado exitoso. */
   private finalizarGuardado(): void {
     const mensaje = this.novedadEditando
       ? 'Novedad actualizada correctamente'

@@ -46,6 +46,11 @@ export const NOVEDAD_BADGE: Record<string, { label: string; classes: string }> =
   Observación:   { label: 'Observación',   classes: 'bg-gray-100 text-gray-500' },
 };
 
+/**
+ * Card del timeline de novedades.
+ * Muestra el badge de tipo, fecha, autor, título, descripción, archivos adjuntos y tarea asociada.
+ * Emite eventos de editar y eliminar al componente padre.
+ */
 @Component({
   selector: 'app-novedades-card',
   standalone: true,
@@ -59,6 +64,7 @@ export class NovedadesCard {
   @Output() editar   = new EventEmitter<Novedad>();
   @Output() eliminar = new EventEmitter<Novedad>();
 
+  /** Retorna la configuración del badge según el tipoLabel de la novedad. Fallback a gris si no hay match. */
   get badge() {
     return NOVEDAD_BADGE[this.novedad.tipoLabel] ?? {
       label: this.novedad.tipoLabel,
@@ -66,6 +72,7 @@ export class NovedadesCard {
     };
   }
 
+  /** Retorna las clases Tailwind del badge de prioridad de la tarea asociada. */
   get prioridadClasses(): string {
     const map: Record<string, string> = {
       Alta:    'bg-red-100 text-red-600',
@@ -77,6 +84,7 @@ export class NovedadesCard {
     return this.novedad.tarea ? (map[this.novedad.tarea.prioridad] ?? '') : '';
   }
 
+  /** Abre el documento en nueva pestaña usando el endpoint de descarga por ID. */
   descargarArchivo(archivo: ArchivoNovedad): void {
     if (!archivo.id) {
       return;

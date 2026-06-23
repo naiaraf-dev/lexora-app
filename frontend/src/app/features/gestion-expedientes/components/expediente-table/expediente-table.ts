@@ -19,6 +19,12 @@ export interface Expediente {
   usuarioPrincipal?: { id: number; nombre: string };
 }
 
+/**
+ * Tabla de expedientes con paginación y acciones por fila.
+ * Navega a la vista o edición del expediente según la acción.
+ * Gestiona internamente el modal de confirmación de eliminación
+ * y emite el evento delete al padre para que ejecute el borrado (Baja lógica).
+ */
 @Component({
   selector: 'app-expediente-table',
   standalone: true,
@@ -37,16 +43,18 @@ export class ExpedienteTable {
   @Output() delete = new EventEmitter<Expediente>();
   @Output() pageChange = new EventEmitter<number>();
 
-  expedienteAEliminar: Expediente | null = null;
+  expedienteAEliminar: Expediente | null = null; // Expediente seleccionado para eliminar. Controla la apertura del modal de confirmación.
 
   constructor(private router: Router) {}
 
+  /** Maneja las acciones de la tabla: navega a view/edit o abre el modal de confirmación para delete. */
   onAction(event: { type: TableAction; row: Expediente }): void {
     if (event.type === 'view')   this.router.navigate(['/gestion-expedientes', event.row.id]);
     if (event.type === 'edit')   this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
     if (event.type === 'delete') this.expedienteAEliminar = event.row;
   }
 
+  /** Emite el expediente seleccionado al padre para que ejecute el borrado y cierra el modal. */
   confirmarEliminar(): void {
     if (this.expedienteAEliminar) {
       this.delete.emit(this.expedienteAEliminar);
@@ -54,10 +62,12 @@ export class ExpedienteTable {
     }
   }
 
+  /** Cancela la eliminación y cierra el modal de confirmación sin emitir nada. */
   cancelarEliminar(): void {
     this.expedienteAEliminar = null;
   }
 
+  /** Propaga el cambio de página al componente padre. */
   onPageChange(page: number): void { this.pageChange.emit(page); }
 
   columns: TableColumn[] = [
@@ -78,6 +88,7 @@ export class ExpedienteTable {
     },
   ];
 
+  /** Mensaje dinámico del modal de confirmación con el número interno del expediente. */
   get mensajeConfirmarEliminar(): string {
     return `¿Estás seguro que querés eliminar el expediente "${this.expedienteAEliminar?.numeroInterno}"? Esta acción no se puede deshacer.`;
   }

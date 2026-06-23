@@ -6,6 +6,11 @@ import * as XLSXStyle from 'xlsx-js-style';
 import { ExpedientesService } from '../../services/expedientes.service';
 import { toast } from 'ngx-sonner';
 
+/**
+ * Header del módulo de expedientes.
+ * Contiene el botón de alta (abre modal-exptes), el botón de exportar a Excel
+ * y emite el evento expedienteCreado al padre para que recargue la lista.
+ */
 @Component({
   selector: 'app-expediente-header',
   standalone: true,
@@ -13,15 +18,16 @@ import { toast } from 'ngx-sonner';
   templateUrl: './expediente-header.html',
 })
 export class ExpedienteHeader {
-  @Input() expedientesFiltrados: Expediente[] = [];
+  @Input() expedientesFiltrados: Expediente[] = []; // Lista de expedientes filtrados recibida del padre, usada para generar el Excel.
   @Output() expedienteCreado = new EventEmitter<unknown>();
   private expedientesService = inject(ExpedientesService);
 
-  modalAbierto = false;
+  modalAbierto = false; // Controla la visibilidad del modal de alta de expedientes.
 
   abrirModal(): void { this.modalAbierto = true; }
   cerrarModal(): void { this.modalAbierto = false; }
 
+  /** Recibe el payload del modal, llama al service para crear el expediente y notifica al padre. */
   onGuardar(payload: any): void {
     this.expedientesService.crear(payload).subscribe({
       next: () => {
@@ -34,6 +40,7 @@ export class ExpedienteHeader {
     });
   }
 
+  /** Genera y descarga un archivo .xlsx con los expedientes filtrados actualmente visibles en la tabla. */
   exportar(): void {
     const headers = ['N° Expediente', 'N° Causa', 'Carátula', 'Cliente', 'Área', 'Tipo', 'Estado', 'Fecha Inicio', 'Últ. Actualización'];
 

@@ -8,6 +8,11 @@ export interface NovedadFilterState {
   tipo: string;
 }
 
+/**
+ * Barra de filtros del timeline de novedades.
+ * Filtra por texto libre (título/descripción) y tipo de novedad.
+ * Emite el estado de filtros al padre en cada cambio.
+ */
 @Component({
   selector: 'app-novedades-filter',
   standalone: true,
@@ -19,10 +24,13 @@ export class NovedadesFilter {
   @Output() filtersChange = new EventEmitter<NovedadFilterState>();
   @Output() nuevaNovedad  = new EventEmitter<void>();
 
+  /** Estado actual de los filtros de búsqueda y tipo. */
   filters: NovedadFilterState = { buscar: '', tipo: '' };
 
+  /** Opciones de tipo de novedad recibidas del componente padre. */
   @Input() tipoOptions: { value: string; label: string }[] = [];
 
+  /** Resetea los filtros y emite el estado vacío al padre. */
   limpiar() {
     this.filters = { buscar: '', tipo: '' };
     this.filtersChange.emit({ ...this.filters });
