@@ -1,7 +1,7 @@
 <app-ui-modal [open]="visible" headerClass="bg-primary" (cerrar)="onCerrar()">
 
   <!-- Título -->
-  <!-- encabezado del modal, muestra el icono y el titulo segun el modo -->
+  <!-- encabezado del modal, muestra el icono y el titulo segun el modo actual -->
   <div slot="titulo" class="flex items-center gap-3">
     <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24"
@@ -14,12 +14,12 @@
   </div>
 
   <!-- ─── MODO VER ─── -->
-  <!-- cuando esta en modo ver, muestra la ficha del cliente sin editar los campos -->
+  <!-- en modo ver muestra la informacion del cliente sin campos editables -->
   <div slot="cuerpo">
     @if (modo === 'ver' && formCliente) {
 
     <!-- Avatar + nombre -->
-    <!-- datos principales del cliente y boton para pasar a edicion -->
+    <!-- muestra la inicial, el nombre completo, tipo, estado y boton para pasar a edicion -->
     <div class="flex items-center gap-4 mb-5">
       <div
         class="w-12 h-12 rounded-full bg-primary/10 text-primary font-extrabold flex items-center justify-center text-xl shrink-0">
@@ -45,7 +45,7 @@
     </div>
 
     <!-- Datos -->
-    <!-- muestra la informacion general del cliente -->
+    <!-- datos principales del cliente, ya formateados para lectura -->
     <div class="grid grid-cols-2 gap-3 mb-5">
       <div class="bg-gray-50 rounded-xl border border-gray-100 px-4 py-3">
         <p class="text-[11px] text-text-primary/45 font-medium mb-1">DNI / CUIT</p>
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Expedientes -->
-    <!-- tabla con los expedientes asociados al cliente -->
+    <!-- lista los expedientes relacionados con este cliente -->
     <div class="border-t border-gray-100 pt-4">
       <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-wide mb-3">
         Expedientes Asociados ({{ formCliente.expedientes.length }})
@@ -110,12 +110,12 @@
     }
 
     <!-- ─── MODO CREAR / EDITAR ─── -->
-    <!-- formulario que se usa tanto para crear como para editar clientes -->
+    <!-- este formulario se usa tanto para dar de alta como para modificar un cliente -->
     @if (modo !== 'ver') {
     <div class="flex flex-col gap-5">
 
       <!-- Tipo -->
-      <!-- define si el cliente es persona fisica o juridica -->
+      <!-- define si se carga una persona fisica o una persona juridica -->
       <div class="flex flex-col gap-2">
         <p class="text-xs font-medium text-text-primary/60">Tipo de Cliente</p>
         <div class="flex gap-2">
@@ -133,7 +133,7 @@
       <div class="h-px bg-gray-100"></div>
 
       <!-- Datos Básicos -->
-      <!-- campos principales, cambian segun el tipo de cliente -->
+      <!-- campos principales, cambian segun el tipo de cliente elegido -->
       <div class="flex flex-col gap-3">
         <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-wide">Datos Básicos</p>
 
@@ -162,7 +162,7 @@
       <div class="h-px bg-gray-100"></div>
 
       <!-- Datos de Contacto -->
-      <!-- datos para contactar al cliente -->
+      <!-- datos de contacto obligatorios y direccion opcional -->
       <div class="flex flex-col gap-3">
         <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-wide">Datos de Contacto</p>
         <div class="grid grid-cols-2 gap-3">
@@ -179,7 +179,7 @@
       <div class="h-px bg-gray-100"></div>
 
       <!-- Datos Adicionales -->
-      <!-- campos extra, algunos solo aparecen en edicion o segun el tipo -->
+      <!-- datos extra, algunos aparecen solo en edicion o solo para persona fisica -->
       <div class="flex flex-col gap-3">
         <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-wide">Datos Adicionales (opcional)</p>
         <div class="grid grid-cols-2 gap-3">
@@ -191,6 +191,7 @@
               [(model)]="formCliente.contactoAlternativo" />
           </div>
 
+          <!-- en edicion permite activar o desactivar el cliente -->
           @if (modo === 'editar') {
           <div class="flex flex-col gap-2 col-span-1">
             <p class="text-xs font-medium text-text-primary/60">Estado del cliente</p>
@@ -217,6 +218,7 @@
           <div></div>
           }
 
+          <!-- observaciones internas del cliente -->
           <div class="col-span-2 flex flex-col gap-1">
             <label class="text-xs font-medium text-text-primary/60">Observaciones</label>
             <textarea [(ngModel)]="formCliente.observaciones" placeholder="Notas internas sobre el cliente..." class="w-full h-20 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary
@@ -231,7 +233,7 @@
   </div>
 
   <!-- Footer -->
-  <!-- acciones del modal: cerrar en modo ver, o cancelar/guardar en crear-editar -->
+  <!-- acciones inferiores: cerrar si esta viendo, o cancelar/guardar si esta creando/editando -->
   <div slot="footer">
     @if (modo === 'ver') {
     <div class="flex justify-end">
