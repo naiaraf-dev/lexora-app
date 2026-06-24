@@ -5,6 +5,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 export type EstadoTarea = 'Pendiente' | 'Vencida' | 'Cumplido' | 'En curso';
 export type PrioridadTarea = 'Baja' | 'Media' | 'Alta' | 'Crítica';
 
+// formato que usa la agenda en el front
 export interface TareaAgenda {
   id: number;
 
@@ -35,6 +36,7 @@ export interface TareaAgenda {
   estado: EstadoTarea;
 }
 
+// formato que viene desde el backend
 interface TareaBackend {
   id: number;
   titulo: string;
@@ -82,14 +84,16 @@ interface PrioridadEnum {
 export class AgendaService {
   private readonly apiUrl = 'http://localhost:5000/api';
 
+  // guarda las tareas en memoria y avisa a los componentes cuando cambian
   private tareasSubject = new BehaviorSubject<TareaAgenda[]>([]);
   tareas$ = this.tareasSubject.asObservable();
 
   private estadosTarea: EstadoTareaEnum[] = [];
   private prioridades: PrioridadEnum[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
+  // trae todas las tareas del backend, las adapta al front y actualiza el subject
   cargarTareas(): Observable<TareaAgenda[]> {
     return this.http.get<TareaBackend[]>(`${this.apiUrl}/tareas`).pipe(
       map((tareasBackend) => tareasBackend.map((tarea) => this.mapearTarea(tarea))),
@@ -97,10 +101,12 @@ export class AgendaService {
     );
   }
 
+  // devuelve las tareas que estan cargadas actualmente en memoria
   obtenerTareas(): TareaAgenda[] {
     return this.tareasSubject.value;
   }
 
+  // trae los estados de tarea y los guarda para usarlos despues
   obtenerEstadosTarea(): Observable<EstadoTareaEnum[]> {
     return this.http.get<EstadoTareaEnum[]>(`${this.apiUrl}/enums/estadotarea`).pipe(
       tap((estados) => {
@@ -109,6 +115,7 @@ export class AgendaService {
     );
   }
 
+  // trae las prioridades y las guarda en memoria
   obtenerPrioridades(): Observable<PrioridadEnum[]> {
     return this.http.get<PrioridadEnum[]>(`${this.apiUrl}/enums/prioridad`).pipe(
       tap((prioridades) => {
@@ -117,6 +124,7 @@ export class AgendaService {
     );
   }
 
+  // busca tareas con filtros opcionales y actualiza la lista cargada
   buscarTareas(filtros: {
     titulo?: string;
     descripcion?: string;
@@ -132,6 +140,7 @@ export class AgendaService {
   }): Observable<TareaAgenda[]> {
     let params = new HttpParams();
 
+    // agrega al query param solo los filtros que tienen valor
     Object.entries(filtros).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, String(value));
@@ -144,6 +153,7 @@ export class AgendaService {
     );
   }
 
+  // inserta una tarea y despues recarga la lista
   insertarTarea(tarea: {
     titulo: string;
     descripcion?: string;
@@ -161,6 +171,7 @@ export class AgendaService {
     );
   }
 
+  // modifica una tarea y despues vuelve a cargar todas
   modificarTarea(
     id: number,
     tarea: {
@@ -180,12 +191,14 @@ export class AgendaService {
     );
   }
 
+  // elimina una tarea y actualiza la lista
   eliminarTarea(id: number): Observable<TareaAgenda[]> {
     return this.http.delete(`${this.apiUrl}/tarea/${id}`).pipe(
       switchMap(() => this.cargarTareas())
     );
   }
 
+  // cambia el estado de una tarea a cumplido
   marcarCumplida(id: number): Observable<TareaAgenda[]> {
     const tarea = this.tareasSubject.value.find((t) => t.id === id);
 
@@ -193,6 +206,7 @@ export class AgendaService {
       throw new Error(`No existe una tarea cargada con id ${id}`);
     }
 
+    // busca el id real del estado cumplido, porque el backend trabaja con ids
     const estadoCumplida = this.estadosTarea.find((estado) => estado.nombre === 'Cumplido');
 
     if (!estadoCumplida) {
@@ -212,6 +226,7 @@ export class AgendaService {
     });
   }
 
+  // vuelve una tarea cumplida a pendiente
   desmarcarCumplida(id: number): Observable<TareaAgenda[]> {
     const tarea = this.tareasSubject.value.find((t) => t.id === id);
 
@@ -219,6 +234,7 @@ export class AgendaService {
       throw new Error(`No existe una tarea cargada con id ${id}`);
     }
 
+    // busca el id real del estado pendiente
     const estadoPendiente = this.estadosTarea.find((estado) => estado.nombre === 'Pendiente');
 
     if (!estadoPendiente) {
@@ -238,6 +254,7 @@ export class AgendaService {
     });
   }
 
+  // convierte la tarea del backend al formato que usa la agenda
   private mapearTarea(tarea: TareaBackend): TareaAgenda {
     const fecha = tarea.fecha_vencimiento
       ? tarea.fecha_vencimiento.substring(0, 10)
@@ -283,6 +300,7 @@ export class AgendaService {
     };
   }
 
+  // calcula si una tarea pendiente ya esta vencida segun la fecha
   private calcularEstado(estadoBackend: EstadoTarea, fecha: string): EstadoTarea {
     if (estadoBackend === 'Cumplido') return 'Cumplido';
     if (estadoBackend === 'En curso') return 'En curso';

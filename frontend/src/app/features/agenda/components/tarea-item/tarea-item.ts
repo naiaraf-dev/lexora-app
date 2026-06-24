@@ -12,6 +12,7 @@ export class TareaItem {
   @Input() tarea!: TareaAgenda;
   @Output() ver = new EventEmitter<TareaAgenda>();
 
+  // devuelve el color segun el estado de la tarea
   obtenerColorEstado(): string {
     if (this.tarea.estado === 'Vencida') return 'bg-red-500';
     if (this.tarea.estado === 'Cumplido') return 'bg-green-500';

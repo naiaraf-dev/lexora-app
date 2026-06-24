@@ -9,6 +9,7 @@ import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { toast } from 'ngx-sonner';
 
+// estructura que usa el calendario para armar cada dia con sus tareas
 interface DiaCalendario {
   numero: number;
   fecha: string;
@@ -55,10 +56,12 @@ export class AgendaCalendar implements OnInit {
     { value: 'Crítica', label: 'Crítica' },
   ];
 
+  // arma las opciones de expediente segun las tareas cargadas
   get expedienteOptions() {
     return this.obtenerExpedientes().map((e) => ({ value: e, label: e }));
   }
 
+  // arma las opciones de cliente segun las tareas cargadas
   get clienteOptions() {
     return this.obtenerClientes().map((c) => ({ value: c, label: c }));
   }
@@ -66,15 +69,18 @@ export class AgendaCalendar implements OnInit {
   paginaActual = 1;
   porPagina = 10;
 
+  // devuelve solo las tareas de la pagina actual para la vista lista
   get tareasListaPaginadas(): TareaAgenda[] {
     const inicio = (this.paginaActual - 1) * this.porPagina;
     return this.tareasFiltradas.slice(inicio, inicio + this.porPagina);
   }
 
+  // calcula cuantas paginas hay segun la cantidad de tareas filtradas
   get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.tareasFiltradas.length / this.porPagina));
   }
 
+  // columnas que usa la tabla de la vista lista
   columnaslista: TableColumn[] = [
     { key: 'fecha', label: 'Fecha', type: 'date' },
     { key: 'hora', label: 'Hora', type: 'text' },
@@ -115,8 +121,9 @@ export class AgendaCalendar implements OnInit {
   constructor(
     private agendaService: AgendaService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
+  // al iniciar arma el calendario, escucha cambios de tareas y carga los datos
   ngOnInit(): void {
     this.generarCalendario();
 
@@ -131,6 +138,7 @@ export class AgendaCalendar implements OnInit {
 
   cargandoTareas = false;
 
+  // carga primero los estados y despues las tareas
   cargarDatosIniciales(): void {
     this.cargandoTareas = true;
 
@@ -157,6 +165,7 @@ export class AgendaCalendar implements OnInit {
     });
   }
 
+  // devuelve la fecha de hoy en formato yyyy-mm-dd para comparar con las tareas
   obtenerFechaHoy(): string {
     const hoy = new Date();
 
@@ -167,10 +176,12 @@ export class AgendaCalendar implements OnInit {
     return `${anio}-${mes}-${dia}`;
   }
 
+  // compara una fecha con la fecha actual
   esDiaActual(fecha: string): boolean {
     return fecha === this.fechaHoy;
   }
 
+  // vuelve todos los filtros al estado inicial
   limpiarFiltros(): void {
     this.filtroPrioridad = '';
     this.filtroExpediente = '';
@@ -182,15 +193,18 @@ export class AgendaCalendar implements OnInit {
     this.aplicarFiltros();
   }
 
+  // cambia la pagina actual de la tabla
   onPageChange(p: number): void {
     this.paginaActual = p;
   }
 
+  // recibe acciones de la tabla y ejecuta lo que corresponda
   onTablaAccion(event: { type: string; row: TareaAgenda }): void {
     if (event.type === 'view') this.abrirDetalle(event.row);
     if (event.type === 'complete') this.marcarCumplida(event.row);
   }
 
+  // aplica filtros de prioridad, expediente, cliente y estado
   aplicarFiltros(): void {
     this.tareasFiltradas = this.tareas.filter((tarea) => {
       const coincidePrioridad = !this.filtroPrioridad || tarea.prioridad === this.filtroPrioridad;
@@ -211,6 +225,7 @@ export class AgendaCalendar implements OnInit {
     this.generarCalendario();
   }
 
+  // genera los dias del mes actual y mete dentro las tareas que vencen ese dia
   generarCalendario(): void {
     const cantidadDias = new Date(this.anioActual, this.mesActual + 1, 0).getDate();
 
@@ -226,6 +241,7 @@ export class AgendaCalendar implements OnInit {
     });
   }
 
+  // cambia el mes actual y ajusta el año si pasa de enero/diciembre
   cambiarMes(direccion: number): void {
     this.mesActual += direccion;
 
@@ -242,6 +258,7 @@ export class AgendaCalendar implements OnInit {
     this.aplicarFiltros();
   }
 
+  // arma una fecha en formato yyyy-mm-dd
   formatearFecha(anio: number, mes: number, dia: number): string {
     const mm = String(mes).padStart(2, '0');
     const dd = String(dia).padStart(2, '0');
@@ -249,6 +266,7 @@ export class AgendaCalendar implements OnInit {
     return `${anio}-${mm}-${dd}`;
   }
 
+  // devuelve el nombre del mes y el año que se esta viendo
   obtenerNombreMes(): string {
     const meses = [
       'Enero',
@@ -268,17 +286,20 @@ export class AgendaCalendar implements OnInit {
     return `${meses[this.mesActual]} ${this.anioActual}`;
   }
 
+  // abre el modal con el detalle de la tarea
   abrirDetalle(tarea: TareaAgenda): void {
     this.tareaSeleccionada = tarea;
     this.marcandoCumplida = false;
   }
 
+  // cierra el modal y limpia estados de carga
   cerrarDetalle(): void {
     this.tareaSeleccionada = null;
     this.marcandoCumplida = false;
     this.desmarcandoCumplida = false;
   }
 
+  // marca una tarea como cumplida desde el servicio
   marcarCumplida(tarea: TareaAgenda): void {
     if (this.marcandoCumplida) return;
 
@@ -300,6 +321,7 @@ export class AgendaCalendar implements OnInit {
     });
   }
 
+  // vuelve una tarea cumplida a pendiente
   desmarcarCumplida(tarea: TareaAgenda): void {
     if (this.desmarcandoCumplida) return;
 
@@ -321,14 +343,17 @@ export class AgendaCalendar implements OnInit {
     });
   }
 
+  // cuenta las tareas pendientes o en curso
   obtenerPendientes(): number {
     return this.tareas.filter((t) => t.estado === 'Pendiente' || t.estado === 'En curso').length;
   }
 
+  // cuenta las tareas vencidas
   obtenerVencidas(): number {
     return this.tareas.filter((t) => t.estado === 'Vencida').length;
   }
 
+  // devuelve las clases del badge segun la prioridad
   obtenerBadgePrioridad(prioridad: string): string {
     if (prioridad === 'Crítica') return 'bg-red-100 text-red-600';
     if (prioridad === 'Alta') return 'bg-orange-100 text-orange-600';
@@ -336,6 +361,7 @@ export class AgendaCalendar implements OnInit {
     return 'bg-green-100 text-green-600';
   }
 
+  // devuelve las clases del badge segun el estado
   obtenerBadgeEstado(estado: string): string {
     if (estado === 'Vencida') return 'bg-red-100 text-red-600';
     if (estado === 'Cumplida') return 'bg-green-100 text-green-600';
@@ -343,6 +369,7 @@ export class AgendaCalendar implements OnInit {
     return 'bg-orange-100 text-orange-600';
   }
 
+  // pasa una fecha yyyy-mm-dd a formato dd/mm/yyyy
   obtenerFechaArgentina(fecha: string | null | undefined): string {
     if (!fecha) {
       return '';
@@ -354,10 +381,12 @@ export class AgendaCalendar implements OnInit {
     return `${dia}/${mes}/${anio}`;
   }
 
+  // obtiene expedientes unicos para el filtro
   obtenerExpedientes(): string[] {
     return [...new Set(this.tareas.map((t) => t.expediente).filter(Boolean))];
   }
 
+  // obtiene clientes unicos para el filtro
   obtenerClientes(): string[] {
     return [...new Set(this.tareas.map((t) => t.cliente).filter(Boolean))];
   }

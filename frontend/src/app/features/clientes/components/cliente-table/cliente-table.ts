@@ -12,19 +12,22 @@ import { BadgeConfig } from '../../../../shared/components/ui-badge/ui-badge';
 export class ClienteTable {
   @Input() clientes: Cliente[] = [];
 
-  @Output() verCliente     = new EventEmitter<Cliente>();
-  @Output() editarCliente  = new EventEmitter<Cliente>();
+  @Output() verCliente = new EventEmitter<Cliente>();
+  @Output() editarCliente = new EventEmitter<Cliente>();
 
+  // configuracion visual para mostrar el tipo de cliente como badge
   tipoBadgeConfig: Record<string, BadgeConfig> = {
-    'Persona Física':   { label: 'Persona Física',   classes: 'bg-info/10 text-info',       dot: 'bg-info'       },
-    'Persona Jurídica': { label: 'Persona Jurídica', classes: 'bg-warning/10 text-warning',  dot: 'bg-warning'    },
+    'Persona Física': { label: 'Persona Física', classes: 'bg-info/10 text-info', dot: 'bg-info' },
+    'Persona Jurídica': { label: 'Persona Jurídica', classes: 'bg-warning/10 text-warning', dot: 'bg-warning' },
   };
 
+  // configuracion visual para mostrar si el cliente esta activo o inactivo
   estadoBadgeConfig: Record<string, BadgeConfig> = {
-    Activo:   { label: 'Activo',   classes: 'bg-success/10 text-success', dot: 'bg-success' },
-    Inactivo: { label: 'Inactivo', classes: 'bg-danger/10 text-danger',   dot: 'bg-danger'  },
+    Activo: { label: 'Activo', classes: 'bg-success/10 text-success', dot: 'bg-success' },
+    Inactivo: { label: 'Inactivo', classes: 'bg-danger/10 text-danger', dot: 'bg-danger' },
   };
 
+  // columnas que va a renderizar la tabla generica
   columns: TableColumn[] = [
     {
       key: 'tipo',
@@ -42,8 +45,8 @@ export class ClienteTable {
       label: 'DNI / CUIT',
       type: 'text',
     },
-    { key: 'email',     label: 'Email',      type: 'text' },
-    { key: 'telefono',  label: 'Teléfono',   type: 'text' },
+    { key: 'email', label: 'Email', type: 'text' },
+    { key: 'telefono', label: 'Teléfono', type: 'text' },
     {
       key: 'estado',
       label: 'Estado',
@@ -59,6 +62,7 @@ export class ClienteTable {
     },
   ];
 
+  // acomoda los datos para que la tabla tenga nombre completo y documento ya calculados
   get data() {
     return this.clientes.map(c => ({
       ...c,
@@ -71,8 +75,9 @@ export class ClienteTable {
     }));
   }
 
+  // recibe la accion de la tabla y la manda al componente padre
   onAction(event: { type: TableAction; row: Cliente }): void {
-    if (event.type === 'view')   this.verCliente.emit(event.row);
-    if (event.type === 'edit')   this.editarCliente.emit(event.row);
+    if (event.type === 'view') this.verCliente.emit(event.row);
+    if (event.type === 'edit') this.editarCliente.emit(event.row);
   }
 }

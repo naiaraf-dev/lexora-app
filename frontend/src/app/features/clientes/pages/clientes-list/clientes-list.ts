@@ -21,20 +21,24 @@ export class ClientesList implements OnInit {
   clientes: Cliente[] = [];
   clientesFiltrados: Cliente[] = [];
 
-  filtroNombre    = '';
+  filtroNombre = '';
   filtroDocumento = '';
-  filtroTipo      = '';
-  filtroEstado    = '';
+  filtroTipo = '';
+  filtroEstado = '';
 
-  modalVisible       = false;
+  modalVisible = false;
   modoModal: 'crear' | 'editar' | 'ver' = 'crear';
   clienteSeleccionado: Cliente | null = null;
 
   filtrosAbiertos = signal(true);
 
   readonly PAGE_SIZE = 10;
-  paginaActual  = 1;
+  paginaActual = 1;
+
+  // calcula la cantidad total de paginas segun los clientes filtrados
   get totalPaginas() { return Math.max(1, Math.ceil(this.clientesFiltrados.length / this.PAGE_SIZE)); }
+
+  // devuelve solo los clientes que corresponden a la pagina actual
   get clientesPagina() {
     const start = (this.paginaActual - 1) * this.PAGE_SIZE;
     return this.clientesFiltrados.slice(start, start + this.PAGE_SIZE);
@@ -43,12 +47,13 @@ export class ClientesList implements OnInit {
   tipoOptions: { label: string; value: TipoCliente }[] = [];
 
   estadoOptions = [
-    { label: 'Activo',   value: 'Activo'   },
+    { label: 'Activo', value: 'Activo' },
     { label: 'Inactivo', value: 'Inactivo' },
   ];
 
-  constructor(private clienteService: ClienteService, private cdr: ChangeDetectorRef) {}
+  constructor(private clienteService: ClienteService, private cdr: ChangeDetectorRef) { }
 
+  // al iniciar escucha los clientes del service y carga los tipos disponibles
   ngOnInit(): void {
     this.clienteService.clientes$.subscribe(clientes => {
       this.clientes = clientes;
@@ -65,29 +70,34 @@ export class ClientesList implements OnInit {
     });
   }
 
+  // abre el modal en modo alta
   abrirAltaCliente(): void {
     this.modoModal = 'crear';
     this.clienteSeleccionado = null;
     this.modalVisible = true;
   }
 
+  // abre el modal en modo detalle
   abrirDetalle(cliente: Cliente): void {
     this.modoModal = 'ver';
     this.clienteSeleccionado = cliente;
     this.modalVisible = true;
   }
 
+  // abre el modal en modo edicion
   abrirEdicion(cliente: Cliente): void {
     this.modoModal = 'editar';
     this.clienteSeleccionado = cliente;
     this.modalVisible = true;
   }
 
+  // cierra el modal y limpia el cliente seleccionado
   cerrarModal(): void {
     this.modalVisible = false;
     this.clienteSeleccionado = null;
   }
 
+  // guarda el cliente segun si se esta creando o editando
   guardarCliente(cliente: Cliente): void {
     if (this.modoModal === 'crear') {
       this.clienteService.agregarCliente(cliente).subscribe({
@@ -110,34 +120,38 @@ export class ClientesList implements OnInit {
     }
   }
 
+  // aplica los filtros de nombre, documento, tipo y estado
   aplicarFiltros(): void {
-    const nombre    = this.filtroNombre.toLowerCase().trim();
+    const nombre = this.filtroNombre.toLowerCase().trim();
     const documento = this.filtroDocumento.toLowerCase().trim();
 
     this.clientesFiltrados = this.clientes.filter(c => {
-      const nombreCliente    = (c.tipo === 'Persona Jurídica' ? (c.razonSocial ?? '') : `${c.nombre ?? ''} ${c.apellido ?? ''}`).toLowerCase();
+      const nombreCliente = (c.tipo === 'Persona Jurídica' ? (c.razonSocial ?? '') : `${c.nombre ?? ''} ${c.apellido ?? ''}`).toLowerCase();
       const documentoCliente = (c.tipo === 'Persona Jurídica' ? c.cuit : c.dni)?.toLowerCase() ?? '';
 
-      return (!nombre    || nombreCliente.includes(nombre))
-          && (!documento || documentoCliente.includes(documento))
-          && (!this.filtroTipo   || c.tipo   === this.filtroTipo)
-          && (!this.filtroEstado || c.estado === this.filtroEstado);
+      return (!nombre || nombreCliente.includes(nombre))
+        && (!documento || documentoCliente.includes(documento))
+        && (!this.filtroTipo || c.tipo === this.filtroTipo)
+        && (!this.filtroEstado || c.estado === this.filtroEstado);
     });
 
     this.paginaActual = 1;
   }
 
+  // limpia todos los filtros y vuelve a mostrar el listado completo
   limpiarFiltros(): void {
-    this.filtroNombre    = '';
+    this.filtroNombre = '';
     this.filtroDocumento = '';
-    this.filtroTipo      = '';
-    this.filtroEstado    = '';
+    this.filtroTipo = '';
+    this.filtroEstado = '';
     this.aplicarFiltros();
   }
 
+  // exporta los clientes a excel con encabezados, bordes y anchos definidos
   exportar(): void {
     const headers = ['Tipo', 'Nombre / Razón Social', 'DNI / CUIT', 'Email', 'Teléfono', 'Dirección', 'Estado', 'Fecha de Alta'];
 
+    // arma la fila de encabezados con estilos
     const filaHeaders = headers.map(h => ({
       v: h,
       t: 's',
@@ -146,14 +160,15 @@ export class ClientesList implements OnInit {
         font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
         alignment: { horizontal: 'center', vertical: 'center' },
         border: {
-          top:    { style: 'thin', color: { rgb: 'FFFFFF' } },
+          top: { style: 'thin', color: { rgb: 'FFFFFF' } },
           bottom: { style: 'thin', color: { rgb: 'FFFFFF' } },
-          left:   { style: 'thin', color: { rgb: 'FFFFFF' } },
-          right:  { style: 'thin', color: { rgb: 'FFFFFF' } },
+          left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+          right: { style: 'thin', color: { rgb: 'FFFFFF' } },
         }
       }
     }));
 
+    // arma las filas de datos respetando si es persona fisica o juridica
     const filasDatos = this.clientes.map(c => [
       c.tipo,
       c.tipo === 'Persona Jurídica' ? (c.razonSocial ?? '') : `${c.nombre ?? ''} ${c.apellido ?? ''}`.trim(),
@@ -169,16 +184,17 @@ export class ClientesList implements OnInit {
       s: {
         alignment: { vertical: 'center' },
         border: {
-          top:    { style: 'thin', color: { rgb: 'E2E8F0' } },
+          top: { style: 'thin', color: { rgb: 'E2E8F0' } },
           bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-          left:   { style: 'thin', color: { rgb: 'E2E8F0' } },
-          right:  { style: 'thin', color: { rgb: 'E2E8F0' } },
+          left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+          right: { style: 'thin', color: { rgb: 'E2E8F0' } },
         }
       }
     })));
 
     const ws = XLSXStyle.utils.aoa_to_sheet([filaHeaders, ...filasDatos]);
 
+    // define el ancho de cada columna del excel
     ws['!cols'] = [
       { wch: 16 }, // Tipo
       { wch: 30 }, // Nombre

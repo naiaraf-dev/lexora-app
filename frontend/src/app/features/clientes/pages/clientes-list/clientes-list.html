@@ -1,20 +1,26 @@
 <div class="flex flex-col gap-6">
 
   <!-- Header -->
+  <!-- muestra el titulo, la cantidad de clientes y los botones principales -->
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold text-text-primary">Clientes</h1>
       <p class="text-sm text-text-primary/50 mt-0.5">{{ clientes.length }} clientes registrados</p>
     </div>
     <div class="flex items-center gap-3">
+      <!-- boton para exportar el listado -->
       <app-primary-btn variant="secondary" (click)="exportar()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
         </svg>
         Exportar
       </app-primary-btn>
+      <!-- abre el modal para cargar un cliente nuevo -->
       <app-primary-btn (click)="abrirAltaCliente()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
         </svg>
         Nuevo Cliente
@@ -23,91 +29,58 @@
   </div>
 
   <!-- Filtros -->
+  <!-- card desplegable para buscar clientes por distintos campos -->
   <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
 
-    <button
-      (click)="filtrosAbiertos.set(!filtrosAbiertos())"
-      class="w-full flex items-center gap-2 px-5 py-4 text-sm font-semibold text-text-primary hover:bg-gray-50 transition"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="w-4 h-4 transition-transform duration-200"
-        [class.rotate-180]="!filtrosAbiertos()"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        stroke-width="2"
-      >
+    <!-- abre o cierra el panel de filtros -->
+    <button (click)="filtrosAbiertos.set(!filtrosAbiertos())"
+      class="w-full flex items-center gap-2 px-5 py-4 text-sm font-semibold text-text-primary hover:bg-gray-50 transition">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform duration-200"
+        [class.rotate-180]="!filtrosAbiertos()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
       </svg>
       Filtrar Clientes
     </button>
 
+    <!-- si los filtros estan abiertos, muestra los inputs y selects -->
     @if (filtrosAbiertos()) {
-      <div class="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-          <app-ui-input
-            label="Nombre / Razón Social"
-            placeholder="Buscar por nombre..."
-            [(model)]="filtroNombre"
-          />
-          <app-ui-input
-            label="DNI / CUIT"
-            placeholder="Buscar por documento..."
-            [(model)]="filtroDocumento"
-          />
-          <app-ui-select
-            label="Tipo de Cliente"
-            [options]="tipoOptions"
-            [(model)]="filtroTipo"
-          />
-          <app-ui-select
-            label="Estado"
-            [options]="estadoOptions"
-            [(model)]="filtroEstado"
-          />
-        </div>
-
-        <div class="flex justify-center gap-3 mt-2">
-          <button
-            (click)="aplicarFiltros()"
-            class="px-8 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition"
-          >
-            Buscar
-          </button>
-          <button
-            (click)="limpiarFiltros()"
-            class="px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
-          >
-            Limpiar
-          </button>
-        </div>
+    <div class="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+        <app-ui-input label="Nombre / Razón Social" placeholder="Buscar por nombre..." [(model)]="filtroNombre" />
+        <app-ui-input label="DNI / CUIT" placeholder="Buscar por documento..." [(model)]="filtroDocumento" />
+        <app-ui-select label="Tipo de Cliente" [options]="tipoOptions" [(model)]="filtroTipo" />
+        <app-ui-select label="Estado" [options]="estadoOptions" [(model)]="filtroEstado" />
       </div>
+
+      <!-- acciones para aplicar o limpiar los filtros -->
+      <div class="flex justify-center gap-3 mt-2">
+        <button (click)="aplicarFiltros()"
+          class="px-8 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition">
+          Buscar
+        </button>
+        <button (click)="limpiarFiltros()"
+          class="px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+          Limpiar
+        </button>
+      </div>
+    </div>
     }
 
   </div>
 
   <!-- Tabla -->
-  <app-cliente-table
-    [clientes]="clientesPagina"
-    (verCliente)="abrirDetalle($event)"
-    (editarCliente)="abrirEdicion($event)"
-  ></app-cliente-table>
+  <!-- recibe los clientes de la pagina actual y devuelve eventos para ver o editar -->
+  <app-cliente-table [clientes]="clientesPagina" (verCliente)="abrirDetalle($event)"
+    (editarCliente)="abrirEdicion($event)"></app-cliente-table>
 
   <!-- Paginación -->
-  <app-ui-pagination
-    [paginaActual]="paginaActual"
-    [totalPaginas]="totalPaginas"
-    (cambio)="paginaActual = $event"
-  ></app-ui-pagination>
+  <!-- cambia la pagina actual del listado -->
+  <app-ui-pagination [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
+    (cambio)="paginaActual = $event"></app-ui-pagination>
 
   <!-- Modal -->
-  <app-cliente-modal
-    [visible]="modalVisible"
-    [modo]="modoModal"
-    [cliente]="clienteSeleccionado"
-    (cerrar)="cerrarModal()"
-    (guardar)="guardarCliente($event)"
-  ></app-cliente-modal>
+  <!-- se usa para crear, editar o ver el detalle del cliente seleccionado -->
+  <app-cliente-modal [visible]="modalVisible" [modo]="modoModal" [cliente]="clienteSeleccionado"
+    (cerrar)="cerrarModal()" (guardar)="guardarCliente($event)"></app-cliente-modal>
 
 </div>
