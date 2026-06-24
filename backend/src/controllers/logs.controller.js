@@ -1,5 +1,6 @@
 const service = require('../services/logs.service');
 
+// lista los logs aplicando filtros y paginacion
 async function listar(req, res) {
     try {
         const filtros = {
@@ -19,6 +20,7 @@ async function listar(req, res) {
     }
 }
 
+// trae un log puntual por id
 async function obtener(req, res) {
     try {
         const log = await service.obtener(Number(req.params.id));
@@ -29,6 +31,7 @@ async function obtener(req, res) {
     }
 }
 
+// trae estadisticas de logs segun el rango de fechas
 async function stats(req, res) {
     try {
         const resultado = await service.getStats({
@@ -41,6 +44,7 @@ async function stats(req, res) {
     }
 }
 
+// trae los usuarios que aparecen en los logs
 async function usuarios(req, res) {
     try {
         const resultado = await service.getUsuarios();

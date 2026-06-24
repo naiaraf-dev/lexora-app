@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const repo = require('../repositories/usuarios.repository');
 
+// trae el perfil del usuario y lo devuelve con formato para el front
 async function getPerfil(id) {
     const u = await repo.getById(id);
     if (!u) throw { status: 404, mensaje: 'Usuario no encontrado' };
@@ -16,6 +17,7 @@ async function getPerfil(id) {
     };
 }
 
+// actualiza los datos del perfil y devuelve el usuario actualizado
 async function actualizarPerfil(id, data) {
     const u = await repo.getById(id);
     if (!u) throw { status: 404, mensaje: 'Usuario no encontrado' };
@@ -32,6 +34,7 @@ async function actualizarPerfil(id, data) {
     };
 }
 
+// actualiza la imagen de perfil y devuelve el perfil actualizado
 async function actualizarImagen(id, avatarUrl) {
     const u = await repo.getById(id);
     if (!u) throw { status: 404, mensaje: 'Usuario no encontrado' };
@@ -48,10 +51,12 @@ async function actualizarImagen(id, avatarUrl) {
     };
 }
 
+// valida la contraseña actual y guarda la nueva hasheada
 async function cambiarPassword(id, actual, nueva) {
     const u = await repo.getById(id);
     if (!u) throw { status: 404, mensaje: 'Usuario no encontrado' };
 
+    // compara la contraseña ingresada con el hash guardado
     const match = await bcrypt.compare(actual, u.password_hash);
     if (!match) throw { status: 400, mensaje: 'La contraseña actual no es correcta' };
 
@@ -59,6 +64,7 @@ async function cambiarPassword(id, actual, nueva) {
     await repo.cambiarPassword(id, hash);
 }
 
+// elimina la cuenta del usuario con baja logica
 async function eliminarCuenta(id) {
     const u = await repo.getById(id);
     if (!u) throw { status: 404, mensaje: 'Usuario no encontrado' };
@@ -66,6 +72,7 @@ async function eliminarCuenta(id) {
     await repo.eliminar(id);
 }
 
+// trae todos los usuarios activos
 async function getAll() {
     return repo.getAll();
 }

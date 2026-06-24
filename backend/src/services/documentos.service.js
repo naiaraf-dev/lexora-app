@@ -6,14 +6,17 @@ const {
     obtenerUrlDocumentoCloudinary
 } = require('./cloudinaryDocumento.service');
 
+// trae documentos aplicando los filtros que llegan desde el controller
 async function obtenerDocumentos(filtros) {
     return await documentosRepository.obtenerDocumentos(filtros);
 }
 
+// trae todos los documentos sin filtros
 async function obtenerTodosLosDocumentos() {
     return await documentosRepository.obtenerTodosLosDocumentos();
 }
 
+// inserta un documento sin subir archivo real, usando una storage key simulada
 async function insertarDocumento(datos) {
     const {
         nombre_archivo,
@@ -26,6 +29,7 @@ async function insertarDocumento(datos) {
         tipo_documento
     } = datos;
 
+    // valida campos obligatorios antes de insertar
     if (!nombre_archivo || !nombre_archivo.trim()) {
         const error = new Error('El nombre del archivo es obligatorio');
         error.statusCode = 400;
@@ -58,6 +62,7 @@ async function insertarDocumento(datos) {
         throw error;
     }
 
+    // si viene novedad, valida que exista
     if (novedad) {
         const novedadExiste = await documentosRepository.existeNovedad(novedad);
 
@@ -84,6 +89,7 @@ async function insertarDocumento(datos) {
         throw error;
     }
 
+    // arma una key simulada para guardar en la base
     const storageKeySimulada = `documentos/${Date.now()}_${nombre_archivo.trim().replace(/\s+/g, '_')}`;
 
     const documento = {
@@ -101,6 +107,7 @@ async function insertarDocumento(datos) {
     return await documentosRepository.insertarDocumento(documento);
 }
 
+// sube el archivo a cloudinary y despues inserta el documento en la base
 async function subirEInsertarDocumento(datos, file) {
     if (!file) {
         const error = new Error('El archivo es obligatorio');
@@ -118,6 +125,7 @@ async function subirEInsertarDocumento(datos, file) {
         tipo_documento
     } = datos;
 
+    // valida los datos principales antes de subir
     if (!expediente) {
         const error = new Error('El expediente es obligatorio');
         error.statusCode = 400;
@@ -190,6 +198,7 @@ async function subirEInsertarDocumento(datos, file) {
 
     const documentoInsertado = await documentosRepository.insertarDocumento(documento);
 
+    // devuelve datos del documento y tambien info basica de cloudinary
     return {
         ...documentoInsertado,
         cloudinary: {
@@ -201,6 +210,7 @@ async function subirEInsertarDocumento(datos, file) {
     };
 }
 
+// genera la url de descarga para un documento guardado
 async function obtenerUrlDescargaDocumento(idDocumento) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
         const error = new Error('El id del documento es obligatorio y debe ser numérico');
@@ -230,6 +240,7 @@ async function obtenerUrlDescargaDocumento(idDocumento) {
     };
 }
 
+// elimina el archivo de cloudinary y despues borra el registro de la base
 async function eliminarDocumento(idDocumento) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
         const error = new Error('El id del documento es obligatorio y debe ser numérico');
@@ -250,6 +261,7 @@ async function eliminarDocumento(idDocumento) {
     if (documento.storage_key) {
         resultadoCloudinary = await eliminarDocumentoDeCloudinary(documento.storage_key);
 
+        // acepta ok o not found, porque si no esta en cloudinary igual puede borrarse de la base
         if (
             resultadoCloudinary.result !== 'ok' &&
             resultadoCloudinary.result !== 'not found' &&
@@ -270,6 +282,7 @@ async function eliminarDocumento(idDocumento) {
     };
 }
 
+// modifica los datos del documento y si viene un archivo nuevo reemplaza el anterior
 async function modificarDocumento(idDocumento, datos, file) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
         const error = new Error('El id del documento es obligatorio y debe ser numérico');
@@ -347,6 +360,7 @@ async function modificarDocumento(idDocumento, datos, file) {
             datosActualizacion
         );
     } catch (error) {
+        // si fallo la base despues de subir el archivo nuevo, lo borra para no dejar basura en cloudinary
         if (resultadoCloudinaryNuevo?.public_id) {
             await eliminarDocumentoDeCloudinary(resultadoCloudinaryNuevo.public_id);
         }
@@ -354,6 +368,7 @@ async function modificarDocumento(idDocumento, datos, file) {
         throw error;
     }
 
+    // si se subio un archivo nuevo, borra el anterior de cloudinary
     if (file && documentoActual.storage_key) {
         resultadoCloudinaryAnterior = await eliminarDocumentoDeCloudinary(documentoActual.storage_key);
     }

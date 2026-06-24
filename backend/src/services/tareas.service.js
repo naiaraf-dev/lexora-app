@@ -1,11 +1,13 @@
 const tareasRepository = require('../repositories/tareas.repository');
 
+// crea un error con mensaje y codigo de estado
 function crearError(mensaje, statusCode = 400) {
     const error = new Error(mensaje);
     error.statusCode = statusCode;
     return error;
 }
 
+// valida que existan las relaciones necesarias para crear o modificar una tarea
 async function validarRelacionesTarea(datos, esAlta = true) {
     const {
         expediente,
@@ -16,6 +18,7 @@ async function validarRelacionesTarea(datos, esAlta = true) {
         estado_tarea
     } = datos;
 
+    // valida campos obligatorios
     if (!expediente) {
         throw crearError('El expediente es obligatorio');
     }
@@ -38,6 +41,7 @@ async function validarRelacionesTarea(datos, esAlta = true) {
         throw crearError(`No existe un expediente con id ${expediente}`);
     }
 
+    // si viene una novedad asociada, valida que exista
     if (novedad) {
         const novedadExiste = await tareasRepository.existeNovedad(Number(novedad));
 
@@ -75,14 +79,17 @@ async function validarRelacionesTarea(datos, esAlta = true) {
     }
 }
 
+// trae tareas con los filtros recibidos
 async function obtenerTareas(filtros) {
     return await tareasRepository.obtenerTareas(filtros);
 }
 
+// trae todas las tareas
 async function obtenerTodasLasTareas() {
     return await tareasRepository.obtenerTodasLasTareas();
 }
 
+// valida los datos y crea una tarea nueva
 async function insertarTarea(datos) {
     const {
         titulo,
@@ -119,6 +126,7 @@ async function insertarTarea(datos) {
     return await tareasRepository.insertarTarea(tarea);
 }
 
+// valida que exista y modifica una tarea
 async function modificarTarea(idTarea, datos) {
     if (!idTarea || isNaN(Number(idTarea))) {
         throw crearError('El id de la tarea es obligatorio y debe ser numérico');
@@ -163,6 +171,7 @@ async function modificarTarea(idTarea, datos) {
     return await tareasRepository.modificarTarea(Number(idTarea), tarea);
 }
 
+// valida que exista y elimina la tarea
 async function eliminarTarea(idTarea) {
     if (!idTarea || isNaN(Number(idTarea))) {
         throw crearError('El id de la tarea es obligatorio y debe ser numérico');

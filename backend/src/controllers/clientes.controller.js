@@ -1,5 +1,6 @@
 const service = require('../services/clientes.service');
 
+// trae todos los clientes
 async function getAll(req, res) {
     try {
         const clientes = await service.getAll();
@@ -9,6 +10,7 @@ async function getAll(req, res) {
     }
 }
 
+// busca un cliente por id
 async function getById(req, res) {
     try {
         const cliente = await service.getById(Number(req.params.id));
@@ -19,6 +21,7 @@ async function getById(req, res) {
     }
 }
 
+// crea un cliente nuevo
 async function create(req, res) {
     try {
         const cliente = await service.create(req.body);
@@ -29,6 +32,7 @@ async function create(req, res) {
     }
 }
 
+// actualiza un cliente existente
 async function update(req, res) {
     try {
         const cliente = await service.update(Number(req.params.id), req.body);

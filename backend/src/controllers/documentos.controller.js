@@ -1,5 +1,6 @@
 const documentosService = require('../services/documentos.service');
 
+// arma los filtros que vienen por query y trae los documentos
 async function obtenerDocumentos(req, res) {
     try {
         const filtros = {
@@ -24,6 +25,7 @@ async function obtenerDocumentos(req, res) {
     }
 }
 
+// sube el archivo y lo guarda como documento
 async function subirDocumento(req, res) {
     try {
         const documentoInsertado = await documentosService.subirEInsertarDocumento(req.body, req.file);
@@ -39,6 +41,7 @@ async function subirDocumento(req, res) {
     }
 }
 
+// descarga un documento usando la url guardada
 async function descargarDocumento(req, res) {
     try {
         const { iddocumento } = req.params;
@@ -78,6 +81,7 @@ async function descargarDocumento(req, res) {
     }
 }
 
+// trae todos los documentos sin filtros
 async function obtenerTodosLosDocumentos(req, res) {
     try {
         const documentos = await documentosService.obtenerTodosLosDocumentos();
@@ -91,6 +95,7 @@ async function obtenerTodosLosDocumentos(req, res) {
     }
 }
 
+// inserta un documento con los datos del body
 async function insertarDocumento(req, res) {
     try {
         const documentoInsertado = await documentosService.insertarDocumento(req.body);
@@ -106,6 +111,7 @@ async function insertarDocumento(req, res) {
     }
 }
 
+// elimina el documento y tambien lo borra de cloudinary
 async function eliminarDocumento(req, res) {
     try {
         const { iddocumento } = req.params;
@@ -125,6 +131,7 @@ async function eliminarDocumento(req, res) {
     }
 }
 
+// modifica los datos del documento y el archivo si viene uno nuevo
 async function modificarDocumento(req, res) {
     try {
         const { iddocumento } = req.params;

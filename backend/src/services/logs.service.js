@@ -1,5 +1,6 @@
 const repo = require('../repositories/logs.repository');
 
+// lista logs y los formatea para el front
 async function listar(filtros) {
     const registros = await repo.getAll(filtros);
 
@@ -8,6 +9,8 @@ async function listar(filtros) {
     }
 
     const total = registros[0].totalRegistros;
+
+    // acomoda los nombres de los campos para devolverlos mas prolijos
     const data = registros.map(r => ({
         id: r.id,
         fechaHora: r.fecha_hora,
@@ -23,6 +26,7 @@ async function listar(filtros) {
     return { data, total, pagina: Number(filtros.pagina ?? 1), pageSize: Number(filtros.pageSize ?? 10) };
 }
 
+// trae un log por id y lo devuelve formateado
 async function obtener(id) {
     const r = await repo.getById(id);
     if (!r) return null;
@@ -40,14 +44,17 @@ async function obtener(id) {
     };
 }
 
+// trae estadisticas de los logs
 async function getStats(filtros) {
     return repo.getStats(filtros);
 }
 
+// trae usuarios que tienen logs registrados
 async function getUsuarios() {
     return repo.getUsuarios();
 }
 
+// registra un nuevo log
 async function registrar(data) {
     return repo.crear(data);
 }

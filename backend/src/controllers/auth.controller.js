@@ -1,5 +1,6 @@
 const authService = require('../services/auth.service');
 
+// registra un usuario nuevo y devuelve el token
 async function register(req, res) {
     try {
         const result = await authService.register(req.body.nombre, req.body.apellido, req.body.email, req.body.password, req.body.matricula);
@@ -9,6 +10,7 @@ async function register(req, res) {
     }
 }
 
+// valida el email y contraseña, y devuelve el token si esta todo bien
 async function login(req, res) {
     try {
         const result = await authService.login(req.body.email, req.body.password);
@@ -18,6 +20,7 @@ async function login(req, res) {
     }
 }
 
+// cierra la sesion del usuario
 async function logout(req, res) {
     try {
         await authService.logout();
@@ -27,6 +30,7 @@ async function logout(req, res) {
     }
 }
 
+// manda el mail para recuperar la contraseña
 async function forgotPassword(req, res) {
     try {
         const { email } = req.body;
@@ -38,6 +42,7 @@ async function forgotPassword(req, res) {
     }
 }
 
+// cambia la contraseña usando el token de recuperacion
 async function resetPassword(req, res) {
     try {
         const { token, password } = req.body;

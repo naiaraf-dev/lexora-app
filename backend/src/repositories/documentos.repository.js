@@ -1,11 +1,13 @@
 const sql = require('mssql');
 const { conectarBD } = require('../config/db');
 
+// trae documentos con filtros opcionales
 async function obtenerDocumentos(filtros) {
     const pool = await conectarBD();
 
     const request = pool.request();
 
+    // query base con los joins para traer nombres relacionados y no solo ids
     let query = `
         SELECT 
             d.id,
@@ -38,6 +40,7 @@ async function obtenerDocumentos(filtros) {
         WHERE 1 = 1
     `;
 
+    // agrega filtros solo si vienen en el objeto filtros
     if (filtros.iddocumento) {
         query += ` AND d.id = @iddocumento`;
         request.input('iddocumento', sql.Int, filtros.iddocumento);
@@ -79,6 +82,7 @@ async function obtenerDocumentos(filtros) {
     return resultado.recordset;
 }
 
+// trae todos los documentos sin aplicar filtros
 async function obtenerTodosLosDocumentos() {
     const pool = await conectarBD();
 
@@ -117,6 +121,7 @@ async function obtenerTodosLosDocumentos() {
     return resultado.recordset;
 }
 
+// valida si existe el expediente antes de asociarle un documento
 async function existeExpediente(idExpediente) {
     const pool = await conectarBD();
 
@@ -131,6 +136,7 @@ async function existeExpediente(idExpediente) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe la novedad
 async function existeNovedad(idNovedad) {
     const pool = await conectarBD();
 
@@ -145,6 +151,7 @@ async function existeNovedad(idNovedad) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe el usuario
 async function existeUsuario(idUsuario) {
     const pool = await conectarBD();
 
@@ -159,6 +166,7 @@ async function existeUsuario(idUsuario) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe el tipo de documento
 async function existeTipoDocumento(idTipoDocumento) {
     const pool = await conectarBD();
 
@@ -173,6 +181,7 @@ async function existeTipoDocumento(idTipoDocumento) {
     return resultado.recordset.length > 0;
 }
 
+// inserta un documento nuevo en la base
 async function insertarDocumento(documento) {
     const pool = await conectarBD();
 
@@ -215,6 +224,7 @@ async function insertarDocumento(documento) {
     return resultado.recordset[0];
 }
 
+// busca un documento por id
 async function obtenerDocumentoPorId(idDocumento) {
     const pool = await conectarBD();
 
@@ -241,6 +251,7 @@ async function obtenerDocumentoPorId(idDocumento) {
     return resultado.recordset[0];
 }
 
+// elimina un documento y devuelve el registro eliminado
 async function eliminarDocumentoPorId(idDocumento) {
     const pool = await conectarBD();
 
@@ -255,6 +266,7 @@ async function eliminarDocumentoPorId(idDocumento) {
     return resultado.recordset[0];
 }
 
+// modifica los datos del documento, y tambien el archivo si vienen nombre_archivo y storage_key
 async function modificarDocumento(idDocumento, datos) {
     const pool = await conectarBD();
 
@@ -271,6 +283,7 @@ async function modificarDocumento(idDocumento, datos) {
 
     let camposArchivo = '';
 
+    // si se subio otro archivo, actualiza tambien el nombre y la key del storage
     if (datos.nombre_archivo && datos.storage_key) {
         request.input('nombre_archivo', sql.NVarChar(200), datos.nombre_archivo);
         request.input('storage_key', sql.NVarChar(sql.MAX), datos.storage_key);

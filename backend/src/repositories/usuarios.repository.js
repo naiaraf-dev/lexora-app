@@ -1,5 +1,6 @@
 const { sql, conectarBD } = require('../config/db');
 
+// trae un usuario por id, incluyendo el nombre del rol
 async function getById(id) {
     const pool = await conectarBD();
     const res = await pool.request()
@@ -13,6 +14,7 @@ async function getById(id) {
     return res.recordset[0] ?? null;
 }
 
+// trae todos los usuarios activos
 async function getAll() {
     const pool = await conectarBD();
     const res = await pool.request().query(`
@@ -24,11 +26,13 @@ async function getAll() {
     return res.recordset;
 }
 
+// actualiza solo los datos del usuario que vienen en el body
 async function actualizar(id, data) {
     const pool = await conectarBD();
     const req = pool.request().input('id', sql.Int, id);
     const campos = [];
 
+    // agrega al update solo los campos que llegaron
     const agregarCampo = (campo, tipo, valor) => {
         if (valor !== undefined) {
             req.input(campo, tipo, valor);
@@ -47,6 +51,7 @@ async function actualizar(id, data) {
     return getById(id);
 }
 
+// actualiza la imagen/avatar del usuario
 async function actualizarImagen(id, avatarUrl) {
     const pool = await conectarBD();
     await pool.request()
@@ -56,6 +61,7 @@ async function actualizarImagen(id, avatarUrl) {
     return getById(id);
 }
 
+// cambia el hash de la contraseña del usuario
 async function cambiarPassword(id, passwordHash) {
     const pool = await conectarBD();
     await pool.request()
@@ -64,6 +70,7 @@ async function cambiarPassword(id, passwordHash) {
         .query('UPDATE usuario SET password_hash = @password_hash WHERE id = @id AND activo = 1');
 }
 
+// baja logica del usuario, no lo borra fisicamente
 async function eliminar(id) {
     const pool = await conectarBD();
     await pool.request()

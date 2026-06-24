@@ -1,17 +1,18 @@
 const service = require('../services/expedientes.service');
 
+// lista expedientes aplicando los filtros que vienen por query
 async function listar(req, res) {
     try {
         const filtros = {
-            numero:    req.query.numero,
-            causa:     req.query.causa,
-            caratula:  req.query.caratula,
-            area:      req.query.area,
-            tipo:      req.query.tipo,
-            estado:    req.query.estado,
+            numero: req.query.numero,
+            causa: req.query.causa,
+            caratula: req.query.caratula,
+            area: req.query.area,
+            tipo: req.query.tipo,
+            estado: req.query.estado,
             clienteId: req.query.clienteId,
-            pagina:    req.query.pagina    ? Number(req.query.pagina)    : 1,
-            pageSize:  req.query.pageSize  ? Number(req.query.pageSize)  : 25,
+            pagina: req.query.pagina ? Number(req.query.pagina) : 1,
+            pageSize: req.query.pageSize ? Number(req.query.pageSize) : 25,
         };
 
         const resultado = await service.listar(filtros);
@@ -19,11 +20,12 @@ async function listar(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al listar expedientes',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// trae un expediente por id
 async function obtener(req, res) {
     try {
         const { id } = req.params;
@@ -37,11 +39,12 @@ async function obtener(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al obtener expediente',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// crea un expediente nuevo
 async function crear(req, res) {
     try {
         const expediente = await service.crear(req.body);
@@ -49,11 +52,12 @@ async function crear(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al crear expediente',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// actualiza un expediente existente
 async function actualizar(req, res) {
     try {
         const { id } = req.params;
@@ -62,11 +66,12 @@ async function actualizar(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al actualizar expediente',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// elimina un expediente por id
 async function eliminar(req, res) {
     try {
         const { id } = req.params;
@@ -75,7 +80,7 @@ async function eliminar(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al eliminar expediente',
-            error:   error.message,
+            error: error.message,
         });
     }
 }

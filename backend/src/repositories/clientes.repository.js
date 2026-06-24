@@ -1,6 +1,7 @@
 const sql = require('mssql');
 const { conectarBD } = require('../config/db');
 
+// trae todos los clientes ordenados por apellido y nombre
 async function getAll() {
     const pool = await conectarBD();
     const result = await pool.request().query(`
@@ -13,6 +14,7 @@ async function getAll() {
     return result.recordset;
 }
 
+// busca un cliente puntual por id
 async function getById(id) {
     const pool = await conectarBD();
     const result = await pool.request()
@@ -27,9 +29,10 @@ async function getById(id) {
     return result.recordset[0];
 }
 
+// crea un cliente nuevo en la base
 async function create(datos) {
     const { nombre, apellido, email, telefono, dni, cuit, activo,
-            direccion, observaciones, fecha_nacimiento, tipo_cliente, rol_cliente } = datos;
+        direccion, observaciones, fecha_nacimiento, tipo_cliente, rol_cliente } = datos;
 
     const pool = await conectarBD();
     const result = await pool.request()
@@ -57,9 +60,10 @@ async function create(datos) {
     return result.recordset[0];
 }
 
+// actualiza los datos de un cliente existente
 async function update(id, datos) {
     const { nombre, apellido, email, telefono, dni, cuit, activo,
-            direccion, observaciones, fecha_nacimiento, tipo_cliente, rol_cliente } = datos;
+        direccion, observaciones, fecha_nacimiento, tipo_cliente, rol_cliente } = datos;
 
     const pool = await conectarBD();
     const result = await pool.request()

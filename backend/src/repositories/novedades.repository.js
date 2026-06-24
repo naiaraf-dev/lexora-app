@@ -1,5 +1,6 @@
 const { sql, conectarBD } = require('../config/db');
 
+// trae todas las novedades activas de un expediente
 async function getAllByExpediente(expedienteId) {
     const pool = await conectarBD();
 
@@ -30,6 +31,7 @@ async function getAllByExpediente(expedienteId) {
     return resultado.recordset;
 }
 
+// trae una novedad puntual por id
 async function getById(id) {
     const pool = await conectarBD();
 
@@ -59,17 +61,18 @@ async function getById(id) {
     return resultado.recordset[0] ?? null;
 }
 
+// crea una novedad nueva y despues la devuelve completa
 async function crear(data) {
     const pool = await conectarBD();
 
     const resultado = await pool.request()
-        .input('expediente',      sql.Int,                data.expediente)
-        .input('fecha_novedad',   sql.DateTime,           data.fecha_novedad ?? new Date())
-        .input('titulo',          sql.NVarChar(200),      data.titulo)
-        .input('descripcion',     sql.NVarChar(sql.MAX),  data.descripcion ?? null)
-        .input('es_procesal',    sql.Bit,                data.es_procesal ?? false)
-        .input('tipo_novedad',    sql.Int,                data.tipo_novedad ?? null)
-        .input('usuario_creacion',sql.Int,                data.usuario_creacion)
+        .input('expediente', sql.Int, data.expediente)
+        .input('fecha_novedad', sql.DateTime, data.fecha_novedad ?? new Date())
+        .input('titulo', sql.NVarChar(200), data.titulo)
+        .input('descripcion', sql.NVarChar(sql.MAX), data.descripcion ?? null)
+        .input('es_procesal', sql.Bit, data.es_procesal ?? false)
+        .input('tipo_novedad', sql.Int, data.tipo_novedad ?? null)
+        .input('usuario_creacion', sql.Int, data.usuario_creacion)
         .query(`
             INSERT INTO novedad (
                 expediente, fecha_novedad, titulo, descripcion, es_procesal,
@@ -88,12 +91,14 @@ async function crear(data) {
     return getById(id);
 }
 
+// actualiza solo los campos que vienen en el body
 async function actualizar(id, data) {
     const pool = await conectarBD();
     const req = pool.request().input('id', sql.Int, id);
 
     const campos = [];
 
+    // agrega al update solamente los campos que llegaron
     const agregarCampo = (campo, tipo, valor) => {
         if (valor !== undefined) {
             req.input(campo, tipo, valor);
@@ -101,11 +106,11 @@ async function actualizar(id, data) {
         }
     };
 
-    agregarCampo('fecha_novedad',   sql.DateTime,       data.fecha_novedad);
-    agregarCampo('titulo',       sql.NVarChar(200),     data.titulo);
-    agregarCampo('descripcion',  sql.NVarChar(sql.MAX), data.descripcion);
-    agregarCampo('es_procesal', sql.Bit,                data.es_procesal);
-    agregarCampo('tipo_novedad', sql.Int,               data.tipo_novedad);
+    agregarCampo('fecha_novedad', sql.DateTime, data.fecha_novedad);
+    agregarCampo('titulo', sql.NVarChar(200), data.titulo);
+    agregarCampo('descripcion', sql.NVarChar(sql.MAX), data.descripcion);
+    agregarCampo('es_procesal', sql.Bit, data.es_procesal);
+    agregarCampo('tipo_novedad', sql.Int, data.tipo_novedad);
 
     if (campos.length === 0) throw new Error('No hay campos para actualizar');
 
@@ -120,6 +125,7 @@ async function actualizar(id, data) {
     return getById(id);
 }
 
+// baja logica de la novedad, no la borra fisicamente
 async function eliminar(id) {
     const pool = await conectarBD();
     await pool.request()

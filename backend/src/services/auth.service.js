@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const authRepository = require('../repositories/auth.repository');
 const { sendPasswordResetEmail } = require('./email.service');
 
+// clave para firmar los tokens jwt
 const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
 
+// registra el usuario y le genera un token para dejarlo logueado
 async function register(nombre, apellido, email, password, matricula) {
     const user = await authRepository.registerUser(nombre, apellido, email, password, matricula);
     const token = jwt.sign(
@@ -15,6 +17,7 @@ async function register(nombre, apellido, email, password, matricula) {
     return { token };
 }
 
+// valida login y genera un token con los datos basicos del usuario
 async function login(email, password) {
     const user = await authRepository.loginUser(email, password);
     const token = jwt.sign(
@@ -25,14 +28,17 @@ async function login(email, password) {
     return { token };
 }
 
+// cierra sesion, aunque en este caso casi todo se maneja del lado del token
 async function logout() {
     return await authRepository.logoutUser();
 }
 
+// genera un token de recuperacion y lo manda por mail
 async function forgotPassword(email) {
     const user = await authRepository.findUserByEmail(email);
     if (!user) throw new Error('Email not found');
 
+    // token aleatorio para recuperar contraseña, valido por 1 hora
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -40,6 +46,7 @@ async function forgotPassword(email) {
     await sendPasswordResetEmail(email, token);
 }
 
+// valida el token de recuperacion y guarda la nueva contraseña
 async function resetPassword(token, newPassword) {
     const user = await authRepository.findUserByResetToken(token);
     if (!user) throw new Error('Invalid or expired token');

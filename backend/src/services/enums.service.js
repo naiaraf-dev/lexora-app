@@ -1,5 +1,6 @@
 const repo = require('../repositories/enums.repository');
 
+// mensajes personalizados para cada enum
 const mensajes = {
     tipocliente: {
         getError: 'Error al obtener tipos de cliente',
@@ -39,6 +40,7 @@ const mensajes = {
     }
 };
 
+// valida que el enum exista dentro de los permitidos
 function validarEnum(nombreEnum) {
     if (!mensajes[nombreEnum]) {
         const error = new Error('Enum no encontrado');
@@ -47,16 +49,19 @@ function validarEnum(nombreEnum) {
     }
 }
 
+// devuelve el mensaje de error correspondiente al enum
 function obtenerMensaje(nombreEnum, tipo) {
     validarEnum(nombreEnum);
     return mensajes[nombreEnum][tipo];
 }
 
+// trae todos los valores del enum
 async function getAll(nombreEnum) {
     validarEnum(nombreEnum);
     return repo.getAll(nombreEnum);
 }
 
+// valida el nombre y crea un valor nuevo para el enum
 async function create(nombreEnum, datos) {
     validarEnum(nombreEnum);
 

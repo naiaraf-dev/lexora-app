@@ -1,5 +1,6 @@
 const tareasService = require('../services/tareas.service');
 
+// arma los filtros que vienen por query y trae las tareas
 async function obtenerTareas(req, res) {
     try {
         const filtros = {
@@ -32,6 +33,7 @@ async function obtenerTareas(req, res) {
     }
 }
 
+// trae todas las tareas sin filtros
 async function obtenerTodasLasTareas(req, res) {
     try {
         const tareas = await tareasService.obtenerTodasLasTareas();
@@ -46,6 +48,7 @@ async function obtenerTodasLasTareas(req, res) {
     }
 }
 
+// inserta una tarea nueva
 async function insertarTarea(req, res) {
     try {
         const tareaInsertada = await tareasService.insertarTarea(req.body);
@@ -62,6 +65,7 @@ async function insertarTarea(req, res) {
     }
 }
 
+// modifica una tarea existente
 async function modificarTarea(req, res) {
     try {
         const { idtarea } = req.params;
@@ -80,6 +84,7 @@ async function modificarTarea(req, res) {
     }
 }
 
+// elimina una tarea por id
 async function eliminarTarea(req, res) {
     try {
         const { idtarea } = req.params;

@@ -1,7 +1,9 @@
 const transporter = require('../config/mailer');
 require('dotenv').config();
 
+// manda el mail con el link para restablecer la contraseña
 async function sendPasswordResetEmail(toEmail, token) {
+    // arma la url del frontend con el token de recuperacion
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     await transporter.sendMail({

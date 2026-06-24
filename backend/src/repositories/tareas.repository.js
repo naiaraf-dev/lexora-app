@@ -1,10 +1,12 @@
 const sql = require('mssql');
 const { conectarBD } = require('../config/db');
 
+// trae tareas con filtros opcionales
 async function obtenerTareas(filtros) {
     const pool = await conectarBD();
     const request = pool.request();
 
+    // query base con joins para traer expediente, cliente, novedad, usuarios, prioridad y estado
     let query = `
         SELECT
             t.id,
@@ -47,6 +49,7 @@ async function obtenerTareas(filtros) {
         WHERE 1 = 1
     `;
 
+    // va agregando filtros solo si vienen informados
     if (filtros.idtarea) {
         query += ` AND t.id = @idtarea`;
         request.input('idtarea', sql.Int, filtros.idtarea);
@@ -113,10 +116,12 @@ async function obtenerTareas(filtros) {
     return resultado.recordset;
 }
 
+// trae todas las tareas usando la misma funcion pero sin filtros
 async function obtenerTodasLasTareas() {
     return await obtenerTareas({});
 }
 
+// busca una tarea por id
 async function obtenerTareaPorId(idTarea) {
     const pool = await conectarBD();
 
@@ -131,6 +136,7 @@ async function obtenerTareaPorId(idTarea) {
     return resultado.recordset[0];
 }
 
+// valida si existe el expediente
 async function existeExpediente(idExpediente) {
     const pool = await conectarBD();
 
@@ -145,6 +151,7 @@ async function existeExpediente(idExpediente) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe la novedad
 async function existeNovedad(idNovedad) {
     const pool = await conectarBD();
 
@@ -159,6 +166,7 @@ async function existeNovedad(idNovedad) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe el usuario
 async function existeUsuario(idUsuario) {
     const pool = await conectarBD();
 
@@ -173,6 +181,7 @@ async function existeUsuario(idUsuario) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe la prioridad
 async function existePrioridad(idPrioridad) {
     const pool = await conectarBD();
 
@@ -187,6 +196,7 @@ async function existePrioridad(idPrioridad) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe el estado de tarea
 async function existeEstadoTarea(idEstadoTarea) {
     const pool = await conectarBD();
 
@@ -201,6 +211,7 @@ async function existeEstadoTarea(idEstadoTarea) {
     return resultado.recordset.length > 0;
 }
 
+// inserta una tarea nueva
 async function insertarTarea(tarea) {
     const pool = await conectarBD();
 
@@ -246,6 +257,7 @@ async function insertarTarea(tarea) {
     return resultado.recordset[0];
 }
 
+// modifica una tarea existente
 async function modificarTarea(idTarea, tarea) {
     const pool = await conectarBD();
 
@@ -280,6 +292,7 @@ async function modificarTarea(idTarea, tarea) {
     return resultado.recordset[0];
 }
 
+// elimina una tarea y devuelve el registro borrado
 async function eliminarTareaPorId(idTarea) {
     const pool = await conectarBD();
 

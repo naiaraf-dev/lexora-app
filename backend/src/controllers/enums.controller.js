@@ -1,5 +1,6 @@
 const service = require('../services/enums.service');
 
+// intenta traer el mensaje personalizado, si falla usa uno por defecto
 function obtenerMensajeError(enumName, tipo, fallback) {
     try {
         return service.obtenerMensaje(enumName, tipo);
@@ -8,6 +9,7 @@ function obtenerMensajeError(enumName, tipo, fallback) {
     }
 }
 
+// trae todos los valores del enum que llega por parametro
 async function getAll(req, res) {
     const { enumName } = req.params;
 
@@ -24,6 +26,7 @@ async function getAll(req, res) {
     }
 }
 
+// crea un nuevo valor para el enum indicado
 async function create(req, res) {
     const { enumName } = req.params;
 

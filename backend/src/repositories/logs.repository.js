@@ -1,9 +1,11 @@
 const { sql, conectarBD } = require('../config/db');
 
+// trae los logs con filtros y paginacion
 async function getAll({ fechaDesde, fechaHasta, usuario, modulo, accion, resultado, pagina = 1, pageSize = 10 }) {
     const pool = await conectarBD();
     const req = pool.request();
 
+    // arranca sin filtros reales, para poder ir agregando condiciones
     let where = 'WHERE 1=1';
 
     if (fechaDesde) {
@@ -31,6 +33,7 @@ async function getAll({ fechaDesde, fechaHasta, usuario, modulo, accion, resulta
         where += ' AND ls.resultado = @resultado';
     }
 
+    // calcula desde que registro empieza la pagina
     const offset = (pagina - 1) * pageSize;
     req.input('offset', sql.Int, offset);
     req.input('pageSize', sql.Int, pageSize);
@@ -57,6 +60,7 @@ async function getAll({ fechaDesde, fechaHasta, usuario, modulo, accion, resulta
     return res.recordset;
 }
 
+// trae un log puntual por id
 async function getById(id) {
     const pool = await conectarBD();
     const res = await pool.request()
@@ -79,10 +83,12 @@ async function getById(id) {
     return res.recordset[0] ?? null;
 }
 
+// calcula estadisticas generales de los logs
 async function getStats({ fechaDesde, fechaHasta }) {
     const pool = await conectarBD();
     const req = pool.request();
 
+    // usa el mismo criterio de fechas que el listado
     let where = 'WHERE 1=1';
     if (fechaDesde) {
         req.input('fechaDesde', sql.DateTime2, fechaDesde);
@@ -105,6 +111,7 @@ async function getStats({ fechaDesde, fechaHasta }) {
     return res.recordset[0];
 }
 
+// trae los usuarios que tienen logs registrados
 async function getUsuarios() {
     const pool = await conectarBD();
     const res = await pool.request().query(`
@@ -116,6 +123,7 @@ async function getUsuarios() {
     return res.recordset;
 }
 
+// inserta un nuevo registro en el log de seguridad
 async function crear({ usuario, accion, modulo, descripcion, resultado, ip }) {
     const pool = await conectarBD();
     await pool.request()

@@ -1,5 +1,6 @@
 const service = require('../services/usuarios.service');
 
+// trae los datos del perfil del usuario logueado
 async function getPerfil(req, res) {
     try {
         const perfil = await service.getPerfil(req.usuario.id);
@@ -12,6 +13,7 @@ async function getPerfil(req, res) {
     }
 }
 
+// actualiza los datos del perfil del usuario logueado
 async function actualizarPerfil(req, res) {
     try {
         const perfil = await service.actualizarPerfil(req.usuario.id, req.body);
@@ -24,6 +26,7 @@ async function actualizarPerfil(req, res) {
     }
 }
 
+// actualiza la imagen de perfil del usuario
 async function actualizarImagen(req, res) {
     try {
         if (!req.file) {
@@ -41,6 +44,7 @@ async function actualizarImagen(req, res) {
     }
 }
 
+// cambia la contraseña del usuario logueado
 async function cambiarPassword(req, res) {
     try {
         const { actual, nueva } = req.body;
@@ -61,6 +65,7 @@ async function cambiarPassword(req, res) {
     }
 }
 
+// elimina la cuenta del usuario logueado
 async function eliminarCuenta(req, res) {
     try {
         await service.eliminarCuenta(req.usuario.id);
@@ -73,6 +78,7 @@ async function eliminarCuenta(req, res) {
     }
 }
 
+// trae todos los usuarios
 async function getAll(req, res) {
     try {
         const usuarios = await service.getAll();

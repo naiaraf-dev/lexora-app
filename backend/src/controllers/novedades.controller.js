@@ -1,5 +1,6 @@
 const service = require('../services/novedades.service');
 
+// lista todas las novedades de un expediente
 async function listarPorExpediente(req, res) {
     try {
         const { id } = req.params;
@@ -8,11 +9,12 @@ async function listarPorExpediente(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al listar novedades',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// trae una novedad por id
 async function obtener(req, res) {
     try {
         const { id } = req.params;
@@ -26,11 +28,12 @@ async function obtener(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al obtener novedad',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// crea una novedad nueva
 async function crear(req, res) {
     try {
         const novedad = await service.crear(req.body);
@@ -38,11 +41,12 @@ async function crear(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al crear novedad',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// actualiza una novedad existente
 async function actualizar(req, res) {
     try {
         const { id } = req.params;
@@ -51,11 +55,12 @@ async function actualizar(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al actualizar novedad',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
 
+// elimina una novedad por id
 async function eliminar(req, res) {
     try {
         const { id } = req.params;
@@ -64,7 +69,7 @@ async function eliminar(req, res) {
     } catch (error) {
         res.status(error.status ?? 500).json({
             mensaje: error.mensaje ?? 'Error al eliminar novedad',
-            error:   error.message,
+            error: error.message,
         });
     }
 }
