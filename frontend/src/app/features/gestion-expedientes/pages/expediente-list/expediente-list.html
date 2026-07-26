@@ -9,11 +9,29 @@
   ></app-expediente-filters>
 
   <app-expediente-table
-    [expedientes]="expedientesPagina"
+    [causas]="causas"
     [total]="total"
     [currentPage]="currentPage"
     [totalPages]="totalPages"
     (delete)="onEliminar($event)"
+    (agrupar)="onAgrupar($event)"
+    (desagrupar)="onDesagrupar($event)"
     (pageChange)="onPageChange($event)"
   ></app-expediente-table>
+
+  <app-modal-agrupar
+    [open]="!!expedienteAAgrupar"
+    [expediente]="expedienteAAgrupar"
+    (cerrar)="expedienteAAgrupar = null"
+    (agrupado)="onAgrupado($event)"
+  ></app-modal-agrupar>
+
+  <app-ui-confirm-modal
+    [open]="!!expedienteADesagrupar"
+    titulo="Desagrupar expediente"
+    [mensaje]="'¿Querés desagrupar ' + expedienteADesagrupar?.numeroInterno + ' de su causa? Podrás agruparlo nuevamente después.'"
+    labelConfirmar="Desagrupar"
+    (confirmar)="confirmarDesagrupar()"
+    (cancelar)="expedienteADesagrupar = null"
+  ></app-ui-confirm-modal>
 </div>

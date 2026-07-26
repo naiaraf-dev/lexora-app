@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { UiTable, TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
+import { TableColumn, TableAction } from '../../../../shared/components/ui-table/ui-table';
 import { Router } from '@angular/router';
-import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { CommonModule } from '@angular/common';
 import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
@@ -19,6 +18,14 @@ export interface Expediente {
   usuarioPrincipal?: { id: number; nombre: string };
 }
 
+export interface Causa {
+  id: number;
+  numeroCausa: string;
+  area: string;
+  expedientePrincipalId: number | null;
+  expedientes: Expediente[];
+}
+
 /**
  * Tabla de expedientes con paginación y acciones por fila.
  * Navega a la vista o edición del expediente según la acción.
@@ -28,7 +35,7 @@ export interface Expediente {
 @Component({
   selector: 'app-expediente-table',
   standalone: true,
-  imports: [UiTable, UiPagination, UiConfirmModal, CommonModule],
+  imports: [UiConfirmModal, CommonModule],
   templateUrl: './expediente-table.html',
 })
 export class ExpedienteTable {
@@ -37,21 +44,28 @@ export class ExpedienteTable {
   @Input() total: number = 0;
   @Input() currentPage: number = 1;
   @Input() totalPages: number = 1;
+  @Input() causas: Causa[] = [];
 
   @Output() view = new EventEmitter<Expediente>();
   @Output() edit = new EventEmitter<Expediente>();
   @Output() delete = new EventEmitter<Expediente>();
   @Output() pageChange = new EventEmitter<number>();
+  @Output() agrupar    = new EventEmitter<Expediente>();
+  @Output() desagrupar = new EventEmitter<Expediente>();
 
   expedienteAEliminar: Expediente | null = null; // Expediente seleccionado para eliminar. Controla la apertura del modal de confirmación.
+
+  expandidas = new Set<number>();
 
   constructor(private router: Router) {}
 
   /** Maneja las acciones de la tabla: navega a view/edit o abre el modal de confirmación para delete. */
-  onAction(event: { type: TableAction; row: Expediente }): void {
-    if (event.type === 'view')   this.router.navigate(['/gestion-expedientes', event.row.id]);
-    if (event.type === 'edit')   this.router.navigate(['/gestion-expedientes', event.row.id, 'edit']);
-    if (event.type === 'delete') this.expedienteAEliminar = event.row;
+  onAction(type: TableAction, row: any): void {
+    if (type === 'view')   this.router.navigate(['/gestion-expedientes', row.id]);
+    if (type === 'edit')   this.router.navigate(['/gestion-expedientes', row.id, 'edit']);
+    if (type === 'delete') this.expedienteAEliminar = row;
+    if (type === 'agrupar')    this.agrupar.emit(row);
+    if (type === 'desagrupar') this.desagrupar.emit(row);
   }
 
   /** Emite el expediente seleccionado al padre para que ejecute el borrado y cierra el modal. */
@@ -91,5 +105,21 @@ export class ExpedienteTable {
   /** Mensaje dinámico del modal de confirmación con el número interno del expediente. */
   get mensajeConfirmarEliminar(): string {
     return `¿Estás seguro que querés eliminar el expediente "${this.expedienteAEliminar?.numeroInterno}"? Esta acción no se puede deshacer.`;
+  }
+
+  toggleCausa(id: number): void {
+    if (this.expandidas.has(id)) {
+      this.expandidas.delete(id);
+    } else {
+      this.expandidas.add(id);
+    }
+  }
+
+  estaExpandida(id: number): boolean {
+    return this.expandidas.has(id);
+  }
+
+  get pages(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 }

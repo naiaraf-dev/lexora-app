@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnInit, Output, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -42,6 +42,7 @@ interface Cliente {
 export class ModalExptes implements OnInit {
   private http = inject(HttpClient);
   private auth = inject(Auth);
+  private cdr = inject(ChangeDetectorRef);
 
   @Input() open = false;
   @Output() cerrar = new EventEmitter<void>();
@@ -73,6 +74,7 @@ export class ModalExptes implements OnInit {
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/tipoexpediente`).subscribe({
       next: (res) => {
         this.tipoOptions = res;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error cargando tipos de expediente:', err);
@@ -82,7 +84,7 @@ export class ModalExptes implements OnInit {
     this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/estadoexpediente`).subscribe({
       next: (res) => {
         this.estadoOptions = res;
-
+        this.cdr.detectChanges();
         // Default: primer estado disponible
         if (res.length > 0 && !this.form.estadoId) {
           this.form.estadoId = String(res[0].id);
@@ -96,6 +98,7 @@ export class ModalExptes implements OnInit {
     this.http.get<Cliente[]>(`${environment.apiUrl}/clientes`).subscribe({
       next: (res) => {
         this.clientes = res;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error cargando clientes:', err);
