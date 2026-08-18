@@ -4,7 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 export interface ExpedienteTab {
   label: string;
   path: string;
-  icon: 'datos' | 'documentos' | 'novedades';
+  icon: 'datos' | 'documentos' | 'novedades' | 'prevision';
 }
 
 /**
@@ -24,8 +24,9 @@ export class ExpedienteTabs {
 
   /** Definición de las tabs disponibles con su label, path e ícono. */
   tabs: ExpedienteTab[] = [
-    { label: 'Datos generales', path: 'datos-generales',   icon: 'datos'      },
-    { label: 'Documentos',      path: 'documentos',        icon: 'documentos' },
-    { label: 'Novedades',       path: 'novedades',         icon: 'novedades'  },
+    { label: 'Datos generales', path: 'datos-generales', icon: 'datos'      },
+    { label: 'Documentos',      path: 'documentos',      icon: 'documentos' },
+    { label: 'Novedades',       path: 'novedades',       icon: 'novedades'  },
+    { label: 'Previsión',       path: 'prevision',       icon: 'prevision'  },
   ];
 }

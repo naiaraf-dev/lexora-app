@@ -1,0 +1,814 @@
+<div class="flex flex-col gap-6 max-w-6xl mx-auto">
+
+  <!-- Breadcrumb -->
+  <nav class="text-sm">
+    <a class="text-gray-400 hover:underline cursor-pointer" (click)="volver()">Previsiones y pagos</a>
+    <span class="text-gray-300 mx-1.5">/</span>
+    <span class="text-gray-400">{{ prevision.expediente }}</span>
+    <span class="text-gray-300 mx-1.5">/</span>
+    <span class="text-text-primary font-medium">Previsión</span>
+  </nav>
+
+  <!-- Contexto expediente -->
+  <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-wrap gap-6">
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-text-primary/40">N° expediente</span>
+      <span class="text-sm font-semibold text-text-primary">{{ prevision.expediente }}</span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-text-primary/40">Cliente</span>
+      <span class="text-sm text-text-primary/70">{{ prevision.cliente }}</span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-text-primary/40">Tipo</span>
+      <span class="text-sm text-text-primary/70">{{ prevision.tipo }}</span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-xs text-text-primary/40">Área</span>
+      <span class="text-sm text-text-primary/70">{{ prevision.area }}</span>
+    </div>
+    <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+      <span class="text-xs text-text-primary/40">Carátula</span>
+      <span class="text-sm text-text-primary/70 truncate">{{ prevision.caratula }}</span>
+    </div>
+  </div>
+
+  <!-- Banner modo activo/seguimiento -->
+  @if (prevision.modo === 'Seguimiento') {
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs font-semibold text-blue-600">Modo Seguimiento</span>
+        <span class="text-xs text-text-primary/60">Un tercero es responsable del pago. EMPRESA controla pero no impulsa ni acredita mientras el tercero sea el pagador efectivo.</span>
+      </div>
+    </div>
+  }
+
+  @if (prevision.modo === 'Activo') {
+    <div class="flex items-start gap-3 px-4 py-3 rounded-xl border border-primary/20 bg-primary/5">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-xs font-semibold text-primary">Modo Activo</span>
+        <span class="text-xs text-text-primary/60">EMPRESA o Estado Nacional es el obligado. Circuito completo de previsión, cálculo, impulso, acreditación y cierre.</span>
+      </div>
+    </div>
+  }
+
+  <!-- Cards resumen -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+      <span class="text-xs text-text-primary/40">Monto de sentencia</span>
+      <span class="text-xl font-bold text-text-primary">{{ prevision.montoSentencia }}</span>
+    </div>
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+      <span class="text-xs text-text-primary/40">Monto previsto</span>
+      <span class="text-xl font-bold text-primary">{{ prevision.montoPrevisto }}</span>
+    </div>
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+      <span class="text-xs text-text-primary/40">Última liquidación</span>
+      <span class="text-xl font-bold text-text-primary">{{ prevision.ultimaLiquidacion }}</span>
+    </div>
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+      <span class="text-xs text-text-primary/40">Estado del pago</span>
+      <span class="px-2.5 py-1 rounded-full text-xs font-medium w-fit mt-1" [ngClass]="prevision.estadoClase">
+        {{ prevision.estado }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="border-b border-gray-200">
+    <nav class="flex gap-1">
+      @for (t of [
+        { key: 'resumen', label: 'Resumen' },
+        { key: 'liquidaciones', label: 'Liquidaciones' },
+        { key: 'sentencia', label: 'Sentencia' },
+        { key: 'pagos', label: 'Pagos' },
+        { key: 'documentos', label: 'Documentos' }
+      ]; track t.key) {
+        <button
+          (click)="tab.set($any(t.key))"
+          [class]="'px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ' +
+            (tab() === t.key
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-primary/50 hover:text-text-primary hover:border-gray-300')"
+        >{{ t.label }}</button>
+      }
+    </nav>
+  </div>
+
+  <!-- TAB Resumen -->
+  @if (tab() === 'resumen') {
+    <div class="flex flex-col gap-4">
+
+      <!-- Alertas -->
+      @if (alertas.length) {
+        <div class="flex flex-col gap-2">
+          @for (alerta of alertas; track alerta.titulo) {
+            <div class="flex items-start gap-3 px-4 py-3 rounded-xl border"
+              [class]="alerta.tipo === 'warning'
+                ? 'border-warning/30 bg-warning/5'
+                : 'border-blue-200 bg-blue-50'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 mt-0.5"
+                [class]="alerta.tipo === 'warning' ? 'text-warning' : 'text-blue-500'"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs font-semibold"
+                  [class]="alerta.tipo === 'warning' ? 'text-warning' : 'text-blue-600'">
+                  {{ alerta.titulo }}
+                </span>
+                <span class="text-xs text-text-primary/60">{{ alerta.descripcion }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Datos de la previsión -->
+      <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+        <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Datos de la previsión</p>
+        <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Modo</span>
+            <span
+              class="px-2.5 py-1 rounded-full text-xs font-medium w-fit"
+              [ngClass]="prevision.modo === 'Activo'
+                ? 'bg-primary/10 text-primary'
+                : 'bg-blue-100 text-blue-600'"
+            >
+              {{ prevision.modo }}
+            </span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Tipo de obligación</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.tipoObligacion }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Fecha de resolución</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.fechaResolucion }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Fecha de firmeza</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.fechaFirmeza }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Fecha límite para previsionar</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.fechaLimitePrevisionar }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Fuero</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.fuero }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Obligado al pago</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.obligado }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Pagador efectivo</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.pagadorEfectivo }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Jurisdicción presupuestaria</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.jurisdiccion }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Ejercicio</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.ejercicio }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Monto base</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.montoBase }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Fecha de actualización</span>
+            <span class="text-sm font-medium text-text-primary">{{ prevision.fechaActualizacion }}</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Estado</span>
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium w-fit" [ngClass]="prevision.estadoClase">
+              {{ prevision.estado }}
+            </span>
+          </div>
+          <div class="flex flex-col gap-0.5 col-span-2">
+            <span class="text-xs text-text-primary/40">Observaciones</span>
+            <span class="text-sm text-text-primary/70">{{ prevision.observaciones }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ítems de previsión -->
+      <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+        <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Ítems de previsión</p>
+        <app-ui-table [columns]="columnsItems" [data]="items"></app-ui-table>
+      </div>
+
+      <!-- Factura de honorarios (solo si hay ítem de Honorarios) -->
+      @if (tieneHonorarios) {
+        <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Factura del profesional</p>
+            @if (!facturaHonorarios.cargada) {
+              <button
+                (click)="cargarFactura()"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors"
+              >
+                Cargar factura
+              </button>
+            }
+          </div>
+
+          @if (!facturaHonorarios.cargada) {
+            <div class="flex items-start gap-3 px-4 py-3 rounded-xl border border-danger/30 bg-danger/5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-danger shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs font-semibold text-danger">Factura de honorarios pendiente</span>
+                <span class="text-xs text-text-primary/60">Para impulsar el pago de honorarios debe existir factura cargada en el sistema. Este ítem está bloqueado hasta que se registre la factura.</span>
+              </div>
+            </div>
+          } @else {
+            <div class="flex items-start gap-3 px-4 py-3 rounded-xl border border-success/30 bg-success/5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs font-semibold text-success">Factura cargada</span>
+                <span class="text-xs text-text-primary/60">La factura del profesional fue registrada correctamente.</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs text-text-primary/40">Profesional</span>
+                <span class="text-sm font-medium text-text-primary">{{ facturaHonorarios.profesional }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs text-text-primary/40">Monto</span>
+                <span class="text-sm font-medium text-text-primary">{{ facturaHonorarios.monto }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs text-text-primary/40">Fecha</span>
+                <span class="text-sm font-medium text-text-primary">{{ facturaHonorarios.fecha }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-xs text-text-primary/40">Documento</span>
+                <button class="flex items-center gap-1.5 text-primary text-sm hover:underline w-fit">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  {{ facturaHonorarios.documento }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Prorrateo Art. 730 -->
+      <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Prorrateo / Art. 730</p>
+          @if (!editandoProrrateo) {
+            <button
+              (click)="editandoProrrateo = true"
+              class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-text-primary/60 hover:bg-gray-50 transition-colors"
+            >
+              Editar
+            </button>
+          }
+        </div>
+
+        <!-- Alerta si prorrateo aprobado sin verificar -->
+        @if (prorrateo.aprobado && !prorrateo.verificado) {
+          <div class="flex items-start gap-3 px-4 py-3 rounded-xl border border-warning/30 bg-warning/5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-warning shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs font-semibold text-warning">Prorrateo aprobado sin verificar</span>
+              <span class="text-xs text-text-primary/60">No debe impulsarse sobre el monto original sino sobre el monto prorrateado. Verificar resolución antes de impulsar.</span>
+            </div>
+          </div>
+        }
+
+        <!-- Vista lectura -->
+                @if (!editandoProrrateo) {
+          <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Prorrateo aprobado</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.aprobado ? 'Sí' : 'No' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Fecha de aprobación</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.fechaAprobacion || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Resolución de prorrateo</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.resolucion || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Base del cálculo</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.baseCalculo || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Honorarios sujetos a prorrateo</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.honorariosSujetos || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Coeficiente</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.coeficiente || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Monto prorrateado</span>
+              <span class="text-sm font-medium text-text-primary">{{ prorrateo.montoProrrateado || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Resultado</span>
+              <span class="text-sm font-medium text-primary font-semibold">{{ prorrateo.resultado || '—' }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Vista edición -->
+        @if (editandoProrrateo) {
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+            <label class="text-xs font-medium text-text-primary/60">Prorrateo aprobado</label>
+            <div class="flex border border-gray-200 rounded-md overflow-hidden text-sm">
+              <button
+                type="button"
+                (click)="prorrateo.aprobado = true"
+                [ngClass]="prorrateo.aprobado ? 'bg-primary text-white' : 'bg-white text-text-primary/60'"
+                class="px-3 py-1.5 transition-colors"
+              >Sí</button>
+              <button
+                type="button"
+                (click)="prorrateo.aprobado = false"
+                [ngClass]="!prorrateo.aprobado ? 'bg-primary text-white' : 'bg-white text-text-primary/60'"
+                class="px-3 py-1.5 transition-colors"
+              >No</button>
+            </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <app-ui-date-input label="Fecha de aprobación" [(model)]="prorrateo.fechaAprobacion"></app-ui-date-input>
+              <app-ui-input label="Resolución de prorrateo" placeholder="Ej: Res. 123/2026" [(model)]="prorrateo.resolucion"></app-ui-input>
+              <app-ui-input label="Base del cálculo" placeholder="$ 0,00" [(model)]="prorrateo.baseCalculo"></app-ui-input>
+              <app-ui-input label="Honorarios sujetos a prorrateo" placeholder="$ 0,00" [(model)]="prorrateo.honorariosSujetos"></app-ui-input>
+              <app-ui-input label="Coeficiente" placeholder="Ej: 0,25" [(model)]="prorrateo.coeficiente"></app-ui-input>
+              <app-ui-input label="Monto prorrateado" placeholder="$ 0,00" [(model)]="prorrateo.montoProrrateado"></app-ui-input>
+              <app-ui-input label="Resultado" placeholder="$ 0,00" [(model)]="prorrateo.resultado"></app-ui-input>
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
+              <button
+                type="button"
+                (click)="cancelarProrrateo()"
+                class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >Cancelar</button>
+              <button
+                type="button"
+                (click)="guardarProrrateo()"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
+              >Guardar</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- TAB Liquidaciones -->
+  @if (tab() === 'liquidaciones') {
+    <div class="flex flex-col gap-4">
+      <div class="flex justify-end">
+        <app-primary-btn (click)="modalLiquidacionOpen = true">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Nueva liquidación
+        </app-primary-btn>
+      </div>
+      <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+        <app-ui-table [columns]="columnsLiquidaciones" [data]="liquidaciones"></app-ui-table>
+      </div>
+    </div>
+  }
+
+  <!-- TAB Sentencia -->
+  @if (tab() === 'sentencia') {
+
+    @if (editandoSentencia) {
+      <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+        <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Editar sentencia</p>
+
+        <div class="grid grid-cols-2 gap-4">
+          <app-ui-date-input
+            label="Fecha de sentencia"
+            [model]="formSentencia.fechaSentencia"
+            (modelChange)="formSentencia.fechaSentencia = $event"
+          ></app-ui-date-input>
+          <app-ui-select
+            label="Tipo de sentencia"
+            [options]="tipoSentenciaOptions"
+            [model]="formSentencia.tipoSentencia"
+            (modelChange)="formSentencia.tipoSentencia = $event"
+          ></app-ui-select>
+          <app-ui-input
+            label="Monto de sentencia"
+            [model]="formSentencia.montoSentencia"
+            (modelChange)="formSentencia.montoSentencia = $event"
+          ></app-ui-input>
+          <div class="col-span-2 flex flex-col gap-1">
+            <label class="text-xs font-medium text-text-primary/60">Observaciones</label>
+            <textarea
+              [(ngModel)]="formSentencia.observaciones"
+              rows="2"
+              placeholder="Observaciones sobre la sentencia..."
+              class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Carga de documento -->
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-medium text-text-primary/60">Documento de sentencia</label>
+          @if (archivoSeleccionado) {
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-primary/20 bg-primary/5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <span class="text-sm text-primary font-medium flex-1">{{ archivoSeleccionado }}</span>
+              <button type="button" (click)="archivoSeleccionado = null" class="text-text-primary/30 hover:text-danger transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          } @else {
+            <button type="button" (click)="seleccionarArchivo()"
+              class="flex items-center gap-3 px-4 py-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition w-full text-left">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+              </svg>
+              <div class="flex flex-col">
+                <span class="text-sm text-text-primary/60">Adjuntar documento</span>
+                <span class="text-xs text-text-primary/30">PDF, DOC hasta 10MB</span>
+              </div>
+            </button>
+          }
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
+          <app-primary-btn variant="secondary" (click)="cancelarSentencia()">Cancelar</app-primary-btn>
+          <app-primary-btn (click)="guardarSentencia()">Guardar sentencia</app-primary-btn>
+        </div>
+      </div>
+
+    } @else {
+      <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Sentencia</p>
+          <app-primary-btn variant="secondary" size="sm" (click)="editandoSentencia = true">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Editar
+          </app-primary-btn>
+        </div>
+
+        @if (!prevision.fechaSentencia) {
+          <div class="flex flex-col items-center gap-3 py-6 border border-dashed border-gray-200 rounded-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-text-primary/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <p class="text-sm text-text-primary/40">No hay sentencia cargada para esta previsión.</p>
+            <div class="flex gap-2">
+              <button (click)="editandoSentencia = true"
+                class="px-4 py-2 text-sm font-medium rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors">
+                Agregar sentencia
+              </button>
+              <button (click)="editandoSentencia = true"
+                class="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-text-primary/60 hover:bg-gray-50 transition-colors">
+                Vincular documento
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Fecha de sentencia</span>
+              <span class="text-sm font-medium text-text-primary">{{ prevision.fechaSentencia }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Tipo de sentencia</span>
+              <span class="text-sm font-medium text-text-primary">{{ prevision.tipoSentencia }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Monto de sentencia</span>
+              <span class="text-sm font-medium text-text-primary">{{ prevision.montoSentencia }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-xs text-text-primary/40">Documento</span>
+              @if (archivoSeleccionado) {
+                <button type="button" class="flex items-center gap-2 text-primary text-sm hover:underline w-fit">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  {{ archivoSeleccionado }}
+                </button>
+              } @else {
+                <span class="text-sm text-text-primary/40 italic">Sin documento adjunto</span>
+              }
+            </div>
+            <div class="flex flex-col gap-0.5 col-span-2">
+              <span class="text-xs text-text-primary/40">Observaciones</span>
+              <span class="text-sm text-text-primary/70">{{ prevision.observacionesSentencia || '—' }}</span>
+            </div>
+            
+            <!-- Vincular con repositorio -->
+            <div class="col-span-2 flex items-center gap-2 pt-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              <span class="text-xs text-text-primary/40 italic">
+                El documento puede vincularse con el repositorio de documentos del expediente en LEXORA.
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- TAB Pagos -->
+  @if (tab() === 'pagos') {
+    <div class="flex flex-col gap-4">
+
+      <!-- Resumen estado pago -->
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs text-text-primary/40">Estado del pago</span>
+            <span class="px-2.5 py-1 rounded-full text-xs font-medium w-fit" [ngClass]="prevision.estadoClase">
+              {{ prevision.estado }}
+            </span>
+          </div>
+          @if (pagos.length) {
+            <div class="flex flex-col gap-0.5 pl-6 border-l border-gray-100">
+              <span class="text-xs text-text-primary/40">Total pagado</span>
+              <span class="text-sm font-semibold text-success">
+                {{ pagos[pagos.length - 1].monto }}
+              </span>
+            </div>
+          }
+        </div>
+        @if (prevision.estado !== 'Pagada') {
+          <app-primary-btn (click)="modalPagoOpen = true">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Registrar pago
+          </app-primary-btn>
+        }
+      </div>
+
+      @if (pagos.length) {
+        <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+          <app-ui-table [columns]="columnasPagos" [data]="pagos"></app-ui-table>
+        </div>
+      } @else {
+        <div class="bg-white rounded-xl border border-black/8 px-5 py-10 text-center flex flex-col items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-primary/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
+            </svg>
+          </div>
+          <p class="text-sm text-text-primary/40">No hay pagos registrados para esta previsión.</p>
+        </div>
+      }
+
+    </div>
+  }
+
+    <!-- TAB Documentos -->
+  @if (tab() === 'documentos') {
+    <div class="flex flex-col gap-4">
+
+      <div class="flex justify-end">
+        <button
+          (click)="agregarDocumento()"
+          class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Agregar documento
+        </button>
+      </div>
+
+      @if (documentos.length) {
+        <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 text-left bg-gray-50">
+                <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Documento</th>
+                <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Tipo</th>
+                <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Fecha</th>
+                <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Tamaño</th>
+                <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (doc of documentos; track doc.nombre) {
+                <tr class="hover:bg-primary/5 transition">
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
+                      <span class="text-text-primary/70 font-medium">{{ doc.nombre }}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{{ doc.tipo }}</span>
+                  </td>
+                  <td class="px-4 py-3 text-text-primary/60 text-xs">{{ doc.fecha }}</td>
+                  <td class="px-4 py-3 text-text-primary/40 text-xs">{{ doc.tamanio }}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-center gap-1">
+                      <button
+                        title="Visualizar"
+                        class="p-1.5 rounded-md text-text-primary/30 hover:text-primary hover:bg-primary/10 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        title="Descargar"
+                        class="p-1.5 rounded-md text-text-primary/30 hover:text-success hover:bg-success/10 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M7 10l5 5 5-5" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="bg-white rounded-xl border border-black/8 px-5 py-10 text-center flex flex-col items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-text-primary/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+          </div>
+          <p class="text-sm text-text-primary/40">No hay documentos cargados para esta previsión.</p>
+          <button
+            (click)="agregarDocumento()"
+            class="px-4 py-2 text-sm font-medium rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors"
+          >
+            Agregar primer documento
+          </button>
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- Estado de acreditación -->
+  <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+      <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Estado de acreditación</p>
+      @if (acreditacion.estado === 'Pendiente de acreditación') {
+        <button
+          (click)="acreditacion.estado = 'Acreditado'; acreditacion.fechaAcreditacion = '16/08/2026'; agregarEventoTimeline('Marcó pago como acreditado')"
+          class="px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary hover:bg-primary/5 transition-colors">
+          Marcar como acreditado
+        </button>
+      }
+    </div>
+
+    @if (acreditacion.estado === 'Pendiente de acreditación') {
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl border border-warning/30 bg-warning/5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs font-semibold text-warning">Pendiente de acreditación</span>
+          <span class="text-xs text-text-primary/60">El pago fue registrado pero aún no fue acreditado judicialmente.</span>
+        </div>
+      </div>
+    } @else {
+      <div class="flex items-center gap-3 px-4 py-3 rounded-xl border border-success/30 bg-success/5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs font-semibold text-success">Acreditado</span>
+          <span class="text-xs text-text-primary/60">Pago acreditado judicialmente.</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-8 gap-y-3">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40">Fecha de acreditación</span>
+          <span class="text-sm font-medium text-text-primary">{{ acreditacion.fechaAcreditacion || '—' }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40">Documento / Proveído</span>
+          <span class="text-sm font-medium text-text-primary">{{ acreditacion.documento || '—' }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40">Comprobante</span>
+          <span class="text-sm font-medium text-text-primary">{{ acreditacion.comprobante || '—' }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Notificación pendiente -->
+    @if (notificacionPendiente) {
+      <div class="flex items-start justify-between gap-4 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50">
+        <div class="flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-info shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+          </svg>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-xs font-semibold text-info">Notificación pendiente</span>
+            <span class="text-xs text-text-primary/60">Corresponde notificar la acreditación del pago a las partes interesadas.</span>
+          </div>
+        </div>
+        <button
+          (click)="generarTareaNotificacion()"
+          class="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-info text-info hover:bg-info/5 transition-colors">
+          Generar tarea
+        </button>
+      </div>
+    }
+
+  </div>
+
+  <!-- Timeline -->
+  <div class="bg-white rounded-xl border border-black/8 p-5 flex flex-col gap-5">
+
+    <h2 class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Historial</h2>
+
+    <ol class="flex flex-col">
+      @for (evento of timeline; track evento.fecha + evento.accion; let last = $last) {
+        <li class="relative flex gap-4" [class.pb-6]="!last">
+
+          <div class="flex flex-col items-center">
+            <span class="w-3 h-3 rounded-full bg-primary/20 border-2 border-primary shrink-0 mt-0.5"></span>
+            @if (!last) {
+              <span class="w-px flex-1 bg-gray-200 mt-1"></span>
+            }
+          </div>
+
+          <div class="flex flex-col gap-0.5 flex-1 -mt-0.5 pb-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-medium text-text-primary">{{ evento.fecha }}</span>
+              <span class="text-xs text-gray-400">{{ evento.usuario }}</span>
+            </div>
+            <p class="text-sm font-medium text-text-primary">{{ evento.accion }}</p>
+            @if (evento.detalle) {
+              <p class="text-xs text-gray-400">{{ evento.detalle }}</p>
+            }
+          </div>
+
+        </li>
+      }
+
+      @if (timeline.length === 0) {
+        <p class="text-sm text-gray-400">Sin eventos registrados.</p>
+      }
+    </ol>
+
+  </div>
+</div>
+
+<app-modal-liquidacion
+  [open]="modalLiquidacionOpen"
+  (cerrar)="modalLiquidacionOpen = false"
+></app-modal-liquidacion>
+
+<app-modal-pago
+  [open]="modalPagoOpen"
+  (cerrar)="modalPagoOpen = false"
+  (guardarPago)="onPagoGuardado($event)"
+></app-modal-pago>

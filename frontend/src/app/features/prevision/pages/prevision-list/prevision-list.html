@@ -1,0 +1,129 @@
+<div class="flex flex-col gap-6">
+
+  <!-- Header -->
+  <div class="flex items-start justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-text-primary">Previsión y pago de sentencia</h1>
+      <p class="text-sm text-text-primary/50 mt-0.5">Gestión de previsiones, liquidaciones y pagos asociados a sentencias.</p>
+    </div>
+    <app-primary-btn (click)="modalAltaOpen = true">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+      Nueva previsión
+    </app-primary-btn>
+  </div>
+
+  <!-- Tabs -->
+  <div class="border-b border-gray-200">
+    <nav class="flex gap-1">
+      @for (t of [{ key: 'previsiones', label: 'Previsiones' }, { key: 'liquidaciones', label: 'Liquidaciones' }, { key: 'pagos', label: 'Pagos' }]; track t.key) {
+        <button
+          (click)="tab.set($any(t.key))"
+          [class]="'px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ' +
+            (tab() === t.key
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-primary/50 hover:text-text-primary hover:border-gray-300')"
+        >{{ t.label }}</button>
+      }
+    </nav>
+  </div>
+
+  @if (tab() === 'previsiones') {
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+        <span class="text-xs text-text-primary/40 uppercase tracking-wide">Previsiones activas</span>
+        <span class="text-2xl font-bold text-primary">{{ stats.activas }}</span>
+      </div>
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+        <span class="text-xs text-text-primary/40 uppercase tracking-wide">Monto total previsto</span>
+        <span class="text-2xl font-bold text-text-primary">{{ stats.totalPrevisto }}</span>
+      </div>
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+        <span class="text-xs text-text-primary/40 uppercase tracking-wide">Pendientes de pago</span>
+        <span class="text-2xl font-bold text-warning">{{ stats.pendientesPago }}</span>
+      </div>
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-col gap-1">
+        <span class="text-xs text-text-primary/40 uppercase tracking-wide">Pagadas</span>
+        <span class="text-2xl font-bold text-success">{{ stats.pagadas }}</span>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-wrap items-end gap-3">
+      <app-ui-input label="Expediente" placeholder="EXP-..." [(model)]="filtros.expediente"></app-ui-input>
+      <app-ui-input label="Cliente" placeholder="Nombre del cliente..." [(model)]="filtros.cliente"></app-ui-input>
+      <app-ui-select label="Estado" [(model)]="filtros.estado" [options]="estadoOptions"></app-ui-select>
+      <app-ui-select label="Concepto" [(model)]="filtros.concepto" [options]="conceptoOptions"></app-ui-select>
+      <app-ui-select label="Modo"     [(model)]="filtros.modo"     [options]="modoOptions"></app-ui-select>
+      <button (click)="limpiarFiltros()"
+        class="self-end px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+        Limpiar
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+      <app-ui-table
+        [columns]="columns"
+        [data]="previsionesFiltradas"
+        (action)="onAction($event)"
+      ></app-ui-table>
+    </div>
+
+  }
+
+  @if (tab() === 'liquidaciones') {
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-wrap items-end gap-3">
+      <app-ui-input label="Expediente" placeholder="EXP-..." [(model)]="filtrosLiquidaciones.expediente"></app-ui-input>
+      <app-ui-input label="Cliente" placeholder="Nombre del cliente..." [(model)]="filtrosLiquidaciones.cliente"></app-ui-input>
+      <app-ui-select label="Estado" [(model)]="filtrosLiquidaciones.estado" [options]="estadoLiquidacionOptions"></app-ui-select>
+      <app-ui-input label="Fecha desde" type="date" [(model)]="filtrosLiquidaciones.fechaDesde"></app-ui-input>
+      <app-ui-input label="Fecha hasta" type="date" [(model)]="filtrosLiquidaciones.fechaHasta"></app-ui-input>
+      <button (click)="limpiarFiltrosLiquidaciones()"
+        class="self-end px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+        Limpiar
+      </button>
+    </div>
+
+    <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+      <app-ui-table [columns]="columnsLiquidaciones" [data]="todasLiquidaciones"></app-ui-table>
+    </div>
+  }
+
+  @if (tab() === 'pagos') {
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-xl border border-black/8 px-5 py-4 flex flex-wrap items-end gap-3">
+      <app-ui-input label="Expediente" placeholder="EXP-..." [(model)]="filtrosPagos.expediente"></app-ui-input>
+      <app-ui-input label="Cliente" placeholder="Nombre del cliente..." [(model)]="filtrosPagos.cliente"></app-ui-input>
+      <app-ui-input label="Pagador" placeholder="Pagador efectivo..." [(model)]="filtrosPagos.pagador"></app-ui-input>
+      <app-ui-select label="Estado" [(model)]="filtrosPagos.estado" [options]="estadoPagoOptions"></app-ui-select>
+      <app-ui-input label="Fecha desde" type="date" [(model)]="filtrosPagos.fechaDesde"></app-ui-input>
+      <app-ui-input label="Fecha hasta" type="date" [(model)]="filtrosPagos.fechaHasta"></app-ui-input>
+      <button (click)="limpiarFiltrosPagos()"
+        class="self-end px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+        Limpiar
+      </button>
+    </div>
+
+    @if (todosPagos.length) {
+      <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+        <app-ui-table [columns]="columnsPagos" [data]="todosPagos"></app-ui-table>
+      </div>
+    } @else {
+      <div class="bg-white rounded-xl border border-black/8 px-5 py-10 text-center text-sm text-text-primary/40">
+        No hay pagos registrados.
+      </div>
+    }
+  }
+
+  <app-modal-prevision-alta-global
+    [open]="modalAltaOpen"
+    (cerrar)="modalAltaOpen = false"
+  ></app-modal-prevision-alta-global>
+</div>

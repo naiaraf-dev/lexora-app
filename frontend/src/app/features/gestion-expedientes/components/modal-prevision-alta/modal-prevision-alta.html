@@ -1,0 +1,105 @@
+<app-ui-modal [open]="open" (cerrar)="cerrarModal()">
+
+  <div slot="titulo" class="flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span class="font-semibold text-text-primary">Nueva previsión</span>
+  </div>
+
+  <div slot="cuerpo" class="flex flex-col gap-5">
+
+    <!-- Contexto expediente -->
+    <div class="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3 flex flex-col gap-2">
+      <p class="text-xs font-semibold text-text-primary/40 uppercase tracking-widest">Expediente</p>
+      <div class="grid grid-cols-2 gap-x-6 gap-y-1.5">
+        <div class="flex flex-col">
+          <span class="text-xs text-text-primary/40">N° expediente</span>
+          <span class="text-sm font-medium text-text-primary">{{ expedienteCtx.numero }}</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-xs text-text-primary/40">Tipo</span>
+          <span class="text-sm text-text-primary/70">{{ expedienteCtx.tipo }}</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-xs text-text-primary/40">Cliente</span>
+          <span class="text-sm text-text-primary/70">{{ expedienteCtx.cliente }}</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-xs text-text-primary/40">Área</span>
+          <span class="text-sm text-text-primary/70">{{ expedienteCtx.area }}</span>
+        </div>
+      </div>
+      <p class="text-xs text-text-primary/30 italic">Estos datos se obtienen automáticamente del expediente.</p>
+    </div>
+
+    <!-- Datos de la previsión -->
+    <div class="flex flex-col gap-4">
+      <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Datos de la previsión</p>
+
+      <div class="grid grid-cols-2 gap-3">
+        <app-ui-select label="Concepto *" [(model)]="form.concepto" [options]="conceptoOptions"></app-ui-select>
+        <app-ui-input  label="Monto base *" placeholder="$ 0,00" [(model)]="form.montoBase"></app-ui-input>
+        <app-ui-date-input label="Fecha base *" [(model)]="form.fechaBase"></app-ui-date-input>
+        <app-ui-date-input label="Fecha estimada de pago" [(model)]="form.fechaEstimadaPago"></app-ui-date-input>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60">Observaciones</label>
+        <textarea
+          [(ngModel)]="form.observaciones"
+          placeholder="Observaciones adicionales..."
+          rows="3"
+          class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Cálculo -->
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold text-text-primary/50 uppercase tracking-widest">Cálculo inicial</p>
+        <app-primary-btn variant="secondary" (click)="calcular()">Calcular previsión</app-primary-btn>
+      </div>
+
+      @if (calculado) {
+        <div class="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3 flex flex-col gap-2 text-sm">
+          <div class="flex justify-between text-text-primary/60">
+            <span>Monto base</span>
+            <span>{{ calculo.montoBase }}</span>
+          </div>
+          <div class="flex justify-between text-text-primary/60">
+            <span>Actualización</span>
+            <span>{{ calculo.actualizacion }}</span>
+          </div>
+          <div class="flex justify-between text-text-primary/60">
+            <span>Intereses</span>
+            <span>{{ calculo.intereses }}</span>
+          </div>
+          <div class="flex justify-between font-semibold text-text-primary border-t border-gray-200 pt-2 mt-1">
+            <span>Monto previsto total</span>
+            <span class="text-primary">{{ calculo.total }}</span>
+          </div>
+        </div>
+      } @else {
+        <div class="rounded-xl border border-dashed border-gray-200 px-4 py-5 text-center text-xs text-text-primary/30">
+          Completá los datos y presioná "Calcular previsión" para ver el resultado.
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <div slot="footer" class="flex justify-end gap-2">
+    <app-primary-btn variant="secondary" (click)="cerrarModal()">Cancelar</app-primary-btn>
+    <app-primary-btn variant="primary" [loading]="guardando" (click)="guardar()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 3v4H7V3" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a3 3 0 100 6 3 3 0 000-6z" />
+      </svg>
+      Guardar previsión
+    </app-primary-btn>
+  </div>
+
+</app-ui-modal>
