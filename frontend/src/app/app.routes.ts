@@ -46,12 +46,6 @@ export const routes: Routes = [
           import('./features/configuracion/pages/configuracion/configuracion')
             .then((m) => m.ConfiguracionView),
       },
-      {
-        path: 'dashboard',
-        loadComponent: () =>
-          import('./features/dashboard/pages/dashboard/dashboard')
-            .then((m) => m.Dashboard),
-      },
     ],
   },
 

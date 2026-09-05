@@ -1,0 +1,68 @@
+<app-ui-modal [open]="open" (cerrar)="cerrarModal()">
+
+  <div slot="titulo" class="flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101m-.758-4.899a4 4 0 01-5.656 0l-4-4a4 4 0 015.656-5.656l1.1 1.1" />
+    </svg>
+    <span class="font-semibold text-text-primary">Agrupar expediente a causa</span>
+  </div>
+
+  <div slot="cuerpo" class="flex flex-col gap-4">
+
+    @if (expediente) {
+      <p class="text-sm text-text-primary/60">
+        Agrupando <span class="font-medium text-text-primary">{{ expediente.numeroInterno }}</span> — {{ expediente.caratula }}
+      </p>
+    }
+
+    <!-- Buscador -->
+    <div class="flex gap-2">
+      <input
+        type="text"
+        [(ngModel)]="busqueda"
+        placeholder="Buscar por N° de causa..."
+        (keyup.enter)="buscar()"
+        class="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+      />
+      <app-primary-btn variant="secondary" (click)="buscar()">Buscar</app-primary-btn>
+    </div>
+
+    <!-- Lista de causas -->
+    <div class="flex flex-col gap-1 max-h-64 overflow-y-auto">
+      @if (cargando) {
+        <p class="text-sm text-text-primary/40 text-center py-4">Buscando...</p>
+      } @else if (causas.length === 0) {
+        <p class="text-sm text-text-primary/40 text-center py-4">No se encontraron causas</p>
+      } @else {
+        @for (causa of causas; track causa.id) {
+          <div
+            (click)="seleccionar(causa)"
+            class="flex items-center justify-between px-3 py-2.5 rounded-lg border cursor-pointer transition"
+            [class]="causaSeleccionada?.id === causa.id
+              ? 'border-primary bg-primary/5'
+              : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'"
+          >
+            <div class="flex flex-col gap-0.5">
+              <span class="text-sm font-medium text-text-primary">{{ causa.numeroCausa }}</span>
+              <span class="text-xs text-text-primary/50">{{ causa.area }} · {{ causa.expedientes?.length ?? 0 }} expediente(s)</span>
+            </div>
+            @if (causaSeleccionada?.id === causa.id) {
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            }
+          </div>
+        }
+      }
+    </div>
+
+  </div>
+
+  <div slot="footer" class="flex justify-end gap-2">
+    <app-primary-btn variant="secondary" (click)="cerrarModal()">Cancelar</app-primary-btn>
+    <app-primary-btn variant="primary" [disabled]="!causaSeleccionada" [loading]="guardando" (click)="confirmar()">
+      Agrupar
+    </app-primary-btn>
+  </div>
+
+</app-ui-modal>

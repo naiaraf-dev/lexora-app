@@ -170,6 +170,7 @@ export class Novedades implements OnInit {
             value: String(t.id),
             label: t.nombre,
           }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar tipos de novedad'),
     });
@@ -180,6 +181,7 @@ export class Novedades implements OnInit {
           value: String(p.id),
           label: p.nombre,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar prioridades'),
     });
@@ -190,6 +192,7 @@ export class Novedades implements OnInit {
           value: String(e.id),
           label: e.nombre,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar estados de tarea'),
     });
@@ -200,6 +203,7 @@ export class Novedades implements OnInit {
           value: String(u.id),
           label: `${u.nombre} ${u.apellido}`,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar usuarios'),
     });
@@ -210,7 +214,7 @@ export class Novedades implements OnInit {
           value: this.normalizarTipoDocumento(t.nombre),
           label: t.nombre,
         }));
-
+        this.cdr.detectChanges();
         this.tipoDocumentoIdMap = Object.fromEntries(
           res.map(t => [
             this.normalizarTipoDocumento(t.nombre),

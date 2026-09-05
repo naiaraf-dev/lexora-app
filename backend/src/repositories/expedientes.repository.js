@@ -50,6 +50,7 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
             e.area,
             e.fecha_inicio,
             e.fecha_creacion,
+            e.causa_id,
             e.fecha_ultima_modificacion    AS ultimaActualizacion,
             e.activo,
             te.id                          AS tipoId,
@@ -139,6 +140,7 @@ async function crear(data) {
         .input('fecha_vencimiento', sql.DateTime, data.fecha_vencimiento ?? null)
         .input('prioridad', sql.Int, data.prioridad ?? null)
         .input('origen_caso', sql.NVarChar(200), data.origen_caso ?? null)
+        .input('causa_id', sql.Int, data.causa_id ?? null)
         .query(`
             INSERT INTO expediente (
                 tipo_expediente, estado_expediente, usuario_principal, usuario_secundario,
@@ -147,7 +149,7 @@ async function crear(data) {
                 descripcion, fuero, juzgado, secretaria, jurisdiccion,
                 numero_expediente_judicial, instancia, contraparte,
                 abogado_contraparte, fecha_estimada_cierre, fecha_procesal_proximo,
-                fecha_vencimiento, prioridad, origen_caso,
+                fecha_vencimiento, prioridad, origen_caso, causa_id,
                 fecha_creacion, fecha_ultima_modificacion, activo
             )
             OUTPUT INSERTED.id
@@ -158,7 +160,7 @@ async function crear(data) {
                 @descripcion, @fuero, @juzgado, @secretaria, @jurisdiccion,
                 @numero_expediente_judicial, @instancia, @contraparte,
                 @abogado_contraparte, @fecha_estimada_cierre, @fecha_procesal_proximo,
-                @fecha_vencimiento, @prioridad, @origen_caso,
+                @fecha_vencimiento, @prioridad, @origen_caso, @causa_id,
                 GETDATE(), GETDATE(), 1
             )
         `);

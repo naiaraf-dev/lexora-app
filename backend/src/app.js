@@ -13,6 +13,7 @@ const clientesRoutes = require('./routes/clientes.routes');
 const authMiddleware = require('./middlewares/auth.middleware');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const expedientesRouter = require('./routes/expedientes.routes');
+const causasRouter = require('./routes/causa.routes');
 const novedadesRouter = require('./routes/novedades.routes');
 const enumsRoutes = require('./routes/enums.routes');
 
@@ -53,10 +54,11 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*
-    EXPEDIENTES Y NOVEDADES
+    EXPEDIENTES, CAUSAS Y NOVEDADES
 */
 
 app.use('/api/expedientes', expedientesRouter);
+app.use('/api/causas', causasRouter);
 app.use('/api/novedades', novedadesRouter);
 
 /*

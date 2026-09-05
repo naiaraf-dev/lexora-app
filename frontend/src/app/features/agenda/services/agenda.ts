@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map, Observable, switchMap, tap } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 export type EstadoTarea = 'Pendiente' | 'Vencida' | 'Cumplido' | 'En curso';
 export type PrioridadTarea = 'Baja' | 'Media' | 'Alta' | 'Crítica';
@@ -82,7 +83,7 @@ interface PrioridadEnum {
   providedIn: 'root',
 })
 export class AgendaService {
-  private readonly apiUrl = 'http://localhost:5000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   // guarda las tareas en memoria y avisa a los componentes cuando cambian
   private tareasSubject = new BehaviorSubject<TareaAgenda[]>([]);

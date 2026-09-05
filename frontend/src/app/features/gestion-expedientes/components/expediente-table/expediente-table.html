@@ -1,20 +1,168 @@
 <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
   <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
-    <app-ui-table
-      [columns]="columns"
-      [data]="expedientes"
-      (action)="onAction($event)"
-    ></app-ui-table>
 
-    <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
-      <span>Mostrando {{ expedientes.length }} de {{ total }} expedientes</span>
-      <app-ui-pagination
-        [paginaActual]="currentPage"
-        [totalPaginas]="totalPages"
-        (cambio)="onPageChange($event)"
-      ></app-ui-pagination>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+
+      <!-- HEADER -->
+      <thead>
+        <tr class="border-b border-gray-100 text-left bg-gray-50">
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase w-8"></th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">N° Causa</th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Área</th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Expedientes</th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Cliente</th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase">Estado</th>
+          <th class="px-4 py-3 text-xs font-semibold text-text-primary/50 uppercase text-center">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-100">
+
+        @for (causa of causas; track causa.id) {
+
+          <!-- FILA CAUSA -->
+          <tr class="hover:bg-primary/5 transition"
+            [class.cursor-pointer]="causa.expedientes.length > 1"
+            (click)="causa.expedientes.length > 1 && toggleCausa(causa.id)">
+            <td class="px-4 py-3">
+              @if (causa.expedientes.length > 1) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/40 transition-transform"
+                  [class.rotate-180]="estaExpandida(causa.id)"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              }
+            </td>
+            <td class="px-4 py-3 font-medium text-text-primary">
+              {{ causa.expedientes.length > 1 ? causa.numeroCausa : causa.expedientes[0].numeroInterno }}
+            </td>
+            <td class="px-4 py-3 text-text-primary/70">{{ causa.area }}</td>
+            <td class="px-4 py-3 text-text-primary/70">
+              {{ causa.expedientes.length > 1 ? causa.expedientes.length + ' expedientes' : causa.expedientes[0].tipo?.nombre }}
+            </td>
+            <td class="px-4 py-3 text-text-primary/70">
+              {{ causa.expedientes[0]?.cliente?.nombre || '-' }}
+            </td>
+            <td class="px-4 py-3 text-text-primary/70">
+              {{ causa.expedientes[0]?.estado?.nombre || '-' }}
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center justify-center gap-1">
+                @if (causa.expedientes.length === 1) {
+                  <button (click)="$event.stopPropagation(); onAction('view', causa.expedientes[0])" title="Visualizar"
+                    class="p-1.5 rounded-md text-text-primary/30 hover:text-primary hover:bg-primary/10 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <button (click)="$event.stopPropagation(); onAction('edit', causa.expedientes[0])" title="Editar"
+                    class="p-1.5 rounded-md text-text-primary/30 hover:text-warning hover:bg-warning/10 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18.414 2.586a2 2 0 0 1 2.828 2.828L11.828 14H9v-2.828l9.414-9.414z" />
+                    </svg>
+                  </button>
+                  <button (click)="$event.stopPropagation(); onAction('agrupar', causa.expedientes[0])" title="Agrupar a causa"
+                    class="p-1.5 rounded-md text-text-primary/30 hover:text-green-600 hover:bg-green-600/10 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101m-.758-4.899a4 4 0 01-5.656 0l-4-4a4 4 0 015.656-5.656l1.1 1.1" />
+                    </svg>
+                  </button>
+                  <button (click)="$event.stopPropagation(); onAction('delete', causa.expedientes[0])" title="Eliminar"
+                    class="p-1.5 rounded-md text-text-primary/30 hover:text-danger hover:bg-danger/10 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V4h6v3m-8 0l1 12h6l1-12" />
+                    </svg>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+
+          <!-- FILAS EXPEDIENTES (expandibles) -->
+          @if (estaExpandida(causa.id)) {
+            @for (exp of causa.expedientes; track exp.id) {
+              <tr class="bg-gray-50/80 border-l-2"
+                [class.border-primary]="exp.id === causa.expedientePrincipalId"
+                [class.border-gray-200]="exp.id !== causa.expedientePrincipalId">
+                <td class="px-4 py-2.5"></td>
+                <td class="px-4 py-2.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-text-primary/70 text-xs">{{ exp.numeroInterno }}</span>
+                    @if (exp.id === causa.expedientePrincipalId) {
+                      <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Principal</span>
+                    }
+                  </div>
+                </td>
+                <td class="px-4 py-2.5 text-text-primary/70 text-xs">{{ exp.area }}</td>
+                <td class="px-4 py-2.5 text-text-primary/70 text-xs">{{ exp.tipo.nombre || '-' }}</td>
+                <td class="px-4 py-2.5 text-text-primary/70 text-xs">{{ exp.cliente?.nombre ?? '-' }}</td>
+                <td class="px-4 py-2.5 text-text-primary/70 text-xs">{{ exp.estado.nombre || '-' }}</td>
+                <td class="px-4 py-2.5">
+                  <div class="flex items-center justify-center gap-1">
+                    <button (click)="onAction('view', exp)" title="Visualizar"
+                      class="p-1.5 rounded-md text-text-primary/30 hover:text-primary hover:bg-primary/10 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                    <button (click)="onAction('edit', exp)" title="Editar"
+                      class="p-1.5 rounded-md text-text-primary/30 hover:text-warning hover:bg-warning/10 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.414 2.586a2 2 0 0 1 2.828 2.828L11.828 14H9v-2.828l9.414-9.414z" />
+                      </svg>
+                    </button>
+                    <button (click)="onAction('desagrupar', exp)" title="Desagrupar"
+                      class="p-1.5 rounded-md text-text-primary/30 hover:text-orange-500 hover:bg-orange-500/10 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                    </button>
+                    <button (click)="onAction('delete', exp)" title="Eliminar"
+                      class="p-1.5 rounded-md text-text-primary/30 hover:text-danger hover:bg-danger/10 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V4h6v3m-8 0l1 12h6l1-12" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        }
+
+        @if (causas.length === 0) {
+          <tr>
+            <td colspan="7" class="text-center py-10 text-text-primary/40">No hay expedientes</td>
+          </tr>
+        }
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer paginación -->
+  <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-xs text-text-primary/40">
+    <span>Mostrando {{ causas.length }} causas</span>
+    <div class="flex items-center gap-1">
+      <button (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1"
+        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed">←</button>
+      @for (page of pages; track page) {
+        <button (click)="onPageChange(page)"
+          [class]="page === currentPage ? 'px-2.5 py-1 rounded bg-primary text-white' : 'px-2.5 py-1 rounded hover:bg-gray-100 transition'">
+          {{ page }}
+        </button>
+      }
+      <button (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages"
+        class="px-2 py-1 rounded hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed">→</button>
     </div>
   </div>
+
+</div>
   
   <!-- Modal confirmación eliminar -->
   <app-ui-confirm-modal
