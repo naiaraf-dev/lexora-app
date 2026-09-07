@@ -35,6 +35,18 @@ export const routes: Routes = [
             .then((m) => m.AgendaCalendar),
       },
       {
+        path: 'prevision-y-pago',
+        loadComponent: () => 
+          import('./features/prevision/pages/prevision-list/prevision-list')
+            .then(m => m.PrevisionList),
+      },
+      {
+        path: 'prevision-y-pago/:id',
+        loadComponent: () => 
+          import('./features/prevision/pages/prevision-detail/prevision-detail')
+            .then(m => m.PrevisionDetail),
+      },
+      {
         path: 'seguridad/log-view',
         loadComponent: () =>
           import('./features/log/pages/log-view/log-view')
@@ -85,6 +97,10 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./features/gestion-expedientes/components/novedades/novedades')
                 .then((m) => m.Novedades),
+          },
+          { path: 'prevision', loadComponent: () => 
+              import('./features/gestion-expedientes/components/prevision/prevision')
+                .then(m => m.Prevision) 
           },
         ],
       },
