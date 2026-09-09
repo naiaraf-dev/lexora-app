@@ -5,13 +5,12 @@ import { HttpClient } from '@angular/common/http';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { environment } from '../../../../../environments/environment';
 import { Auth } from '../../../../core/services/auth';
-
 interface ExpedienteForm {
   nroCausa: string;
   caratula: string;
   area: string;
   tipoId: string;
-  estadoId: string;
+  prioridadId: string;
   clienteId: string;
 }
 
@@ -55,7 +54,7 @@ export class ModalExptes implements OnInit {
 
   clientes: Cliente[] = [];
   tipoOptions: OpcionEnum[] = [];
-  estadoOptions: OpcionEnum[] = [];
+  prioridadOptions: OpcionEnum[] = [];
 
   areaOptions = [
     { value: 'CIVIL', label: 'Civil' },
@@ -81,19 +80,15 @@ export class ModalExptes implements OnInit {
       }
     });
 
-    this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/estadoexpediente`).subscribe({
-      next: (res) => {
-        this.estadoOptions = res;
-        this.cdr.detectChanges();
-        // Default: primer estado disponible
-        if (res.length > 0 && !this.form.estadoId) {
-          this.form.estadoId = String(res[0].id);
-        }
-      },
-      error: (err) => {
-        console.error('Error cargando estados de expediente:', err);
-      }
-    });
+    this.http.get<OpcionEnum[]>(`${environment.apiUrl}/enums/prioridad`).subscribe({
+  next: (res) => {
+    this.prioridadOptions = res;
+    this.cdr.detectChanges();
+  },
+  error: (err) => {
+    console.error('Error cargando prioridades:', err);
+  }
+});
 
     this.http.get<Cliente[]>(`${environment.apiUrl}/clientes`).subscribe({
       next: (res) => {
@@ -106,14 +101,7 @@ export class ModalExptes implements OnInit {
     });
   }
 
-  /** Retorna la clase CSS para el botón de estado según su ID. */
-  estadoBtnClass(id: number): string {
-    const base = 'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors cursor-pointer';
-
-    return this.form.estadoId === String(id)
-      ? `${base} border-primary bg-primary/10 text-primary`
-      : `${base} border-gray-200 bg-background text-gray-500 hover:border-gray-300`;
-  }
+  
 
   /** Filtra la lista de clientes por nombre, apellido o CUIT según el texto de búsqueda. */
   clientesFiltrados(): Cliente[] {
@@ -145,42 +133,51 @@ export class ModalExptes implements OnInit {
 
   /** Valida que los campos obligatorios del alta estén completos antes de habilitar el guardado. */
   formValido(): boolean {
-    return !!(
-      this.form.caratula.trim() &&
-      this.form.area &&
-      this.form.tipoId &&
-      this.form.estadoId
-    );
-  }
+  return !!(
+    this.form.caratula.trim() &&
+    this.form.area &&
+    this.form.tipoId &&
+    this.form.prioridadId
+  );
+}
 
   /** Construye el payload y lo emite al padre. Requiere usuario autenticado para asignar creador. */
   guardar(): void {
-    if (!this.formValido()) return;
+  if (!this.formValido()) return;
 
-    const usuarioActual = this.auth.currentUser();
+  const usuarioActual = this.auth.currentUser();
 
-    if (!usuarioActual?.id) {
-      console.error('No hay usuario autenticado para crear el expediente.');
-      return;
-    }
-
-    const payload = {
-      numero_expediente_judicial: this.form.nroCausa || null,
-      caratula:                   this.form.caratula,
-      area:                       this.form.area,
-      tipo_expediente:            Number(this.form.tipoId),
-      estado_expediente:          Number(this.form.estadoId),
-      cliente:                    this.form.clienteId ? Number(this.form.clienteId) : null,
-      usuario_creacion:           this.auth.currentUser()?.id ?? 1,
-      usuario_principal:          this.auth.currentUser()?.id ?? 1,
-    };
-
-    this.guardarExpediente.emit(payload);
-
-    this.form = this.formVacio();
-    this.clienteSearch = '';
-    this.cerrar.emit();
+  if (!usuarioActual?.id) {
+    console.error('No hay usuario autenticado para crear el expediente.');
+    return;
   }
+
+  const payload = {
+    numero_expediente_judicial: this.form.nroCausa || null,
+    caratula: this.form.caratula,
+    area: this.form.area,
+
+    tipo_expediente: Number(this.form.tipoId),
+
+    cliente: this.form.clienteId
+      ? Number(this.form.clienteId)
+      : null,
+
+    prioridad: Number(this.form.prioridadId),
+
+    usuario_creacion: usuarioActual.id,
+    usuario_creacion_tareas: usuarioActual.id,
+    usuario_principal: usuarioActual.id,
+  };
+
+  console.log('Payload creación expediente:', payload);
+
+  this.guardarExpediente.emit(payload);
+
+  this.form = this.formVacio();
+  this.clienteSearch = '';
+  this.cerrar.emit();
+}
 
   /** Resetea el formulario y la búsqueda de clientes al cerrar el modal sin guardar. */
   onCerrar(): void {
@@ -191,13 +188,13 @@ export class ModalExptes implements OnInit {
 
   /** Retorna un objeto vacío con la estructura inicial del formulario de alta. */
   private formVacio(): ExpedienteForm {
-    return {
-      nroCausa: '',
-      caratula: '',
-      area: '',
-      tipoId: '',
-      estadoId: '',
-      clienteId: '',
-    };
-  }
+  return {
+    nroCausa: '',
+    caratula: '',
+    area: '',
+    tipoId: '',
+    prioridadId: '',
+    clienteId: '',
+  };
+}
 }
