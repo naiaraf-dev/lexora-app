@@ -507,6 +507,32 @@ async function eliminar(id) {
     return repo.eliminar(id);
 }
 
+// trae el historial de estados de un expediente
+async function obtenerHistorial(id) {
+    const existente = await repo.getById(id);
+
+    if (!existente) {
+        throw {
+            status: 404,
+            mensaje: 'Expediente no encontrado'
+        };
+    }
+
+    const historial =
+        await historialExpedienteService.obtenerPorExpediente(id);
+
+    return historial.map(h => ({
+        id: h.id,
+
+        estado: {
+            id: h.estadoId,
+            nombre: h.estadoNombre
+        },
+
+        fechaCambioEstado: h.fecha_cambio_estado
+    }));
+}
+
 
 module.exports = {
     listar,
@@ -514,5 +540,6 @@ module.exports = {
     crear,
     actualizar,
     cerrar,
-    eliminar
+    eliminar,
+    obtenerHistorial
 };

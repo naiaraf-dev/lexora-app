@@ -21,4 +21,6 @@ router.put('/:id',  controller.actualizar);
 // DELETE /api/expedientes/:id    → baja lógica
 router.delete('/:id', controller.eliminar);
 
+router.get('/:id/historial', controller.obtenerHistorial);
+
 module.exports = router;

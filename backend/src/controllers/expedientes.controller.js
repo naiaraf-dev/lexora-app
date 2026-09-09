@@ -85,4 +85,25 @@ async function eliminar(req, res) {
     }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+// trae el historial de estados de un expediente
+async function obtenerHistorial(req, res) {
+    try {
+        const { id } = req.params;
+
+        const historial =
+            await service.obtenerHistorial(Number(id));
+
+        res.json(historial);
+
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje:
+                error.mensaje ??
+                'Error al obtener historial del expediente',
+
+            error: error.message
+        });
+    }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar,obtenerHistorial };
