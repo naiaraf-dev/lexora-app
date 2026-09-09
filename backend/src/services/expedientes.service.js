@@ -5,7 +5,8 @@ const causaRepo = require('../repositories/causa.repository');
 
 const tareasAutomaticasService =
     require('./tareasAutomaticas.service');
-
+const historialExpedienteService =
+    require('./historialExpediente.service');
 const { sql, conectarBD } = require('../config/db');
 
 
@@ -287,6 +288,12 @@ async function crear(data) {
             transaction
         );
 
+        await historialExpedienteService.registrarCambio(
+            expedienteId,
+            Number(primerEstado.estadoId),
+            transaction
+        );
+
         await transaction.commit();
 
     } catch (error) {
@@ -443,6 +450,11 @@ async function actualizar(id, data) {
                     Number(data.usuario_creacion_tareas),
                 prioridadId: prioridadFinal
             },
+            transaction
+        );
+        await historialExpedienteService.registrarCambio(
+            Number(id),
+            estadoFinal,
             transaction
         );
 
