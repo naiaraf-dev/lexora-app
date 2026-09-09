@@ -50,7 +50,28 @@ async function create(nombreEnum, nombre) {
     return resultado.recordset[0];
 }
 
+async function getEstadosPorTipoExpediente(tipoExpedienteId) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('tipoExpedienteId', sql.Int, tipoExpedienteId)
+        .query(`
+            SELECT
+                ee.id AS estadoId,
+                ee.nombre AS estadoNombre,
+                tet.orden
+            FROM tipoestadoexpediente tet
+            INNER JOIN estadoexpediente ee
+                ON ee.id = tet.estadoexpediente
+            WHERE tet.tipoexpediente = @tipoExpedienteId
+            ORDER BY tet.orden
+        `);
+
+    return resultado.recordset;
+}
+
 module.exports = {
     getAll,
-    create
+    create,
+    getEstadosPorTipoExpediente
 };
