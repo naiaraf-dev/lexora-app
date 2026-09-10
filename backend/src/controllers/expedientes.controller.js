@@ -65,8 +65,11 @@ async function actualizar(req, res) {
         res.json(expediente);
     } catch (error) {
         res.status(error.status ?? 500).json({
-            mensaje: error.mensaje ?? 'Error al actualizar expediente',
-            error: error.message,
+            mensaje: 'Error al actualizar el expediente',
+            detalle:
+                error.mensaje ??
+                error.message ??
+                'No se pudo actualizar el expediente'
         });
     }
 }
@@ -105,5 +108,28 @@ async function obtenerHistorial(req, res) {
         });
     }
 }
+// trae las tareas automaticas pendientes del expediente
+async function obtenerTareasAutomaticasPendientes(req, res) {
+    try {
+        const { id } = req.params;
 
-module.exports = { listar, obtener, crear, actualizar, eliminar,obtenerHistorial };
+        const tareas =
+            await service.obtenerTareasAutomaticasPendientes(
+                Number(id)
+            );
+
+        res.json(tareas);
+
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje:
+                error.mensaje ??
+                error.message ??
+                'Error al obtener las tareas automáticas pendientes',
+
+            error: error.message
+        });
+    }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar,obtenerHistorial,obtenerTareasAutomaticasPendientes };

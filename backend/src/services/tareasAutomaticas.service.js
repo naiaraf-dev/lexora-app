@@ -128,9 +128,50 @@ async function generarTareasAutomaticas(
     return tareas;
 }
 
+// trae solamente las tareas automaticas con estado Pendiente (1)
+async function obtenerPendientesPorExpediente(expedienteId) {
+    const expediente = validarId(
+        expedienteId,
+        'Expediente'
+    );
+
+    return repo.obtenerPendientesPorExpediente(
+        expediente
+    );
+}
+
+
+// valida que no quede ninguna tarea automatica sin cumplir
+async function validarPuedeCambiarEstado(
+    expedienteId,
+    transaction = null
+) {
+    const expediente = validarId(
+        expedienteId,
+        'Expediente'
+    );
+
+    const cantidad =
+        await repo.contarNoCumplidasPorExpediente(
+            expediente,
+            transaction
+        );
+
+    if (cantidad > 0) {
+        throw crearError(
+            `Todavía tiene ${cantidad} tarea${cantidad === 1 ? '' : 's'} automática${cantidad === 1 ? '' : 's'} sin cumplir en el estado actual. Debe completar todas antes de cambiar de estado.`,
+            409
+        );
+    }
+
+    return true;
+}
+
 module.exports = {
     obtenerPorTipoYEstado,
     obtenerPrimerEstado,
     validarEstadoPermitido,
-    generarTareasAutomaticas
+    generarTareasAutomaticas,
+    obtenerPendientesPorExpediente,
+    validarPuedeCambiarEstado
 };

@@ -9,6 +9,11 @@ router.get('/',     controller.listar);
 // GET  /api/expedientes/:id/novedades → listar novedades del expediente
 router.get('/:id/novedades', novedadesController.listarPorExpediente);
 
+router.get(
+    '/:id/tareas-automaticas-pendientes',
+    controller.obtenerTareasAutomaticasPendientes
+);
+
 // GET  /api/expedientes/:id      → obtener uno completo
 router.get('/:id',  controller.obtener);
 

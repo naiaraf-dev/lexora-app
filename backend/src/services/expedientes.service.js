@@ -377,7 +377,7 @@ async function actualizar(id, data) {
 
     /*
      * Si se intenta cambiar el tipo o el estado,
-     * valida que la combinacion resultante sea valida.
+     * valida que la combinación resultante sea válida.
      */
     if (cambiaTipo || data.estado_expediente !== undefined) {
         await tareasAutomaticasService.validarEstadoPermitido(
@@ -388,15 +388,17 @@ async function actualizar(id, data) {
 
     /*
      * Si NO cambia el estado, actualiza normalmente.
-     * No se generan tareas.
+     * No valida tareas automáticas.
+     * No genera tareas.
+     * No registra historial.
      */
     if (!cambiaEstado) {
         return repo.actualizar(id, data);
     }
 
     /*
-     * Desde aca sabemos que efectivamente
-     * el expediente esta entrando en otro estado.
+     * Desde acá sabemos que efectivamente
+     * el expediente está entrando en otro estado.
      */
 
     if (!data.usuario_creacion_tareas) {
@@ -433,14 +435,38 @@ async function actualizar(id, data) {
     await transaction.begin();
 
     try {
-        // primero cambia el expediente
+
+        /*
+         * Antes de cambiar de estado verifica que no haya
+         * tareas automáticas sin cumplir.
+         *
+         * estado_tarea:
+         * 1 = Pendiente  -> bloquea
+         * 2 = Cumplido   -> permite
+         * 3 = Vencido    -> bloquea
+         */
+        await tareasAutomaticasService.validarPuedeCambiarEstado(
+            Number(id),
+            transaction
+        );
+
+        /*
+         * Cambia el expediente.
+         */
         await repo.actualizar(
             id,
             data,
             transaction
         );
 
-        // despues crea las tareas del nuevo estado
+        /*
+         * Genera las tareas automáticas correspondientes
+         * al nuevo estado.
+         *
+         * Se crean con:
+         * automatica = 1
+         * estado_tarea = 1
+         */
         await tareasAutomaticasService.generarTareasAutomaticas(
             {
                 expedienteId: Number(id),
@@ -452,6 +478,11 @@ async function actualizar(id, data) {
             },
             transaction
         );
+
+        /*
+         * Registra el nuevo estado
+         * en el historial del expediente.
+         */
         await historialExpedienteService.registrarCambio(
             Number(id),
             estadoFinal,
@@ -533,6 +564,20 @@ async function obtenerHistorial(id) {
     }));
 }
 
+// trae las tareas automaticas pendientes de un expediente
+async function obtenerTareasAutomaticasPendientes(id) {
+    const existente = await repo.getById(id);
+
+    if (!existente) {
+        throw {
+            status: 404,
+            mensaje: 'Expediente no encontrado'
+        };
+    }
+
+    return tareasAutomaticasService.obtenerPendientesPorExpediente(id);
+}
+
 
 module.exports = {
     listar,
@@ -541,5 +586,6 @@ module.exports = {
     actualizar,
     cerrar,
     eliminar,
-    obtenerHistorial
+    obtenerHistorial,
+    obtenerTareasAutomaticasPendientes
 };

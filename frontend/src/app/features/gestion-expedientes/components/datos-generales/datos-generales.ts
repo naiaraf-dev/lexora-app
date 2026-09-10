@@ -984,7 +984,6 @@ export class DatosGenerales implements OnInit {
       },
 
       error: (err) => {
-
         this.guardando = false;
 
         console.error(
@@ -993,8 +992,12 @@ export class DatosGenerales implements OnInit {
         );
 
         toast.error(
-          err?.error?.mensaje ??
-          'No se pudo guardar. Intentá de nuevo.'
+          err?.error?.mensaje ?? 'Error al actualizar el expediente',
+          {
+            description:
+              err?.error?.detalle ??
+              'No se pudo guardar el expediente. Intentá nuevamente.'
+          }
         );
       },
     });
