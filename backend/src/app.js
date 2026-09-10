@@ -17,6 +17,7 @@ const causasRouter = require('./routes/causa.routes');
 const novedadesRouter = require('./routes/novedades.routes');
 const enumsRoutes = require('./routes/enums.routes');
 const tareasAutomaticasRoutes = require('./routes/tareasAutomaticas.routes');
+const tasasRoutes = require('./routes/tasas.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -80,6 +81,14 @@ app.use(clientesRoutes);
     LOG DE SEGURIDAD
 */
 app.use('/api/logs', logsRoutes);
+
+/*
+  TASAS
+  */
+app.use(
+    '/api/tasa',
+    tasasRoutes
+);
 
 /*
     ENUMS
