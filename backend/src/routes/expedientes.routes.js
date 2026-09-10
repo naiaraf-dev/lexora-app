@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/expedientes.controller');
 const novedadesController = require('../controllers/novedades.controller');
+const authMiddleware = require('../middlewares/auth.middleware');
+
+// protege todas las rutas de este router: exige token JWT válido
+router.use(authMiddleware);
 
 // GET  /api/expedientes          → listar con filtros y paginación
 router.get('/',     controller.listar);
