@@ -1,0 +1,164 @@
+<div class="bg-white rounded-xl border border-black/8 p-4 flex flex-col gap-4">
+
+    <!-- Header con contexto + cerrar -->
+    <div class="flex items-start justify-between gap-2 pb-3 border-b border-gray-100">
+        <div class="flex flex-col gap-0.5 min-w-0">
+            @if (estadoNombre) {
+                <span class="text-[10px] font-semibold text-text-primary/40 uppercase tracking-wide">
+                    Estado procesal · {{ estadoNombre }}
+                </span>
+            }
+            <p class="text-sm font-semibold text-text-primary truncate">{{ tarea.descripcion }}</p>
+        </div>
+        <button type="button" (click)="cerrar.emit()" class="text-text-primary/30 hover:text-text-primary transition-colors shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Selector de estado -->
+    <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60">Estado de la actividad</label>
+        <div class="flex gap-2 flex-wrap">
+            <button
+                type="button"
+                [disabled]="soloLectura"
+                (click)="seleccionarEstado('EN_CURSO')"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                [class]="form.estado === 'EN_CURSO' ? 'bg-yellow-100 border-yellow-300 text-yellow-700' : 'bg-white border-gray-200 text-text-primary/50 hover:bg-gray-50'"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                En curso
+            </button>
+            <button
+                type="button"
+                [disabled]="soloLectura"
+                (click)="seleccionarEstado('COMPLETADO')"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                [class]="form.estado === 'COMPLETADO' ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-gray-200 text-text-primary/50 hover:bg-gray-50'"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Completado
+            </button>
+            <button
+                type="button"
+                [disabled]="soloLectura"
+                (click)="seleccionarEstado('NO_PROCEDENTE')"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors"
+                [class]="form.estado === 'NO_PROCEDENTE' ? 'bg-gray-200 border-gray-300 text-text-primary' : 'bg-white border-gray-200 text-text-primary/50 hover:bg-gray-50'"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 105.636 5.636a9 9 0 0012.728 12.728zM6 18L18 6" />
+                </svg>
+                No procedente
+            </button>
+        </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60">Observaciones</label>
+        <textarea
+            [(ngModel)]="form.observacion"
+            [disabled]="soloLectura"
+            placeholder="Registrá notas o avances..."
+            rows="3"
+            class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all disabled:bg-gray-100 disabled:text-text-primary/50"
+        ></textarea>
+    </div>
+
+    <!-- Última actualización: solo lectura, se pisa sola -->
+    <div class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-text-primary/60">Última actualización</span>
+      <span class="text-sm text-text-primary">{{ tarea.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+
+    <!-- Fecha de vencimiento -->
+    <app-ui-date-input
+      label="Fecha de vencimiento (opcional)"
+      [(model)]="form.fechaVencimiento"
+      [disabled]="soloLectura"
+      [min]="hoyIso"
+      (modelChange)="onFechaVencimientoChange()"
+    ></app-ui-date-input>
+
+    <!-- Switch agenda: NO se renderiza hasta que hay fecha de vencimiento -->
+    @if (form.fechaVencimiento) {
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-text-primary">Enviar a la agenda</span>
+            <button
+                type="button"
+                [disabled]="soloLectura"
+                (click)="!soloLectura && (form.enviarAgenda = !form.enviarAgenda)"
+                class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                [class.bg-primary]="form.enviarAgenda"
+                [class.bg-gray-200]="!form.enviarAgenda"
+                [class.opacity-50]="soloLectura"
+                [class.cursor-not-allowed]="soloLectura"
+                [class.cursor-pointer]="!soloLectura"
+            >
+                <span
+                    class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition duration-200 ease-in-out"
+                    [class.translate-x-5]="form.enviarAgenda"
+                    [class.translate-x-0]="!form.enviarAgenda"
+                ></span>
+            </button>
+        </div>
+    }
+
+    <!-- Adjuntar -->
+    <div class="flex flex-col gap-2">
+        <label class="text-xs font-medium text-text-primary/60">Adjuntar documentos</label>
+
+        @if (archivosExistentes.length > 0) {
+            <div class="flex flex-col gap-1">
+                @for (archivo of archivosExistentes; track archivo.nombre) {
+                    <div class="px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100 text-xs text-text-primary truncate">
+                        {{ archivo.nombre }}
+                    </div>
+                }
+            </div>
+        }
+
+        @if (!soloLectura) {
+            <label class="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors bg-white">
+                <input type="file" multiple class="hidden" (change)="onFileChange($event)" />
+                <span class="text-sm text-text-primary/40">
+                    Arrastra un archivo o <span class="text-primary font-medium">seleccionalo</span>
+                </span>
+            </label>
+        }
+
+        @if (archivosNuevos.length > 0) {
+            <div class="flex flex-col gap-1">
+                @for (archivo of archivosNuevos; track archivo.name) {
+                    <div class="flex items-center justify-between px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+                        <span class="text-xs text-text-primary truncate">{{ archivo.name }}</span>
+                        <button type="button" (click)="eliminarArchivoNuevo(archivo)" class="text-danger shrink-0 ml-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Acciones -->
+    @if (!soloLectura) {
+        <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <app-primary-btn variant="secondary" (click)="cancelar()">Cancelar</app-primary-btn>
+            <app-primary-btn variant="primary" [loading]="guardando" (click)="submit()">Guardar</app-primary-btn>
+        </div>
+    } @else {
+        <div class="flex justify-end pt-2 border-t border-gray-100">
+            <app-primary-btn variant="secondary" (click)="cerrar.emit()">Cerrar</app-primary-btn>
+        </div>
+    }
+</div>
