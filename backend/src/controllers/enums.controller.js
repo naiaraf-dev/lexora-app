@@ -43,7 +43,25 @@ async function create(req, res) {
     }
 }
 
+async function getEstadosPorTipoExpediente(req, res) {
+    const { tipoExpedienteId } = req.params;
+
+    try {
+        const data = await service.getEstadosPorTipoExpediente(
+            Number(tipoExpedienteId)
+        );
+
+        res.json(data);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje: error.mensaje ?? 'Error al obtener estados del tipo de expediente',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     getAll,
-    create
+    create,
+    getEstadosPorTipoExpediente
 };

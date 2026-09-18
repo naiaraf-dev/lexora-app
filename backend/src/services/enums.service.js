@@ -74,8 +74,22 @@ async function create(nombreEnum, datos) {
     return repo.create(nombreEnum, datos.nombre);
 }
 
+// trae los estados posibles para un tipo de expediente, ordenados
+async function getEstadosPorTipoExpediente(tipoExpedienteId) {
+    const id = Number(tipoExpedienteId);
+
+    if (!Number.isInteger(id)) {
+        const error = new Error('Tipo de expediente inválido');
+        error.status = 400;
+        throw error;
+    }
+
+    return repo.getEstadosPorTipoExpediente(id);
+}
+
 module.exports = {
     getAll,
     create,
-    obtenerMensaje
+    obtenerMensaje,
+    getEstadosPorTipoExpediente
 };

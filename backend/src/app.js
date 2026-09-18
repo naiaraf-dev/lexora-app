@@ -16,6 +16,8 @@ const expedientesRouter = require('./routes/expedientes.routes');
 const causasRouter = require('./routes/causa.routes');
 const novedadesRouter = require('./routes/novedades.routes');
 const enumsRoutes = require('./routes/enums.routes');
+const tareasAutomaticasRoutes = require('./routes/tareasAutomaticas.routes');
+const tasasRoutes = require('./routes/tasas.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -66,6 +68,7 @@ app.use('/api/novedades', novedadesRouter);
 */
 app.use('/api', documentosRoutes);
 app.use('/api', tareasRoutes);
+app.use('/api', tareasAutomaticasRoutes);
 
 /*
     AUTH Y CLIENTES
@@ -78,6 +81,14 @@ app.use(clientesRoutes);
     LOG DE SEGURIDAD
 */
 app.use('/api/logs', logsRoutes);
+
+/*
+  TASAS
+  */
+app.use(
+    '/api/tasa',
+    tasasRoutes
+);
 
 /*
     ENUMS
