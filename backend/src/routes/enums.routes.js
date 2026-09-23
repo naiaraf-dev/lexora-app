@@ -3,6 +3,10 @@ const controller = require('../controllers/enums.controller');
 
 const router = express.Router();
 
+router.get(
+    '/enums/tipoexpediente/:tipoExpedienteId/transiciones',
+    controller.getTransicionesPorTipo
+);
 router.get('/enums/:enumName', controller.getAll);
 router.post('/enums/:enumName', controller.create);
 router.get(

@@ -30,6 +30,7 @@ export class Estados implements OnInit {
   private cdr    = inject(ChangeDetectorRef);
 
   private expedienteId!: number;
+  expediente: any = null;
 
   cargando = true;
   flujo: EstadoDefinicion[] = [];
@@ -48,12 +49,13 @@ export class Estados implements OnInit {
 
   private cargarDatos(): void {
     this.http.get<any>(`${environment.apiUrl}/expedientes/${this.expedienteId}`).subscribe({
-      next: (expediente) => {
-        const tipoNombre = expediente.tipo?.nombre ?? '';
+      next: (exp) => {
+        this.expediente = exp;
+        const tipoId = exp.tipo?.id;
 
         forkJoin({
-          flujo:   this.estadosService.obtenerFlujo(tipoNombre),
-          runtime: this.estadosService.obtenerEstadoActual(this.expedienteId, tipoNombre),
+          flujo:   this.estadosService.obtenerFlujo(Number(tipoId)),
+          runtime: this.estadosService.obtenerEstadoActual(this.expedienteId, Number(tipoId)),
         }).subscribe(({ flujo, runtime }) => {
           this.flujo = flujo;
           this.runtime = runtime;
@@ -130,13 +132,17 @@ export class Estados implements OnInit {
   }
 
   avanzarA(siguienteEstado: string): void {
-    this.estadosService.avanzarEstado(this.expedienteId, siguienteEstado).subscribe({
+    const estadoActual = this.flujo.find(e => e.nombre === this.runtime?.estadoActual);
+    // necesitamos el id numérico — lo buscamos desde los datos del expediente
+    const estadoActualId = this.expediente?.estado?.id ?? 0;
+
+    this.estadosService.avanzarEstado(this.expedienteId, siguienteEstado, estadoActualId).subscribe({
       next: () => {
         toast.success(`Expediente avanzado a "${siguienteEstado}"`);
         this.cargarDatos();
         this.cdr.detectChanges();
       },
-      error: () => toast.error('Error al avanzar de estado'),
+      error: (err) => toast.error(err?.error?.detalle ?? err?.error?.mensaje ?? 'Error al avanzar de estado'),
     });
   }
 
@@ -149,22 +155,6 @@ export class Estados implements OnInit {
   avanzarYCerrar(opcion: string): void {
     this.avanzarA(opcion);
     this.modalAvanceOpen = false;
-  }
-
-  desarchivar(): void {
-    this.estadosService.desarchivar(this.expedienteId).subscribe(() => {
-      toast.success('Expediente desarchivado');
-      this.cargarDatos();
-      this.cdr.detectChanges();
-    });
-  }
-
-  volverAFinalizar(): void {
-    this.estadosService.volverAFinalizar(this.expedienteId).subscribe(() => {
-      toast.success('Expediente archivado nuevamente');
-      this.cargarDatos();
-      this.cdr.detectChanges();
-    });
   }
 
   /** Retorna a la página de gestión de expedientes. */

@@ -60,8 +60,22 @@ async function getEstadosPorTipoExpediente(req, res) {
     }
 }
 
+async function getTransicionesPorTipo(req, res) {
+    const { tipoExpedienteId } = req.params;
+    try {
+        const data = await service.getTransicionesPorTipo(Number(tipoExpedienteId));
+        res.json(data);
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+        mensaje: error.mensaje ?? 'Error al obtener transiciones',
+        error: error.message
+        });
+    }
+}
+
 module.exports = {
     getAll,
     create,
-    getEstadosPorTipoExpediente
+    getEstadosPorTipoExpediente,
+    getTransicionesPorTipo
 };

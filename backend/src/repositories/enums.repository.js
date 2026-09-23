@@ -70,8 +70,28 @@ async function getEstadosPorTipoExpediente(tipoExpedienteId) {
     return resultado.recordset;
 }
 
+async function getTransicionesPorTipo(tipoExpedienteId) {
+    const pool = await conectarBD();
+    const resultado = await pool.request()
+        .input('tipoExpedienteId', sql.Int, tipoExpedienteId)
+        .query(`
+        SELECT
+            t.estado_origen   AS estadoOrigenId,
+            eo.nombre         AS estadoOrigenNombre,
+            t.estado_destino  AS estadoDestinoId,
+            ed.nombre         AS estadoDestinoNombre
+        FROM transicion_estado t
+        INNER JOIN estadoexpediente eo ON eo.id = t.estado_origen
+        INNER JOIN estadoexpediente ed ON ed.id = t.estado_destino
+        WHERE t.tipo_expediente = @tipoExpedienteId
+        ORDER BY t.estado_origen, t.estado_destino
+        `);
+    return resultado.recordset;
+}
+
 module.exports = {
     getAll,
     create,
-    getEstadosPorTipoExpediente
+    getEstadosPorTipoExpediente,
+    getTransicionesPorTipo
 };

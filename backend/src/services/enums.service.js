@@ -87,9 +87,20 @@ async function getEstadosPorTipoExpediente(tipoExpedienteId) {
     return repo.getEstadosPorTipoExpediente(id);
 }
 
+async function getTransicionesPorTipo(tipoExpedienteId) {
+    const id = Number(tipoExpedienteId);
+    if (!Number.isInteger(id)) {
+        const error = new Error('Tipo de expediente inválido');
+        error.status = 400;
+        throw error;
+    }
+    return repo.getTransicionesPorTipo(id);
+}
+
 module.exports = {
     getAll,
     create,
     obtenerMensaje,
-    getEstadosPorTipoExpediente
+    getEstadosPorTipoExpediente,
+    getTransicionesPorTipo
 };

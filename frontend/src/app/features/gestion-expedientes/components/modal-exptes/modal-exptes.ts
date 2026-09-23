@@ -101,8 +101,6 @@ export class ModalExptes implements OnInit {
     });
   }
 
-  
-
   /** Filtra la lista de clientes por nombre, apellido o CUIT según el texto de búsqueda. */
   clientesFiltrados(): Cliente[] {
     const q = this.clienteSearch.toLowerCase().trim();
@@ -143,41 +141,26 @@ export class ModalExptes implements OnInit {
 
   /** Construye el payload y lo emite al padre. Requiere usuario autenticado para asignar creador. */
   guardar(): void {
-  if (!this.formValido()) return;
+    if (!this.formValido()) return;
 
-  const usuarioActual = this.auth.currentUser();
+    const payload = {
+      numero_expediente_judicial: this.form.nroCausa || null,
+      caratula:                   this.form.caratula,
+      area:                       this.form.area,
+      tipo_expediente:            Number(this.form.tipoId),
+      // estado_expediente se setea en el backend como Inicio (1)
+      cliente:                    this.form.clienteId ? Number(this.form.clienteId) : null,
+      prioridad:                  Number(this.form.prioridadId),
+      usuario_creacion:           this.auth.currentUser()?.id ?? 1,
+      usuario_principal:          this.auth.currentUser()?.id ?? 1,
+      usuario_creacion_tareas:    this.auth.currentUser()?.id ?? 1,
+    };
 
-  if (!usuarioActual?.id) {
-    console.error('No hay usuario autenticado para crear el expediente.');
-    return;
+    this.guardarExpediente.emit(payload);
+    this.form = this.formVacio();
+    this.clienteSearch = '';
+    this.cerrar.emit();
   }
-
-  const payload = {
-    numero_expediente_judicial: this.form.nroCausa || null,
-    caratula: this.form.caratula,
-    area: this.form.area,
-
-    tipo_expediente: Number(this.form.tipoId),
-
-    cliente: this.form.clienteId
-      ? Number(this.form.clienteId)
-      : null,
-
-    prioridad: Number(this.form.prioridadId),
-
-    usuario_creacion: usuarioActual.id,
-    usuario_creacion_tareas: usuarioActual.id,
-    usuario_principal: usuarioActual.id,
-  };
-
-  console.log('Payload creación expediente:', payload);
-
-  this.guardarExpediente.emit(payload);
-
-  this.form = this.formVacio();
-  this.clienteSearch = '';
-  this.cerrar.emit();
-}
 
   /** Resetea el formulario y la búsqueda de clientes al cerrar el modal sin guardar. */
   onCerrar(): void {

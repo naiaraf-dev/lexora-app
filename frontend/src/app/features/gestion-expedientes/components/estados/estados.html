@@ -33,13 +33,6 @@
             }
         </div>
 
-        @if (runtime!.archivado && esVistaActual) {
-            <div class="flex items-center justify-between px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <span class="text-sm text-amber-800 font-medium">Este expediente está archivado (Finalizado).</span>
-                <app-primary-btn variant="secondary" (click)="desarchivar()">Desarchivar</app-primary-btn>
-            </div>
-        }
-
         @if (!esVistaActual) {
             <div class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-text-primary/50">
                 Estás viendo un estado anterior en modo lectura.
@@ -133,12 +126,6 @@
                 </div>
             }
         </div>
-
-        @if (esVistaActual && !runtime!.archivado && runtime!.estadoActual === 'FINALIZADO') {
-            <app-primary-btn variant="secondary" (click)="volverAFinalizar()">
-                Volver a archivar
-            </app-primary-btn>
-        }
 
         @if (modalAvanceOpen) {
             <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">

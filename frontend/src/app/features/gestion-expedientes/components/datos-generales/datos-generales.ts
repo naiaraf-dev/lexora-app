@@ -101,10 +101,7 @@ export class DatosGenerales implements OnInit {
 
       rolCliente: [''],
 
-      estado: [
-        '',
-        Validators.required
-      ],
+      estado: [''],
 
       descripcion: [''],
 
@@ -889,9 +886,6 @@ export class DatosGenerales implements OnInit {
       tipo_expediente:
         Number(v.tipo),
 
-      estado_expediente:
-        Number(v.estado),
-
       cliente:
         v.clienteId
           ? Number(v.clienteId)
@@ -1001,5 +995,9 @@ export class DatosGenerales implements OnInit {
         );
       },
     });
+  }
+
+  get estadoActualLabel(): string {
+    return this.estadoOptions.find(e => e.value === this.form.get('estado')?.value)?.label ?? '';
   }
 }

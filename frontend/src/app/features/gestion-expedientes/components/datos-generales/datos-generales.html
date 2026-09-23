@@ -61,12 +61,11 @@
         <!-- Fila 3: Estado -->
         <div class="grid grid-cols-3 gap-4">
 
-            <app-ui-select
-                label="Estado del expediente *"
-                [options]="estadoOptions"
-                [model]="form.get('estado')?.value"
-                (modelChange)="form.get('estado')?.setValue($event)"
-            ></app-ui-select>
+            <app-ui-input
+                label="Estado del expediente"
+                [model]="estadoActualLabel"
+                [disabled]="true"
+            ></app-ui-input>
 
         </div>
 

@@ -35,6 +35,7 @@ async function obtenerTareas(filtros) {
             p.nombre AS nombre_prioridad,
 
             t.hora,
+            t.automatica,
             t.estado_tarea,
             et.nombre AS nombre_estado_tarea
 

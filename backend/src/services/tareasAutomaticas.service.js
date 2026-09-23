@@ -41,26 +41,25 @@ async function obtenerPrimerEstado(tipoExpedienteId) {
 }
 
 // valida que un estado pertenezca al tipo
-async function validarEstadoPermitido(
-    tipoExpedienteId,
-    estadoExpedienteId,
-    transaction = null
-) {
-    const tipo = validarId(tipoExpedienteId, 'Tipo de expediente');
-    const estado = validarId(estadoExpedienteId, 'Estado de expediente');
+async function validarEstadoPermitido(tipoExpedienteId, estadoExpedienteId, estadoOrigenId = null, transaction = null) {
+    const tipo   = validarId(tipoExpedienteId,   'Tipo de expediente');
+    const estado = validarId(estadoExpedienteId,  'Estado de expediente');
 
-    const permitido = await repo.estadoPermitido(
-        tipo,
-        estado,
-        transaction
-    );
-
-    if (!permitido) {
-        throw crearError(
-            'El estado seleccionado no es válido para este tipo de expediente'
-        );
+    // Si viene el estado origen, validamos la transición específica
+    if (estadoOrigenId !== null) {
+        const origen = validarId(estadoOrigenId, 'Estado de origen');
+        const permitido = await repo.transicionPermitida(tipo, origen, estado, transaction);
+        if (!permitido) {
+        throw crearError('La transición de estado seleccionada no está permitida para este tipo de expediente');
+        }
+        return true;
     }
 
+    // Sin origen: validamos que el estado pertenezca al tipo (comportamiento anterior)
+    const permitido = await repo.estadoPermitido(tipo, estado, transaction);
+    if (!permitido) {
+        throw crearError('El estado seleccionado no es válido para este tipo de expediente');
+    }
     return true;
 }
 
@@ -84,7 +83,7 @@ async function generarTareasAutomaticas(
     );
     const prioridad = validarId(prioridadId, 'Prioridad');
 
-    await validarEstadoPermitido(tipo, estado, transaction);
+    await validarEstadoPermitido(tipo, estado, null, transaction);
 
     const usuarioExiste = await repo.existeUsuario(usuario, transaction);
 

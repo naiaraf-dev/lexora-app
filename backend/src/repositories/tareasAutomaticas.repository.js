@@ -73,7 +73,7 @@ async function estadoPermitido(
             SELECT TOP 1 1 AS existe
             FROM tipoestadoexpediente
             WHERE tipoexpediente = @tipoExpedienteId
-              AND estadoexpediente = @estadoExpedienteId
+            AND estadoexpediente = @estadoExpedienteId
         `);
 
     return resultado.recordset.length > 0;
@@ -239,11 +239,27 @@ async function contarNoCumplidasPorExpediente(
             SELECT COUNT(*) AS cantidad
             FROM tarea
             WHERE expediente = @expedienteId
-              AND automatica = 1
-              AND estado_tarea <> 2
+            AND automatica = 1
+            AND estado_tarea <> 2
         `);
 
     return Number(resultado.recordset[0]?.cantidad ?? 0);
+}
+
+async function transicionPermitida(tipoExpedienteId, estadoOrigenId, estadoDestinoId, transaction = null) {
+    const request = await crearRequest(transaction);
+    const resultado = await request
+        .input('tipo', sql.Int, tipoExpedienteId)
+        .input('origen', sql.Int, estadoOrigenId)
+        .input('destino', sql.Int, estadoDestinoId)
+        .query(`
+        SELECT TOP 1 1 AS existe
+        FROM transicion_estado
+        WHERE tipo_expediente = @tipo
+            AND estado_origen   = @origen
+            AND estado_destino  = @destino
+        `);
+    return resultado.recordset.length > 0;
 }
 
 module.exports = {
@@ -254,5 +270,6 @@ module.exports = {
     existePrioridad,
     generarTareas,
     obtenerPendientesPorExpediente,
-    contarNoCumplidasPorExpediente
+    contarNoCumplidasPorExpediente,
+    transicionPermitida
 };

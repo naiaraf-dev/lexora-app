@@ -382,7 +382,8 @@ async function actualizar(id, data) {
     if (cambiaTipo || data.estado_expediente !== undefined) {
         await tareasAutomaticasService.validarEstadoPermitido(
             tipoFinal,
-            estadoFinal
+            estadoFinal,
+            data.estado_origen ? Number(data.estado_origen) : null
         );
     }
 
