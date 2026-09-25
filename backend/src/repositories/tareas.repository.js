@@ -36,6 +36,7 @@ async function obtenerTareas(filtros) {
 
             t.hora,
             t.automatica,
+            t.enviar_agenda,
             t.estado_tarea,
             et.nombre AS nombre_estado_tarea
 
@@ -227,6 +228,7 @@ async function insertarTarea(tarea) {
         .input('fecha_vencimiento', sql.DateTime2, tarea.fecha_vencimiento || null)
         .input('titulo', sql.NVarChar(200), tarea.titulo)
         .input('hora', sql.NVarChar(5), tarea.hora || null)
+        .input('enviar_agenda', sql.Bit, tarea.enviar_agenda ?? false)
         .query(`
             INSERT INTO tarea (
                 expediente,
@@ -238,7 +240,8 @@ async function insertarTarea(tarea) {
                 estado_tarea,
                 fecha_vencimiento,
                 titulo,
-                hora
+                hora,
+                enviar_agenda
             )
             OUTPUT INSERTED.*
             VALUES (
@@ -251,7 +254,8 @@ async function insertarTarea(tarea) {
                 @estado_tarea,
                 @fecha_vencimiento,
                 @titulo,
-                @hora
+                @hora,
+                @enviar_agenda
             )
         `);
 
@@ -273,6 +277,7 @@ async function modificarTarea(idTarea, tarea) {
         .input('fecha_vencimiento', sql.DateTime2, tarea.fecha_vencimiento || null)
         .input('titulo', sql.NVarChar(200), tarea.titulo)
         .input('hora', sql.NVarChar(5), tarea.hora || null)
+        .input('enviar_agenda', sql.Bit, tarea.enviar_agenda ?? false)
         .query(`
             UPDATE tarea
             SET
@@ -285,7 +290,8 @@ async function modificarTarea(idTarea, tarea) {
                 fecha_vencimiento = @fecha_vencimiento,
                 titulo = @titulo,
                 hora = @hora,
-                fecha_ultima_modificacion = SYSDATETIME()
+                enviar_agenda = @enviar_agenda,
+                fecha_ultima_modificacion = GETUTCDATE()
             OUTPUT INSERTED.*
             WHERE id = @idTarea
         `);

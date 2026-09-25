@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, forkJoin } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   EstadoDefinicion, EstadoExpedienteRuntime, EstadoTareaChecklist, TareaChecklist,
@@ -100,15 +100,15 @@ export class EstadosService {
       observacion:      t.descripcion ?? '',
       fechaRegistro:    t.fecha_ultima_modificacion ?? t.fecha_creacion,
       fechaVencimiento: t.fecha_vencimiento ? t.fecha_vencimiento.slice(0, 10) : undefined,
-      enviarAgenda:     false,
+      enviarAgenda:     t.enviar_agenda ?? false,
       archivos:         [],
     };
   }
 
   private mapearEstadoTarea(nombre: string): EstadoTareaChecklist {
-    if (nombre === 'Cumplido')  return 'COMPLETADO';
-    if (nombre === 'Vencido')   return 'EN_CURSO';
-    return 'EN_CURSO'; // Pendiente
+    if (nombre === 'Cumplido')      return 'COMPLETADO';
+    if (nombre === 'No procedente') return 'NO_PROCEDENTE';
+    return 'EN_CURSO'; // Pendiente o Vencido
   }
 
   /**
@@ -121,8 +121,12 @@ export class EstadosService {
     tareaId: string,
     cambios: Partial<Pick<TareaChecklist, 'estado' | 'observacion' | 'fechaVencimiento' | 'enviarAgenda'>>,
   ): Observable<TareaChecklist> {
-    // Primero traemos la tarea para tener sus campos actuales (titulo, prioridad, etc.)
-    return this.http.get<any[]>(`${this.base}/tarea?expediente=${expedienteId}`).pipe(
+    const conEstados$ = this.estadosTareaCache.length
+      ? of(this.estadosTareaCache)
+      : this.cargarEstadosTarea();
+
+    return conEstados$.pipe(
+      switchMap(() => this.http.get<any[]>(`${this.base}/tarea?expediente=${expedienteId}`)),
       switchMap(tareas => {
         const tarea = tareas.find((t: any) => String(t.id) === tareaId);
         if (!tarea) throw new Error('Tarea no encontrada');
@@ -138,6 +142,7 @@ export class EstadosService {
           estado_tarea:      estadoId,
           fecha_vencimiento: cambios.fechaVencimiento || tarea.fecha_vencimiento || null,
           hora:              tarea.hora || null,
+          enviar_agenda:     cambios.enviarAgenda ?? tarea.enviar_agenda ?? false,
         }).pipe(
           map(() => ({
             id:               tareaId,
@@ -154,12 +159,21 @@ export class EstadosService {
     );
   }
 
-  /** Mapea el estado del checklist al id de estadotarea en la BD */
+  private estadosTareaCache: { id: number; nombre: string }[] = [];
+
+  private cargarEstadosTarea(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/enums/estadotarea`).pipe(
+      tap(estados => this.estadosTareaCache = estados)
+    );
+  }
+
   private mapearEstadoTareaId(estado: EstadoTareaChecklist): number {
-    // Pendiente=1, Cumplido=2, Vencido=3
-    if (estado === 'COMPLETADO')    return 2;
-    if (estado === 'NO_PROCEDENTE') return 2; // se marca como cumplido
-    return 1; // EN_CURSO → Pendiente
+    const nombreBuscado =
+      estado === 'COMPLETADO'    ? 'Cumplido' :
+      estado === 'NO_PROCEDENTE' ? 'No procedente' :
+      'Pendiente';
+
+    return this.estadosTareaCache.find(e => e.nombre === nombreBuscado)?.id ?? 1;
   }
 
   /**
