@@ -10,6 +10,7 @@ import { EstadosService } from '../../services/estados.service';
 import { EstadoDefinicion, EstadoExpedienteRuntime, EstadoRegistrado, TareaChecklist } from '../../models/estado.model';
 import { TareaChecklistItem } from '../tarea-checklist-item/tarea-checklist-item';
 import { TareaChecklistDetalle, TareaChecklistPayload } from '../tarea-checklist-detalle/tarea-checklist-detalle';
+import { Auth } from '../../../../core/services/auth';
 
 /**
  * Pestaña "Estados" del expediente.
@@ -28,9 +29,12 @@ export class Estados implements OnInit {
   private router = inject(Router);
   private estadosService = inject(EstadosService);
   private cdr    = inject(ChangeDetectorRef);
+  private auth = inject(Auth);
 
   private expedienteId!: number;
   expediente: any = null;
+
+  private tipoDocumentoOtroId: number | null = null;
 
   cargando = true;
   flujo: EstadoDefinicion[] = [];
@@ -44,7 +48,16 @@ export class Estados implements OnInit {
 
   ngOnInit(): void {
     this.expedienteId = Number(this.route.snapshot.parent?.paramMap.get('id'));
+    this.cargarTipoDocumentoOtro();
     this.cargarDatos();
+  }
+
+  private cargarTipoDocumentoOtro(): void {
+      this.http.get<any[]>(`${environment.apiUrl}/enums/tipodocumento`).subscribe({
+        next: (tipos) => {
+          this.tipoDocumentoOtroId = tipos.find(t => t.nombre === 'Otro')?.id ?? null;
+        }
+      });
   }
 
   private cargarDatos(): void {
@@ -121,13 +134,48 @@ export class Estados implements OnInit {
       fechaVencimiento: payload.fechaVencimiento,
       enviarAgenda: payload.enviarAgenda,
     }).subscribe({
+      next: () => this.subirArchivosTarea(tareaId, payload.archivosNuevos, payload.fechaVencimiento),
+      error: () => toast.error('Error al actualizar la tarea'),
+    });
+  }
+
+  /** Sube los archivos nuevos adjuntados en la tarea, asociándolos por tarea_id. */
+  private subirArchivosTarea(tareaId: string, archivos: File[], fechaVencimiento?: string): void {
+    if (!archivos.length) {
+      toast.success('Tarea actualizada');
+      this.cargarDatos();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const usuarioId = this.auth.currentUser()?.id ?? 1;
+
+    const requests = archivos.map(archivo => {
+      const fd = new FormData();
+      fd.append('archivo', archivo);
+      fd.append('expediente', String(this.expedienteId));
+      fd.append('tarea', tareaId);
+      fd.append('usuario_creacion', String(usuarioId));
+      if (fechaVencimiento) {
+        fd.append('fecha_documento', fechaVencimiento);
+      }
+      if (this.tipoDocumentoOtroId) {
+        fd.append('tipo_documento', String(this.tipoDocumentoOtroId));
+      }
+      return this.http.post(`${environment.apiUrl}/subirDocumento`, fd);
+    });
+
+    forkJoin(requests).subscribe({
       next: () => {
-        // 🔴 MOCK: los archivosNuevos todavía no se suben a ningún lado (falta HU21)
         toast.success('Tarea actualizada');
         this.cargarDatos();
         this.cdr.detectChanges();
       },
-      error: () => toast.error('Error al actualizar la tarea'),
+      error: () => {
+        toast.error('La tarea se actualizó pero hubo un error al subir uno o más documentos');
+        this.cargarDatos();
+        this.cdr.detectChanges();
+      },
     });
   }
 

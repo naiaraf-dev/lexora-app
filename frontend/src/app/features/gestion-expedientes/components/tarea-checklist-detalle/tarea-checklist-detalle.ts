@@ -5,6 +5,7 @@ import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { toast } from 'ngx-sonner';
 import { ArchivoChecklist, EstadoTareaChecklist, TareaChecklist } from '../../models/estado.model';
+import { environment } from '../../../../../environments/environment';
 
 export interface TareaChecklistPayload {
   estado: EstadoTareaChecklist;
@@ -83,6 +84,11 @@ export class TareaChecklistDetalle implements OnChanges {
       this.archivosNuevos = [...this.archivosNuevos, ...Array.from(input.files)];
     }
     input.value = '';
+  }
+
+  descargarArchivo(archivo: ArchivoChecklist): void {
+    if (!archivo.id) return;
+    window.open(`${environment.apiUrl}/documento/${archivo.id}/descargar`, '_blank');
   }
 
   eliminarArchivoNuevo(archivo: File): void {

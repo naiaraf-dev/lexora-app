@@ -4,7 +4,7 @@ import { Observable, of, forkJoin } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
-  EstadoDefinicion, EstadoExpedienteRuntime, EstadoTareaChecklist, TareaChecklist,
+  EstadoDefinicion, EstadoExpedienteRuntime, EstadoTareaChecklist, TareaChecklist, ArchivoChecklist,
 } from '../models/estado.model';
 import { Auth } from '../../../core/services/auth';
 
@@ -49,19 +49,18 @@ export class EstadosService {
       expediente: this.http.get<any>(`${this.base}/expedientes/${expedienteId}`),
       historial:  this.http.get<any[]>(`${this.base}/expedientes/${expedienteId}/historial`),
       tareas:     this.http.get<any[]>(`${this.base}/tarea?expediente=${expedienteId}`),
+      documentos: this.http.get<any[]>(`${this.base}/documento?expediente=${expedienteId}`),
     }).pipe(
-      map(({ expediente, historial, tareas }) => {
+      map(({ expediente, historial, tareas, documentos }) => {
         const estadoActual = expediente.estado?.nombre ?? '';
         const archivado    = estadoActual === 'FINALIZADO';
+
+        const documentosPorTarea = this.agruparDocumentosPorTarea(documentos);
 
         const historialOrdenado = [...historial].sort((a, b) =>
           new Date(a.fechaCambioEstado).getTime() - new Date(b.fechaCambioEstado).getTime()
         );
 
-        // El back genera las tareas del estado ANTES de registrar el historial de ese
-        // mismo estado (por eso fecha_creacion de la tarea queda unos ms antes que
-        // fechaCambioEstado). Por eso cada bucket toma como límite superior su propio
-        // timestamp de historial, y como límite inferior el timestamp del historial anterior.
         const historialMapeado = historialOrdenado.map((h, i) => {
           const hasta = new Date(h.fechaCambioEstado).getTime();
           const desde = i === 0 ? -Infinity : new Date(historialOrdenado[i - 1].fechaCambioEstado).getTime();
@@ -74,7 +73,7 @@ export class EstadosService {
 
           return {
             nombre: h.estado.nombre,
-            tareas: tareasDelEstado.map((t: any) => this.mapearTarea(t)),
+            tareas: tareasDelEstado.map((t: any) => this.mapearTarea(t, documentosPorTarea)),
           };
         });
 
@@ -92,7 +91,29 @@ export class EstadosService {
     );
   }
 
-  private mapearTarea(t: any): TareaChecklist {
+  private agruparDocumentosPorTarea(documentos: any[]): Map<string, ArchivoChecklist[]> {
+    const mapa = new Map<string, ArchivoChecklist[]>();
+
+    documentos.forEach(doc => {
+      if (!doc.tarea) return;
+
+      const tareaId = String(doc.tarea);
+
+      if (!mapa.has(tareaId)) {
+        mapa.set(tareaId, []);
+      }
+
+      mapa.get(tareaId)!.push({
+        id: String(doc.id),
+        nombre: doc.nombre_archivo ?? 'Documento sin nombre',
+        url: doc.storage_key ?? '#',
+      });
+    });
+
+    return mapa;
+  }
+
+  private mapearTarea(t: any, documentosPorTarea: Map<string, ArchivoChecklist[]>): TareaChecklist {
     return {
       id:               String(t.id),
       descripcion:      t.titulo,
@@ -101,7 +122,7 @@ export class EstadosService {
       fechaRegistro:    t.fecha_ultima_modificacion ?? t.fecha_creacion,
       fechaVencimiento: t.fecha_vencimiento ? t.fecha_vencimiento.slice(0, 10) : undefined,
       enviarAgenda:     t.enviar_agenda ?? false,
-      archivos:         [],
+      archivos:         documentosPorTarea.get(String(t.id)) ?? [],
     };
   }
 

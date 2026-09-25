@@ -25,6 +25,9 @@ async function obtenerDocumentos(filtros) {
             d.novedad,
             n.titulo AS titulo_novedad,
 
+            d.tarea,
+            t.titulo AS titulo_tarea,
+
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,
             u.apellido AS apellido_usuario_creacion,
@@ -35,6 +38,7 @@ async function obtenerDocumentos(filtros) {
         FROM documento d
         INNER JOIN expediente e ON d.expediente = e.id
         LEFT JOIN novedad n ON d.novedad = n.id
+        LEFT JOIN tarea t ON d.tarea = t.id
         INNER JOIN usuario u ON d.usuario_creacion = u.id
         INNER JOIN tipodocumento td ON d.tipo_documento = td.id
         WHERE 1 = 1
@@ -76,6 +80,11 @@ async function obtenerDocumentos(filtros) {
         request.input('expediente', sql.Int, Number(filtros.expediente));
     }
 
+    if (filtros.tarea) {
+        query += ` AND d.tarea = @tarea`;
+        request.input('tarea', sql.Int, Number(filtros.tarea));
+    }
+
     query += ` ORDER BY d.fecha_creacion DESC`;
 
     const resultado = await request.query(query);
@@ -103,6 +112,9 @@ async function obtenerTodosLosDocumentos() {
             d.novedad,
             n.titulo AS titulo_novedad,
 
+            d.tarea,
+            t.titulo AS titulo_tarea,
+
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,
             u.apellido AS apellido_usuario_creacion,
@@ -113,6 +125,7 @@ async function obtenerTodosLosDocumentos() {
         FROM documento d
         INNER JOIN expediente e ON d.expediente = e.id
         LEFT JOIN novedad n ON d.novedad = n.id
+        LEFT JOIN tarea t ON d.tarea = t.id
         INNER JOIN usuario u ON d.usuario_creacion = u.id
         INNER JOIN tipodocumento td ON d.tipo_documento = td.id
         ORDER BY d.fecha_creacion DESC
@@ -181,6 +194,21 @@ async function existeTipoDocumento(idTipoDocumento) {
     return resultado.recordset.length > 0;
 }
 
+// valida si existe la tarea
+async function existeTarea(idTarea) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('idTarea', sql.Int, idTarea)
+        .query(`
+            SELECT id 
+            FROM tarea 
+            WHERE id = @idTarea
+        `);
+
+    return resultado.recordset.length > 0;
+}
+
 // inserta un documento nuevo en la base
 async function insertarDocumento(documento) {
     const pool = await conectarBD();
@@ -193,6 +221,7 @@ async function insertarDocumento(documento) {
         .input('activo', sql.Bit, documento.activo)
         .input('expediente', sql.Int, documento.expediente)
         .input('novedad', sql.Int, documento.novedad || null)
+        .input('tarea', sql.Int, documento.tarea || null)
         .input('usuario_creacion', sql.Int, documento.usuario_creacion)
         .input('tipo_documento', sql.Int, documento.tipo_documento)
         .query(`
@@ -204,6 +233,7 @@ async function insertarDocumento(documento) {
                 activo,
                 expediente,
                 novedad,
+                tarea,
                 usuario_creacion,
                 tipo_documento
             )
@@ -216,6 +246,7 @@ async function insertarDocumento(documento) {
                 @activo,
                 @expediente,
                 @novedad,
+                @tarea,
                 @usuario_creacion,
                 @tipo_documento
             )
@@ -318,6 +349,7 @@ module.exports = {
     existeNovedad,
     existeUsuario,
     existeTipoDocumento,
+    existeTarea,
     insertarDocumento,
     obtenerDocumentoPorId,
     eliminarDocumentoPorId,
