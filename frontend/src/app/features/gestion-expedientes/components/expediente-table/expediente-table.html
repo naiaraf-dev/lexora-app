@@ -39,7 +39,7 @@
             </td>
             <td class="px-4 py-3 text-text-primary/70">{{ causa.area }}</td>
             <td class="px-4 py-3 text-text-primary/70">
-              {{ causa.expedientes.length > 1 ? causa.expedientes.length + ' expedientes' : causa.expedientes[0].tipo?.nombre }}
+              {{ causa.expedientes.length > 1 ? causa.expedientes.length + ' expedientes' : causa.expedientes[0].tipo.nombre }}
             </td>
             <td class="px-4 py-3 text-text-primary/70">
               {{ causa.expedientes[0]?.cliente?.nombre || '-' }}
