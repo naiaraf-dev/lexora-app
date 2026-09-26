@@ -153,7 +153,7 @@ const BADGE_ESTADO: Record<string, { label: string; classes: string; dot: string
 @Component({
   selector: 'app-prevision-list',
   standalone: true,
-  imports: [CommonModule, UiTable, UiPagination, UiBadge, UiInput, UiSelect, PrimaryBtn, ModalPrevisionAltaGlobal],
+  imports: [CommonModule, UiTable, UiInput, UiSelect, PrimaryBtn, ModalPrevisionAltaGlobal],
   templateUrl: './prevision-list.html',
 })
 export class PrevisionList {

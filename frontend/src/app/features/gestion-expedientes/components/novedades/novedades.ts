@@ -116,7 +116,7 @@ export class Novedades implements OnInit {
               id:                       String(t.id),
               titulo:                   t.titulo,
               prioridad:                t.prioridad ? String(t.prioridad) : '',
-              fechaVencimiento:         t.fecha_vencimiento ?? '',
+              fechaVencimiento: t.fecha_vencimiento ? String(t.fecha_vencimiento).slice(0, 10) : '',
               hora:                     t.hora ?? '',
               responsableNombre:        t.nombre_usuario_completado
                                           ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
@@ -401,6 +401,7 @@ export class Novedades implements OnInit {
         estado_tarea:       estadoId,
         fecha_vencimiento:  tareaPayload.fechaVencimiento || null,
         hora:               tareaPayload.hora?.trim() || null,
+        enviar_agenda:      true,
       };
 
       if (tareaExistente?.id) {

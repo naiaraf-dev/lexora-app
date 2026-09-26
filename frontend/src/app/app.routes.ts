@@ -98,6 +98,12 @@ export const routes: Routes = [
               import('./features/gestion-expedientes/components/novedades/novedades')
                 .then((m) => m.Novedades),
           },
+          {
+            path: 'estados',
+            loadComponent: () =>
+              import('./features/gestion-expedientes/components/estados/estados')
+                .then((m) => m.Estados),
+          },
           { path: 'prevision', loadComponent: () => 
               import('./features/gestion-expedientes/components/prevision/prevision')
                 .then(m => m.Prevision) 

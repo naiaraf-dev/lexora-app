@@ -67,6 +67,7 @@ interface TareaBackend {
   nombre_estado_tarea: EstadoTarea;
   hora: string | null;
   nombre_cliente: string | null;
+  enviar_agenda: boolean;
 }
 
 interface EstadoTareaEnum {
@@ -97,7 +98,11 @@ export class AgendaService {
   // trae todas las tareas del backend, las adapta al front y actualiza el subject
   cargarTareas(): Observable<TareaAgenda[]> {
     return this.http.get<TareaBackend[]>(`${this.apiUrl}/tareas`).pipe(
-      map((tareasBackend) => tareasBackend.map((tarea) => this.mapearTarea(tarea))),
+      map((tareasBackend) =>
+        tareasBackend
+          .filter((t) => t.enviar_agenda && t.fecha_vencimiento)
+          .map((tarea) => this.mapearTarea(tarea))
+      ),
       tap((tareas) => this.tareasSubject.next(tareas))
     );
   }
@@ -148,8 +153,12 @@ export class AgendaService {
       }
     });
 
-    return this.http.get<TareaBackend[]>(`${this.apiUrl}/tarea`, { params }).pipe(
-      map((tareasBackend) => tareasBackend.map((tarea) => this.mapearTarea(tarea))),
+    return this.http.get<TareaBackend[]>(`${this.apiUrl}/tareas`, { params }).pipe(
+      map((tareasBackend) => 
+        tareasBackend
+          .filter((t) => t.enviar_agenda && t.fecha_vencimiento)
+          .map((tarea) => this.mapearTarea(tarea))
+      ),
       tap((tareas) => this.tareasSubject.next(tareas))
     );
   }
@@ -259,7 +268,7 @@ export class AgendaService {
   private mapearTarea(tarea: TareaBackend): TareaAgenda {
     const fecha = tarea.fecha_vencimiento
       ? tarea.fecha_vencimiento.substring(0, 10)
-      : tarea.fecha_creacion.substring(0, 10);
+      : '';
 
     const estadoCalculado = this.calcularEstado(tarea.nombre_estado_tarea, fecha);
 

@@ -121,6 +121,7 @@ async function subirEInsertarDocumento(datos, file) {
         activo,
         expediente,
         novedad,
+        tarea,
         usuario_creacion,
         tipo_documento
     } = datos;
@@ -162,6 +163,16 @@ async function subirEInsertarDocumento(datos, file) {
         }
     }
 
+    if (tarea) {
+        const tareaExiste = await documentosRepository.existeTarea(Number(tarea));
+
+        if (!tareaExiste) {
+            const error = new Error(`No existe una tarea con id ${tarea}`);
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
     const usuarioExiste = await documentosRepository.existeUsuario(Number(usuario_creacion));
 
     if (!usuarioExiste) {
@@ -192,6 +203,7 @@ async function subirEInsertarDocumento(datos, file) {
         activo: activo === undefined ? true : activo === 'true' || activo === true || activo === '1',
         expediente: Number(expediente),
         novedad: novedad ? Number(novedad) : null,
+        tarea: tarea ? Number(tarea) : null,
         usuario_creacion: Number(usuario_creacion),
         tipo_documento: Number(tipo_documento)
     };

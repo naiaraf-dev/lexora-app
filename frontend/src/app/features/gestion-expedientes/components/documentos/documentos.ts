@@ -138,6 +138,12 @@ export class Documentos implements OnInit {
 
   /** Mapea un objeto crudo del backend al modelo Documento usado en el frontend. */
   private mapDocumento(d: any): Documento {
+    const relacionadoCon = d.titulo_novedad
+      ? `Novedad: ${d.titulo_novedad}`
+      : d.titulo_tarea
+      ? `Tarea: ${d.titulo_tarea}`
+      : '—';
+
     return {
       id:             String(d.id),
       nombre:         d.nombre_archivo,
@@ -145,7 +151,7 @@ export class Documentos implements OnInit {
         ? this.normalizarTipoDocumento(d.nombre_tipo_documento)
         : '',
       tipoLabel:      d.nombre_tipo_documento ?? '',
-      relacionadoCon: d.titulo_novedad ? `Novedad: ${d.titulo_novedad}` : '—',
+      relacionadoCon,
       relacionadoId:  d.novedad ? String(d.novedad) : '',
       fechaCarga:     d.fecha_creacion,
       tamanio:        '—',
