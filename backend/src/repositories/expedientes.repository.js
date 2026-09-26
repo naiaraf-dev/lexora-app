@@ -406,6 +406,12 @@ async function actualizar(id, data, transaction = null) {
         data.origen_caso
     );
 
+    agregarCampo(
+        'causa_id',
+        sql.Int,
+        data.causa_id
+    );
+
     if (campos.length === 0) {
         throw new Error('No hay campos para actualizar');
     }

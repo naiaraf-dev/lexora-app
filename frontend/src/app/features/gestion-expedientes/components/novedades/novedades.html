@@ -10,7 +10,7 @@
     <!-- Timeline -->
     <div class="px-2">
         @if (novedadesOrdenadas.length === 0) {
-            <div class="text-center py-16 text-text-primary/40">No hay novedades</div>
+            <div class="text-center py-16 text-text-primary/40 dark:text-slate-500">No hay novedades</div>
         }
 
         @for (novedad of novedadesOrdenadas; track novedad.id; let i = $index) {

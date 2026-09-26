@@ -122,4 +122,8 @@ export class ExpedienteTable {
   get pages(): number[] {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
+
+  get totalExpedientesPagina(): number {
+    return this.causas.reduce((acc, c) => acc + c.expedientes.length, 0);
+  }
 }

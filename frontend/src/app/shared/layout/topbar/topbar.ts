@@ -22,10 +22,25 @@ export class Topbar {
     return { name, email: u.email, avatarUrl: '' };
   }
 
-  constructor(private elRef: ElementRef) {}
+  constructor(private elRef: ElementRef) {
+    const saved = localStorage.getItem('lexora-theme');
+    if (saved === 'dark') {
+      this.darkMode.set(true);
+      document.documentElement.classList.add('dark');
+    }
+  }
 
   toggleDropdown() { this.dropdownOpen.set(!this.dropdownOpen()); }
-  toggleDarkMode()  { this.darkMode.set(!this.darkMode()); }
+  toggleDarkMode() {
+    this.darkMode.set(!this.darkMode());
+    if (this.darkMode()) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('lexora-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('lexora-theme', 'light');
+    }
+  }
   closeDropdown()   { this.dropdownOpen.set(false); }
 
   @HostListener('document:click', ['$event'])

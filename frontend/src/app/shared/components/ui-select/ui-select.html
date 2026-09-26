@@ -1,16 +1,16 @@
 <div class="relative flex flex-col gap-1">
     @if (label) {
-        <label class="text-xs font-medium text-text-primary/60">{{ label }}</label>
+        <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ label }}</label>
     }
 
     <button
         type="button"
         (click)="toggleAbierto()"
-        class="w-full min-w-[180px] flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white text-sm text-left transition-all duration-200
+        class="w-full min-w-[180px] flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-sm text-left transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-        [class]="abierto ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'"
+        [class]="abierto ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200 dark:border-slate-700'"
     >
-        <span class="truncate" [class]="model ? 'text-text-primary' : 'text-text-primary/40'">
+        <span class="truncate" [class]="model ? 'text-text-primary dark:text-slate-100' : 'text-text-primary/40 dark:text-slate-500'">
             {{ etiquetaSeleccionada }}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/30 shrink-0 transition-transform" [class.rotate-180]="abierto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -20,7 +20,7 @@
 
     @if (abierto) {
         <div
-            class="absolute z-20 left-0 w-full bg-white rounded-xl border border-gray-200 shadow-lg py-1 flex flex-col max-h-64 overflow-y-auto"
+            class="absolute z-20 left-0 w-full bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg py-1 flex flex-col max-h-64 overflow-y-auto"
             [class.top-full]="!abrirHaciaArriba"
             [class.mt-1]="!abrirHaciaArriba"
             [class.bottom-full]="abrirHaciaArriba"
@@ -30,7 +30,7 @@
                 type="button"
                 (click)="elegir('')"
                 class="px-3 py-2 text-sm text-left transition-colors"
-                [class]="!model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary hover:bg-gray-50'"
+                [class]="!model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
             >
                 Todos
             </button>
@@ -40,7 +40,7 @@
                     type="button"
                     (click)="elegir(opt.value)"
                     class="px-3 py-2 text-sm text-left transition-colors"
-                    [class]="opt.value === model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary hover:bg-gray-50'"
+                    [class]="opt.value === model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
                 >
                     {{ opt.label }}
                 </button>
