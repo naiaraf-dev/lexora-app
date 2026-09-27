@@ -30,7 +30,7 @@ export interface Cliente {
   telefono: string;
   direccion: string;
 
-  fechaNacimiento?: string;
+  fechaNacimiento: string;
   contactoAlternativo?: string;
   observaciones?: string;
 
