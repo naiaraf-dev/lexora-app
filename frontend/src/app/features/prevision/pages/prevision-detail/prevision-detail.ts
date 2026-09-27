@@ -165,8 +165,8 @@ export class PrevisionDetail {
     { key: 'obligado', label: 'Obligado', type: 'text' },
     { key: 'estado',   label: 'Estado',   type: 'badge',
       badgeConfig: {
-        'Con previsión': { label: 'Con previsión', classes: 'bg-indigo-100 text-indigo-600', dot: 'bg-indigo-500' },
-        'Impulsado':     { label: 'Impulsado',     classes: 'bg-purple-100 text-purple-600', dot: 'bg-purple-500' },
+        'Con previsión': { label: 'Con previsión', classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
+        'Impulsado':     { label: 'Impulsado',     classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' },
         'Pagado':        { label: 'Pagado',        classes: 'bg-success/10 text-success',    dot: 'bg-success'    },
       }
     },
@@ -183,7 +183,7 @@ export class PrevisionDetail {
     { key: 'estado',   label: 'Estado',   type: 'badge',
       badgeConfig: {
         'Vigente':      { label: 'Vigente',      classes: 'bg-success/10 text-success',  dot: 'bg-success'  },
-        'Reemplazada':  { label: 'Reemplazada',  classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
+        'Reemplazada':  { label: 'Reemplazada',  classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
       }
     },
   ];

@@ -34,6 +34,9 @@ export class UiDateInput {
   abierto = false;
   abrirHaciaArriba = false;
 
+  /** Posición calculada del panel flotante (position: fixed, para escapar de overflow de ancestros). */
+  panelStyle: { top?: string; bottom?: string; left: string; width: string } = { left: '0px', width: '0px' };
+
   /** Mes que se está mostrando en el calendario (no necesariamente el de la fecha seleccionada). */
   mesVisible = new Date();
 
@@ -112,18 +115,32 @@ export class UiDateInput {
 
     if (!this.abierto) {
       this.mesVisible = this.fechaSeleccionada ?? new Date();
-      this.calcularDireccionApertura();
+      this.calcularPosicion();
     }
     this.abierto = !this.abierto;
   }
 
-  /** Decide si el calendario abre hacia abajo (default) o hacia arriba, según el espacio disponible en la ventana. */
-  private calcularDireccionApertura(): void {
+  /** Calcula la posición fija del panel según la posición real del botón en la ventana. */
+  private calcularPosicion(): void {
     const ALTO_ESTIMADO_PANEL = 340;
-    const rect = this.elementRef.nativeElement.getBoundingClientRect();
+    const rect = this.elementRef.nativeElement.querySelector('button').getBoundingClientRect();
     const espacioAbajo = window.innerHeight - rect.bottom;
 
     this.abrirHaciaArriba = espacioAbajo < ALTO_ESTIMADO_PANEL;
+
+    this.panelStyle = {
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      ...(this.abrirHaciaArriba
+        ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+        : { top: `${rect.bottom + 4}px` }),
+    };
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onWindowChange(): void {
+    if (this.abierto) this.calcularPosicion();
   }
 
   mesAnterior(): void {

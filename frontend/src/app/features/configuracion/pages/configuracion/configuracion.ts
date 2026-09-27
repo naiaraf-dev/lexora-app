@@ -97,6 +97,7 @@ export class ConfiguracionView implements OnInit {
     this.http.put(`${environment.apiUrl}/usuarios/profile/image`, formData).subscribe({
       next: (res: any) => {
         this.perfil.avatarUrl = res.avatarUrl ?? '';
+        this.auth.actualizarAvatar(res.avatarUrl ?? '');
         toast.success('Imagen actualizada correctamente.');
       },
       error: () => this.imagenError.set('Error al subir la imagen.')
@@ -143,14 +144,14 @@ export class ConfiguracionView implements OnInit {
           apellido:  res.apellido,
           matricula: res.matricula ?? '',
           email:     res.email,
-          avatarUrl: res.avatar_url ?? '',
+          avatarUrl: res.avatarUrl ?? '',
         };
+        this.cdr.detectChanges();
       }
     });
     this.imagenError.set('');
     this.perfilErrors.set({});
     this.editando.set(false);
-    this.cdr.detectChanges();
   }
 
   /** Resetea el formulario de contraseña y abre el modal */

@@ -1,7 +1,9 @@
-import { Component, signal, computed, inject, HostListener, ElementRef } from '@angular/core';
+import { Component, signal, computed, inject, HostListener, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { Auth } from '../../../core/services/auth';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-topbar',
@@ -9,8 +11,9 @@ import { Auth } from '../../../core/services/auth';
   imports: [CommonModule, RouterModule],
   templateUrl: './topbar.html',
 })
-export class Topbar {
+export class Topbar implements OnInit {
   private authService = inject(Auth);
+  private http = inject(HttpClient);
 
   dropdownOpen = signal(false);
   darkMode     = signal(false);
@@ -19,7 +22,7 @@ export class Topbar {
     const u = this.authService.currentUser();
     if (!u) return { name: 'Usuario', email: '', avatarUrl: '' };
     const name = u.apellido ? `${u.nombre} ${u.apellido}` : u.nombre;
-    return { name, email: u.email, avatarUrl: '' };
+    return { name, email: u.email, avatarUrl: u.avatarUrl ?? '' };
   }
 
   constructor(private elRef: ElementRef) {
@@ -28,6 +31,12 @@ export class Topbar {
       this.darkMode.set(true);
       document.documentElement.classList.add('dark');
     }
+  }
+
+  ngOnInit(): void {
+    this.http.get<any>(`${environment.apiUrl}/usuarios/profile`).subscribe({
+      next: (res) => this.authService.actualizarAvatar(res.avatarUrl ?? ''),
+    });
   }
 
   toggleDropdown() { this.dropdownOpen.set(!this.dropdownOpen()); }

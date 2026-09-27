@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-6">
   <div>
     <!-- Page content -->
-    <main class="flex flex-col flex-1 overflow-y-auto bg-[#F8FAFC] gap-6">
+    <main class="flex flex-col flex-1 overflow-y-auto bg-[#F8FAFC] dark:bg-slate-900 gap-6">
       <!-- ENCABEZADO -->
       <div class="flex items-start justify-between">
         <div>
@@ -25,7 +25,7 @@
       </div>
 
       <!-- FILTROS -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700 overflow-hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700" [class.overflow-hidden]="!filtrosAbiertos()">
         <button
           (click)="filtrosAbiertos.set(!filtrosAbiertos())"
           class="w-full flex items-center gap-2 px-5 py-4 text-sm font-semibold text-text-primary dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
@@ -47,8 +47,8 @@
         @if (filtrosAbiertos()) {
           <div class="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100 dark:border-slate-700">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <app-ui-input label="Fecha desde" type="date" [(model)]="filtros.fechaDesde" />
-              <app-ui-input label="Fecha hasta" type="date" [(model)]="filtros.fechaHasta" />
+              <app-ui-date-input label="Fecha desde" [(model)]="filtros.fechaDesde" />
+              <app-ui-date-input label="Fecha hasta" [(model)]="filtros.fechaHasta" />
               <app-ui-select label="Usuario" [options]="usuarioOpts()" [(model)]="filtros.usuario" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

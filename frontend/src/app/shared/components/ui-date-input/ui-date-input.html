@@ -22,11 +22,11 @@
 
     @if (abierto) {
         <div
-            class="absolute z-20 left-0 w-full bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg p-3 flex flex-col gap-2"
-            [class.top-full]="!abrirHaciaArriba"
-            [class.mt-1]="!abrirHaciaArriba"
-            [class.bottom-full]="abrirHaciaArriba"
-            [class.mb-1]="abrirHaciaArriba"
+            class="fixed z-50 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg p-3 flex flex-col gap-2"
+            [style.top]="panelStyle.top"
+            [style.bottom]="panelStyle.bottom"
+            [style.left]="panelStyle.left"
+            [style.width]="panelStyle.width"
         >
 
             <!-- Header: mes + navegación -->
