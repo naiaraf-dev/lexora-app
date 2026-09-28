@@ -172,6 +172,17 @@
             <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">{{ log.modulo }}</p>
           </div>
         </div>
+
+        <!-- IP -->
+        <div class="col-span-2 flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/>
+          </svg>
+          <div>
+            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Dirección IP</p>
+            <p class="text-sm text-text-primary font-semibold">{{ log.ip || '-' }}</p>
+          </div>
+        </div>
       </div>
 
       <!-- Descripción -->

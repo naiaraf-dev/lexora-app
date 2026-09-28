@@ -1,18 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 
-import { UiStatsCard } from './ui-stats-card';
+import { UiStatCard } from './ui-stats-card';
 
-describe('UiStatsCard', () => {
-  let component: UiStatsCard;
-  let fixture: ComponentFixture<UiStatsCard>;
+describe('UiStatCard', () => {
+  let component: UiStatCard;
+  let fixture: ComponentFixture<UiStatCard>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UiStatsCard],
+      imports: [UiStatCard],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(UiStatsCard);
+    fixture = TestBed.createComponent(UiStatCard);
     component = fixture.componentInstance;
+    // label y value son inputs obligatorios
+    fixture.componentRef.setInput('label', 'Total');
+    fixture.componentRef.setInput('value', 0);
     await fixture.whenStable();
   });
 

@@ -10,5 +10,6 @@ router.get('/api/clientes', authMiddleware, controller.getAll);
 router.get('/api/clientes/:id', authMiddleware, controller.getById);
 router.post('/api/clientes', authMiddleware, controller.create);
 router.put('/api/clientes/:id', authMiddleware, controller.update);
+router.delete('/api/clientes/:id', authMiddleware, controller.remove);
 
 module.exports = router;

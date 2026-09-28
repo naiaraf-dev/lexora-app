@@ -14,6 +14,7 @@ export class ClienteTable {
 
   @Output() verCliente = new EventEmitter<Cliente>();
   @Output() editarCliente = new EventEmitter<Cliente>();
+  @Output() eliminarCliente = new EventEmitter<Cliente>();
 
   // configuracion visual para mostrar el tipo de cliente como badge
   tipoBadgeConfig: Record<string, BadgeConfig> = {
@@ -58,7 +59,8 @@ export class ClienteTable {
       key: 'acciones',
       label: 'Acciones',
       type: 'actions',
-      actions: ['view', 'edit'],
+      // la baja solo se ofrece para clientes activos
+      getActions: (row: Cliente) => row.estado === 'Activo' ? ['view', 'edit', 'delete'] : ['view', 'edit'],
     },
   ];
 
@@ -79,5 +81,6 @@ export class ClienteTable {
   onAction(event: { type: TableAction; row: Cliente }): void {
     if (event.type === 'view') this.verCliente.emit(event.row);
     if (event.type === 'edit') this.editarCliente.emit(event.row);
+    if (event.type === 'delete') this.eliminarCliente.emit(event.row);
   }
 }
