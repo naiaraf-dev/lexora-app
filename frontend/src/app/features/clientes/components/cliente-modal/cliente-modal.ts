@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Cliente, TipoCliente, ClienteService } from '../../services/cliente';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
+import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiBadge, BadgeConfig } from '../../../../shared/components/ui-badge/ui-badge';
 
 @Component({
   selector: 'app-cliente-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, UiModal, UiInput, PrimaryBtn, UiBadge],
+  imports: [CommonModule, FormsModule, UiModal, UiInput, UiDateInput, PrimaryBtn, UiBadge],
   templateUrl: './cliente-modal.html',
 })
 export class ClienteModal implements OnChanges {

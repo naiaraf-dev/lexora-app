@@ -6,17 +6,17 @@ import { LogStats, LogEntry, LogFiltros } from '../../models/log.model';
 import { TableColumn, UiTable } from '../../../../shared/components/ui-table/ui-table';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { Log } from '../../services/log';
-import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { UiStatCard } from '../../../../shared/components/ui-stats-card/ui-stats-card';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import * as XLSXStyle from 'xlsx-js-style';
 
 @Component({
   selector: 'app-log-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, UiTable, UiSelect, UiInput, UiPagination, UiStatCard, UiModal, PrimaryBtn],
+  imports: [CommonModule, FormsModule, UiTable, UiSelect, UiDateInput, UiPagination, UiStatCard, UiModal, PrimaryBtn],
   templateUrl: './log-view.html',
 })
 export class LogView implements OnInit {
@@ -29,7 +29,7 @@ export class LogView implements OnInit {
   totalPaginas  = computed(() => Math.max(1, Math.ceil(this.totalLogs() / this.porPagina)));
   filtrosAbiertos = signal(true);
 
-  filtros: LogFiltros = {};
+  filtros: LogFiltros = { fechaDesde: '', fechaHasta: '' };
 
   // Modal detalle
   modalAbierto   = signal(false);
@@ -69,19 +69,18 @@ export class LogView implements OnInit {
         'Edición':     { label: 'Edición',     classes: 'bg-primary/10 text-primary',  dot: 'bg-primary'  },
         'Eliminación': { label: 'Eliminación', classes: 'bg-danger/10 text-danger',    dot: 'bg-danger'   },
         'Descarga':    { label: 'Descarga',    classes: 'bg-warning/10 text-warning',  dot: 'bg-warning'  },
-        'Login':       { label: 'Login',       classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
-        'Logout':      { label: 'Logout',      classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
+        'Login':       { label: 'Login',       classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
+        'Logout':      { label: 'Logout',      classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
       },
     },
     {
       key: 'modulo', label: 'Módulo', type: 'badge',
       badgeConfig: {
         'Expedientes': { label: 'Expedientes', classes: 'bg-primary/10 text-primary',   dot: 'bg-primary'   },
-        'Clientes':    { label: 'Clientes',    classes: 'bg-pink-100 text-pink-500',     dot: 'bg-pink-400'  },
-        'Documentos':  { label: 'Documentos',  classes: 'bg-warning/10 text-warning',   dot: 'bg-warning'   },
-        'Agenda':      { label: 'Agenda',      classes: 'bg-purple-100 text-purple-500', dot: 'bg-purple-400'},
-        'Reportes':    { label: 'Reportes',    classes: 'bg-teal-100 text-teal-600',     dot: 'bg-teal-500'  },
-        'Sistema':     { label: 'Sistema',     classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400'  },
+        'Clientes':    { label: 'Clientes',    classes: 'bg-pink-100 dark:bg-pink-900/30 text-pink-500 dark:text-pink-400',     dot: 'bg-pink-400'  },
+        'Agenda':      { label: 'Agenda',      classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400', dot: 'bg-purple-400'},
+        'Reportes':    { label: 'Reportes',    classes: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',     dot: 'bg-teal-500'  },
+        'Sistema':     { label: 'Sistema',     classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',     dot: 'bg-gray-400'  },
       },
     },
     { key: 'descripcion', label: 'Descripción', type: 'text' },
@@ -115,7 +114,7 @@ export class LogView implements OnInit {
   }
 
   limpiar() {
-    this.filtros = {};
+    this.filtros = { fechaDesde: '', fechaHasta: '' };
     this.paginaActual.set(1);
     this.cargarLogs();
   }

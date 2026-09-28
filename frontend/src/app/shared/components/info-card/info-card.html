@@ -1,8 +1,8 @@
-<section class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+<section class="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm p-6">
 
   @if (title) {
     <header class="flex items-center justify-between mb-5">
-      <h2 class="text-base font-semibold text-text-primary">{{ title }}</h2>
+      <h2 class="text-base font-semibold text-text-primary dark:text-slate-100">{{ title }}</h2>
 
       <div class="flex items-center gap-3">
         <ng-content select="[slot=header-actions]" />
@@ -11,7 +11,7 @@
           <button
             type="button"
             (click)="toggle()"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
             [attr.aria-label]="collapsed() ? 'Expandir' : 'Colapsar'">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               @if (collapsed()) {

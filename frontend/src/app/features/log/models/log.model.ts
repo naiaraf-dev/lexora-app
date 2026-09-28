@@ -13,8 +13,8 @@ export interface LogEntry {
 }
 
 export interface LogFiltros {
-  fechaDesde?: string;
-  fechaHasta?: string;
+  fechaDesde: string;
+  fechaHasta: string;
   usuario?: string;
   modulo?: string;
   tipoAccion?: string;

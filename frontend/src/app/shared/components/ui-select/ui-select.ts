@@ -27,6 +27,9 @@ export class UiSelect {
   abierto = false;
   abrirHaciaArriba = false;
 
+  /** Posición calculada del panel flotante (position: fixed, para escapar de overflow de ancestros). */
+  panelStyle: { top?: string; bottom?: string; left: string; width: string } = { left: '0px', width: '0px' };
+
   constructor(private elementRef: ElementRef) {}
 
   get etiquetaSeleccionada(): string {
@@ -36,7 +39,7 @@ export class UiSelect {
 
   toggleAbierto(): void {
     if (!this.abierto) {
-      this.calcularDireccionApertura();
+      this.calcularPosicion();
     }
     this.abierto = !this.abierto;
   }
@@ -46,16 +49,30 @@ export class UiSelect {
     this.abierto = false;
   }
 
-  /** Mismo criterio que el date input: si no hay espacio abajo, el panel abre hacia arriba. */
-  private calcularDireccionApertura(): void {
+  /** Calcula la posición fija del panel según la posición real del botón en la ventana. */
+  private calcularPosicion(): void {
     const ALTO_ESTIMADO_POR_OPCION = 36;
     const ALTO_MAXIMO_PANEL = 260;
     const altoEstimado = Math.min((this.options.length + 1) * ALTO_ESTIMADO_POR_OPCION, ALTO_MAXIMO_PANEL);
 
-    const rect = this.elementRef.nativeElement.getBoundingClientRect();
+    const rect = this.elementRef.nativeElement.querySelector('button').getBoundingClientRect();
     const espacioAbajo = window.innerHeight - rect.bottom;
 
     this.abrirHaciaArriba = espacioAbajo < altoEstimado;
+
+    this.panelStyle = {
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      ...(this.abrirHaciaArriba
+        ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+        : { top: `${rect.bottom + 4}px` }),
+    };
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onWindowChange(): void {
+    if (this.abierto) this.calcularPosicion();
   }
 
   @HostListener('document:click', ['$event'])

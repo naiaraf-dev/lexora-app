@@ -13,13 +13,13 @@ export class Storage {
     localStorage.setItem(TOKEN_KEY, token);
   }
 
-  getUser(): { nombre: string; apellido: string; email: string } | null {
+  getUser(): { nombre: string; apellido: string; email: string; avatarUrl?: string } | null {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }
   }
 
-  setUser(user: { nombre: string; apellido: string; email: string }): void {
+  setUser(user: { nombre: string; apellido: string; email: string; avatarUrl?: string }): void {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 

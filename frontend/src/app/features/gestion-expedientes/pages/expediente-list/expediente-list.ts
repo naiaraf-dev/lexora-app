@@ -159,9 +159,8 @@ export class ExpedienteList implements OnInit {
   onAgrupar(exp: Expediente) { this.expedienteAAgrupar = exp; }
 
   onAgrupado(event: { expediente: Expediente; causaId: number; numeroCausa: string }) {
-    // PUT al back actualizando numero_expediente_judicial del expediente
     this.expedientesService.actualizar(Number(event.expediente.id), {
-      numero_expediente_judicial: event.numeroCausa
+      causa_id: event.causaId
     }).subscribe({
       next: () => {
         this.expedienteAAgrupar = null;

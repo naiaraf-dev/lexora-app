@@ -1,45 +1,45 @@
 <div class="relative flex flex-col gap-1">
     @if (label) {
-        <label class="text-xs font-medium text-text-primary/60">{{ label }}</label>
+        <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ label }}</label>
     }
 
     <button
         type="button"
         [disabled]="disabled"
         (click)="toggleAbierto()"
-        class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white text-sm text-left transition-all duration-200
+        class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-sm text-left transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-            disabled:bg-gray-100 disabled:text-text-primary/50 disabled:cursor-not-allowed"
-        [class]="abierto ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'"
+            disabled:bg-gray-100 dark:disabled:bg-slate-700 disabled:text-text-primary/50 disabled:cursor-not-allowed"
+        [class]="abierto ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200 dark:border-slate-700'"
     >
-        <span [class]="textoMostrado ? 'text-text-primary' : 'text-text-primary/40'">
+        <span [class]="textoMostrado ? 'text-text-primary dark:text-slate-100' : 'text-text-primary/40 dark:text-slate-500'">
             {{ textoMostrado || 'dd/mm/aaaa' }}
         </span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/40 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-primary/40 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
     </button>
 
     @if (abierto) {
         <div
-            class="absolute z-20 left-0 w-full bg-white rounded-xl border border-gray-200 shadow-lg p-3 flex flex-col gap-2"
-            [class.top-full]="!abrirHaciaArriba"
-            [class.mt-1]="!abrirHaciaArriba"
-            [class.bottom-full]="abrirHaciaArriba"
-            [class.mb-1]="abrirHaciaArriba"
+            class="fixed z-50 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg p-3 flex flex-col gap-2"
+            [style.top]="panelStyle.top"
+            [style.bottom]="panelStyle.bottom"
+            [style.left]="panelStyle.left"
+            [style.width]="panelStyle.width"
         >
 
             <!-- Header: mes + navegación -->
             <div class="flex items-center justify-between px-1">
-                <button type="button" (click)="mesAnterior()" class="p-1 rounded-lg hover:bg-gray-100 text-text-primary/50 transition-colors">
+                <button type="button" (click)="mesAnterior()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
 
-                <span class="text-sm font-semibold text-text-primary">{{ etiquetaMes }}</span>
+                <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ etiquetaMes }}</span>
 
-                <button type="button" (click)="mesSiguiente()" class="p-1 rounded-lg hover:bg-gray-100 text-text-primary/50 transition-colors">
+                <button type="button" (click)="mesSiguiente()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
@@ -49,7 +49,7 @@
             <!-- Días de la semana -->
             <div class="grid grid-cols-7 gap-1">
                 @for (dia of diasSemana; track dia) {
-                    <span class="text-[10px] font-semibold text-text-primary/40 text-center py-1">{{ dia }}</span>
+                    <span class="text-[10px] font-semibold text-text-primary/40 dark:text-slate-500 text-center py-1">{{ dia }}</span>
                 }
             </div>
 
@@ -64,10 +64,10 @@
                         [class]="celda.seleccionado
                             ? 'bg-primary text-white font-semibold'
                             : (celda.deshabilitada
-                                ? 'text-text-primary/20 cursor-not-allowed'
+                                ? 'text-text-primary/20 dark:text-slate-600 cursor-not-allowed'
                                 : (celda.delMesActual
-                                    ? (celda.esHoy ? 'text-primary font-semibold border border-primary/40 hover:bg-primary/10' : 'text-text-primary hover:bg-gray-100')
-                                    : 'text-text-primary/20 cursor-default'))"
+                                    ? (celda.esHoy ? 'text-primary font-semibold border border-primary/40 hover:bg-primary/10' : 'text-text-primary dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700')
+                                    : 'text-text-primary/20 dark:text-slate-600 cursor-default'))"
                     >
                         {{ celda.dia }}
                     </button>
@@ -75,8 +75,8 @@
             </div>
 
             <!-- Footer: Borrar / Hoy -->
-            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                <button type="button" (click)="borrar()" class="text-xs font-medium text-text-primary/50 hover:text-text-primary transition-colors">
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">
+                <button type="button" (click)="borrar()" class="text-xs font-medium text-text-primary/50 dark:text-slate-400 hover:text-text-primary dark:hover:text-slate-200 transition-colors">
                     Borrar
                 </button>
                 <button type="button" (click)="irAHoy()" class="text-xs font-medium text-primary hover:text-primary/80 transition-colors">

@@ -4,23 +4,23 @@
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
-    <span class="font-semibold text-text-primary">Registrar pago</span>
+    <span class="font-semibold text-text-primary dark:text-slate-100">Registrar pago</span>
   </div>
 
   <div slot="cuerpo" class="flex flex-col gap-4">
 
     <!-- Resumen saldos -->
-    <div class="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3 grid grid-cols-3 gap-4 text-sm">
+    <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 grid grid-cols-3 gap-4 text-sm">
       <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40">Monto previsto</span>
-        <span class="font-semibold text-text-primary">{{ resumen.montoPrevisto }}</span>
+        <span class="text-xs text-text-primary/40 dark:text-slate-500">Monto previsto</span>
+        <span class="font-semibold text-text-primary dark:text-slate-100">{{ resumen.montoPrevisto }}</span>
       </div>
       <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40">Monto pagado</span>
+        <span class="text-xs text-text-primary/40 dark:text-slate-500">Monto pagado</span>
         <span class="font-semibold text-success">{{ resumen.montoPagado }}</span>
       </div>
       <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40">Saldo pendiente</span>
+        <span class="text-xs text-text-primary/40 dark:text-slate-500">Saldo pendiente</span>
         <span class="font-semibold text-warning">{{ resumen.saldoPendiente }}</span>
       </div>
     </div>
@@ -33,9 +33,9 @@
     </div>
 
     <div class="flex flex-col gap-1">
-      <label class="text-xs font-medium text-text-primary/60">Observaciones</label>
+      <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">Observaciones</label>
       <textarea [(ngModel)]="form.observaciones" rows="2"
-        class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-text-primary resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"></textarea>
+        class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all placeholder:text-text-primary/30 dark:placeholder:text-slate-500"></textarea>
     </div>
 
   </div>

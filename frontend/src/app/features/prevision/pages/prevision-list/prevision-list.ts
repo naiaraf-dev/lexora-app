@@ -5,6 +5,7 @@ import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { UiBadge } from '../../../../shared/components/ui-badge/ui-badge';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
+import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { ModalPrevisionAltaGlobal } from '../../components/modal-prevision-alta/modal-prevision-alta';
@@ -140,20 +141,20 @@ const MOCK_TODOS_PAGOS = [
 ];
 
 const BADGE_ESTADO: Record<string, { label: string; classes: string; dot: string }> = {
-  'Registrado':          { label: 'Registrado',          classes: 'bg-gray-100 text-gray-500',    dot: 'bg-gray-400'   },
-  'En seguimiento':      { label: 'En seguimiento',      classes: 'bg-blue-100 text-blue-600',    dot: 'bg-blue-500'   },
-  'Con previsión':       { label: 'Con previsión',       classes: 'bg-indigo-100 text-indigo-600',dot: 'bg-indigo-500' },
+  'Registrado':          { label: 'Registrado',          classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',    dot: 'bg-gray-400'   },
+  'En seguimiento':      { label: 'En seguimiento',      classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',    dot: 'bg-blue-500'   },
+  'Con previsión':       { label: 'Con previsión',       classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
   'Listo para impulsar': { label: 'Listo para impulsar', classes: 'bg-warning/10 text-warning',   dot: 'bg-warning'    },
-  'Impulsado':           { label: 'Impulsado',           classes: 'bg-purple-100 text-purple-600',dot: 'bg-purple-500' },
+  'Impulsado':           { label: 'Impulsado',           classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' },
   'Pagado':              { label: 'Pagado',              classes: 'bg-success/10 text-success',   dot: 'bg-success'    },
-  'Acreditado':          { label: 'Acreditado',          classes: 'bg-teal-100 text-teal-600',    dot: 'bg-teal-500'   },
-  'Cerrado':             { label: 'Cerrado',             classes: 'bg-gray-100 text-gray-400',    dot: 'bg-gray-300'   },
+  'Acreditado':          { label: 'Acreditado',          classes: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',    dot: 'bg-teal-500'   },
+  'Cerrado':             { label: 'Cerrado',             classes: 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400',    dot: 'bg-gray-300'   },
 };
 
 @Component({
   selector: 'app-prevision-list',
   standalone: true,
-  imports: [CommonModule, UiTable, UiInput, UiSelect, PrimaryBtn, ModalPrevisionAltaGlobal],
+  imports: [CommonModule, UiTable, UiInput, UiSelect, UiDateInput, PrimaryBtn, ModalPrevisionAltaGlobal],
   templateUrl: './prevision-list.html',
 })
 export class PrevisionList {
@@ -163,7 +164,7 @@ export class PrevisionList {
   modalAltaOpen = false;
 
   // Filtros
-  filtros = { expediente: '', cliente: '', estado: '', concepto: '', modo: '' };
+  filtros = { expediente: '', cliente: '', estado: '', concepto: '', modo: '', fechaDesde: '', fechaHasta: '' };
 
   estadoOptions = [
     { value: 'Registrado',           label: 'Registrado'           },
@@ -252,7 +253,7 @@ export class PrevisionList {
   }
 
   limpiarFiltros() {
-    this.filtros = { expediente: '', cliente: '', estado: '', concepto: '', modo: '' };
+    this.filtros = { expediente: '', cliente: '', estado: '', concepto: '', modo: '', fechaDesde: '', fechaHasta: '' };
   }
 
   badgeConfig = BADGE_ESTADO;
@@ -264,7 +265,7 @@ export class PrevisionList {
     { key: 'modo',             label: 'Modo',              type: 'badge',
       badgeConfig: {
         'Activo':      { label: 'Activo',      classes: 'bg-primary/10 text-primary',  dot: 'bg-primary'  },
-        'Seguimiento': { label: 'Seguimiento', classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
+        'Seguimiento': { label: 'Seguimiento', classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
       }
     },
     { key: 'fechaResolucion',  label: 'Fecha resolución',  type: 'text' },
@@ -300,7 +301,7 @@ export class PrevisionList {
     { key: 'total',          label: 'Total',            type: 'text' },
     { key: 'estado',         label: 'Estado',           type: 'badge',
       badgeConfig: {
-        'Practicada':       { label: 'Practicada',       classes: 'bg-blue-100 text-blue-600',    dot: 'bg-blue-500'   },
+        'Practicada':       { label: 'Practicada',   classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',    dot: 'bg-blue-500'   },
         'Impugnada':        { label: 'Impugnada',        classes: 'bg-danger/10 text-danger',     dot: 'bg-danger'     },
         'Con traslado':     { label: 'Con traslado',     classes: 'bg-warning/10 text-warning',   dot: 'bg-warning'    },
         'Aprobada / firme': { label: 'Aprobada / firme', classes: 'bg-success/10 text-success',   dot: 'bg-success'    },
@@ -321,8 +322,8 @@ export class PrevisionList {
       badgeConfig: {
         'Parcial':                { label: 'Parcial',                classes: 'bg-warning/10 text-warning',   dot: 'bg-warning'  },
         'Total':                  { label: 'Total',                  classes: 'bg-success/10 text-success',   dot: 'bg-success'  },
-        'Pendiente de acreditar': { label: 'Pendiente de acreditar', classes: 'bg-blue-100 text-blue-600',    dot: 'bg-blue-500' },
-        'Acreditado':             { label: 'Acreditado',             classes: 'bg-teal-100 text-teal-600',    dot: 'bg-teal-500' },
+        'Pendiente de acreditar': { label: 'Pendiente de acreditar', classes: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',    dot: 'bg-blue-500' },
+        'Acreditado':             { label: 'Acreditado',             classes: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',    dot: 'bg-teal-500' },
       }
     },
   ];

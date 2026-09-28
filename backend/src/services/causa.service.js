@@ -61,7 +61,7 @@ function agrupar(filas) {
 async function listar(filtros = {}) {
     const filas = await repo.getAll(filtros);
     if (!filas.length) return [];
-    return agrupar(filas);
+    return agrupar(filas).filter(causa => causa.expedientes.length > 0);
 }
 
 // trae una causa por id con sus expedientes

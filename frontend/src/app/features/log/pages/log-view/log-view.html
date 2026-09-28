@@ -1,12 +1,12 @@
 <div class="flex flex-col gap-6">
   <div>
     <!-- Page content -->
-    <main class="flex flex-col flex-1 overflow-y-auto bg-[#F8FAFC] gap-6">
+    <main class="flex flex-col flex-1 overflow-y-auto bg-[#F8FAFC] dark:bg-slate-900 gap-6">
       <!-- ENCABEZADO -->
       <div class="flex items-start justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-text-primary">Log de seguridad</h1>
-          <p class="text-sm text-text-primary/50 mt-0.5">Registro de actividad del sistema</p>
+          <h1 class="text-2xl font-bold text-text-primary dark:text-slate-100">Log de seguridad</h1>
+          <p class="text-sm text-text-primary/50 dark:text-slate-400 mt-0.5">Registro de actividad del sistema</p>
         </div>
         <app-primary-btn variant="secondary" (click)="exportar()">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -25,10 +25,10 @@
       </div>
 
       <!-- FILTROS -->
-      <div class="bg-white rounded-xl border border-black/8 overflow-hidden">
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700" [class.overflow-hidden]="!filtrosAbiertos()">
         <button
           (click)="filtrosAbiertos.set(!filtrosAbiertos())"
-          class="w-full flex items-center gap-2 px-5 py-4 text-sm font-semibold text-text-primary hover:bg-gray-50 transition"
+          class="w-full flex items-center gap-2 px-5 py-4 text-sm font-semibold text-text-primary dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -45,10 +45,10 @@
         </button>
 
         @if (filtrosAbiertos()) {
-          <div class="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100">
+          <div class="px-5 pb-5 flex flex-col gap-4 border-t border-gray-100 dark:border-slate-700">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <app-ui-input label="Fecha desde" type="date" [(model)]="filtros.fechaDesde" />
-              <app-ui-input label="Fecha hasta" type="date" [(model)]="filtros.fechaHasta" />
+              <app-ui-date-input label="Fecha desde" [(model)]="filtros.fechaDesde" />
+              <app-ui-date-input label="Fecha hasta" [(model)]="filtros.fechaHasta" />
               <app-ui-select label="Usuario" [options]="usuarioOpts()" [(model)]="filtros.usuario" />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -73,7 +73,7 @@
               </button>
               <button
                 (click)="limpiar()"
-                class="px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                class="px-8 py-2 border border-gray-200 dark:border-slate-700 text-sm font-medium text-text-primary dark:text-slate-100 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition"
               >
                 Limpiar
               </button>
@@ -130,58 +130,58 @@
       <!-- Grid de campos en cards -->
       <div class="grid grid-cols-2 gap-3">
         <!-- Fecha y Hora -->
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Fecha y Hora</p>
-            <p class="text-sm text-text-primary font-semibold">{{ log.fechaHora | date:'dd/MM/yyyy - HH:mm' }}</p>
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Fecha y Hora</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">{{ log.fechaHora | date:'dd/MM/yyyy - HH:mm' }}</p>
           </div>
         </div>
 
         <!-- Usuario -->
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0"/>
           </svg>
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Usuario</p>
-            <p class="text-sm text-text-primary font-semibold">{{ log.usuario }}</p>
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Usuario</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">{{ log.usuario }}</p>
           </div>
         </div>
 
         <!-- Acción -->
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
           </svg>
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Acción</p>
-            <p class="text-sm text-text-primary font-semibold">{{ log.accion }}</p>
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Acción</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">{{ log.accion }}</p>
           </div>
         </div>
 
         <!-- Módulo -->
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
           </svg>
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Módulo</p>
-            <p class="text-sm text-text-primary font-semibold">{{ log.modulo }}</p>
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Módulo</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">{{ log.modulo }}</p>
           </div>
         </div>
       </div>
 
       <!-- Descripción -->
-      <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+      <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
         </svg>
         <div class="min-w-0">
-          <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Descripción</p>
-          <p class="text-sm text-text-primary leading-relaxed">{{ log.descripcion }}</p>
+          <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Descripción</p>
+          <p class="text-sm text-text-primary dark:text-slate-100 leading-relaxed">{{ log.descripcion }}</p>
         </div>
       </div>
     }
@@ -190,7 +190,7 @@
   <div slot="footer" class="flex justify-end">
     <button
       (click)="cerrarModal()"
-      class="px-6 py-2 text-sm font-medium rounded-lg border border-gray-200 text-text-primary/70 hover:bg-gray-50 transition"
+      class="px-6 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-text-primary/70 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
     >
       Cerrar
     </button>
