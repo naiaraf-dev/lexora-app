@@ -12,6 +12,7 @@ import { UiStatCard } from '../../../../shared/components/ui-stats-card/ui-stats
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import * as XLSXStyle from 'xlsx-js-style';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-log-view',
@@ -97,25 +98,44 @@ export class LogView implements OnInit {
   constructor(private logService: Log) {}
 
   ngOnInit() {
-    this.stats.set(this.logService.getStats());
-    this.usuarioOpts.set(this.logService.getUsuarios().map(u => ({ label: u, value: u })));
+    // el filtro de usuario manda el id, que es lo que espera el backend
+    this.logService.getUsuarios().subscribe({
+      next: usuarios => this.usuarioOpts.set(usuarios.map(u => ({ label: u.nombre, value: String(u.id) }))),
+      error: () => toast.error('Error al obtener los usuarios del log'),
+    });
+    this.cargarStats();
     this.cargarLogs();
   }
 
+  // trae los totales de las cards segun el rango de fechas
+  cargarStats() {
+    this.logService.getStats(this.filtros).subscribe({
+      next: stats => this.stats.set(stats),
+      error: () => toast.error('Error al obtener las estadísticas del log'),
+    });
+  }
+
+  // trae la pagina actual de logs desde el backend
   cargarLogs() {
-    const { data, total } = this.logService.getLogs(this.filtros, this.paginaActual(), this.porPagina);
-    this.logs.set(data);
-    this.totalLogs.set(total);
+    this.logService.getLogs(this.filtros, this.paginaActual(), this.porPagina).subscribe({
+      next: ({ data, total }) => {
+        this.logs.set(data);
+        this.totalLogs.set(total);
+      },
+      error: () => toast.error('Error al obtener el log de seguridad'),
+    });
   }
 
   buscar() {
     this.paginaActual.set(1);
+    this.cargarStats();
     this.cargarLogs();
   }
 
   limpiar() {
     this.filtros = { fechaDesde: '', fechaHasta: '' };
     this.paginaActual.set(1);
+    this.cargarStats();
     this.cargarLogs();
   }
 
@@ -125,10 +145,16 @@ export class LogView implements OnInit {
     this.cargarLogs();
   }
 
+  // trae todos los logs filtrados y los exporta a excel
   exportar(): void {
-    const logs = this.logService.getAllLogs(this.filtros);
+    this.logService.getAllLogs(this.filtros, this.totalLogs()).subscribe({
+      next: logs => this.generarExcel(logs),
+      error: () => toast.error('Error al exportar el log de seguridad'),
+    });
+  }
 
-    const headers = ['ID', 'Fecha y Hora', 'Usuario', 'Acción', 'Módulo', 'Descripción', 'Resultado'];
+  private generarExcel(logs: LogEntry[]): void {
+    const headers = ['ID', 'Fecha y Hora', 'Usuario', 'Acción', 'Módulo', 'Descripción', 'Resultado', 'IP'];
 
     const filaHeaders = headers.map(h => ({
       v: h,
@@ -154,6 +180,7 @@ export class LogView implements OnInit {
       l.modulo,
       l.descripcion,
       l.resultado,
+      l.ip ?? '',
     ].map(v => ({
       v: v ?? '',
       t: 's',
@@ -178,6 +205,7 @@ export class LogView implements OnInit {
       { wch: 14 }, // Módulo
       { wch: 50 }, // Descripción
       { wch: 10 }, // Resultado
+      { wch: 18 }, // IP
     ];
 
     ws['!rows'] = [{ hpt: 22 }];

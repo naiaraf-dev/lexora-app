@@ -103,6 +103,12 @@ export class ClienteService {
     return this.http.put<any>(`${environment.apiUrl}/clientes/${cliente.id}`, this.mapToBackend(cliente));
   }
 
+  /** DELETE /api/clientes/:id */
+  // da de baja logica al cliente (queda como Inactivo, no se borra)
+  eliminarCliente(id: number): Observable<any> {
+    return this.http.delete<any>(`${environment.apiUrl}/clientes/${id}`);
+  }
+
   // Mapeo BD → modelo frontend
   // convierte los nombres y formatos de la base al modelo que usa Angular
   private mapFromBackend(c: any): Cliente {

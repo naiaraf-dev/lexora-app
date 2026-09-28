@@ -1,18 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
 
-import { Notification } from './notification';
+import { ExpedientesService } from './expedientes.service';
 
-describe('Notification', () => {
-  let service: Notification;
+describe('ExpedientesService', () => {
+  let service: ExpedientesService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
-    service = TestBed.inject(Notification);
+    service = TestBed.inject(ExpedientesService);
   });
 
   it('should be created', () => {

@@ -10,6 +10,12 @@ export interface LogEntry {
   modulo: LogModulo;
   descripcion: string;
   resultado: LogResultado;
+  ip: string | null;
+}
+
+export interface LogUsuario {
+  id: number;
+  nombre: string;
 }
 
 export interface LogFiltros {
