@@ -69,9 +69,9 @@
   </div>
 
   <!-- Tabla -->
-  <!-- recibe los clientes de la pagina actual y devuelve eventos para ver o editar -->
+  <!-- recibe los clientes de la pagina actual y devuelve eventos para ver, editar o dar de baja -->
   <app-cliente-table [clientes]="clientesPagina" (verCliente)="abrirDetalle($event)"
-    (editarCliente)="abrirEdicion($event)"></app-cliente-table>
+    (editarCliente)="abrirEdicion($event)" (eliminarCliente)="pedirBaja($event)"></app-cliente-table>
 
   <!-- Paginación -->
   <!-- cambia la pagina actual del listado -->
@@ -82,5 +82,10 @@
   <!-- se usa para crear, editar o ver el detalle del cliente seleccionado -->
   <app-cliente-modal [visible]="modalVisible" [modo]="modoModal" [cliente]="clienteSeleccionado"
     (cerrar)="cerrarModal()" (guardar)="guardarCliente($event)"></app-cliente-modal>
+
+  <!-- Confirmación de baja -->
+  <!-- pide confirmacion antes de dar de baja (baja logica) al cliente -->
+  <app-ui-confirm-modal [open]="!!clienteAEliminar" titulo="Dar de baja cliente" [mensaje]="mensajeConfirmarBaja"
+    labelConfirmar="Dar de baja" (confirmar)="confirmarBaja()" (cancelar)="clienteAEliminar = null"></app-ui-confirm-modal>
 
 </div>

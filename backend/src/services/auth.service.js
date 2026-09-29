@@ -3,8 +3,9 @@ const jwt = require('jsonwebtoken');
 const authRepository = require('../repositories/auth.repository');
 const { sendPasswordResetEmail } = require('./email.service');
 
-// clave para firmar los tokens jwt
-const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
+// clave para firmar los tokens jwt: tiene que ser la misma que valida auth.middleware
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET no está definido en las variables de entorno');
 
 // registra el usuario y le genera un token para dejarlo logueado
 async function register(nombre, apellido, email, password, matricula) {
