@@ -22,6 +22,8 @@ export class UiSelect {
   @Input() label = '';
   @Input() options: UiSelectOption[] = [];
   @Input() model: any;
+  @Input() variant: 'filtro' | 'formulario' = 'filtro';
+  @Input() placeholder = 'Seleccionar...';
   @Output() modelChange = new EventEmitter<any>();
 
   abierto = false;
@@ -34,7 +36,8 @@ export class UiSelect {
 
   get etiquetaSeleccionada(): string {
     const opcion = this.options.find(o => o.value === this.model);
-    return opcion?.label ?? 'Todos';
+    if (opcion) return opcion.label;
+    return this.variant === 'formulario' ? this.placeholder : 'Todos';
   }
 
   toggleAbierto(): void {

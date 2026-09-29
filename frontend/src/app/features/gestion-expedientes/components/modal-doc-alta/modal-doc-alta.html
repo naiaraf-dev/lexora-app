@@ -32,12 +32,14 @@
     </div>
 
     <div class="grid grid-cols-2 gap-3">
-      <app-ui-select label="Tipo de documento" [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
+      <app-ui-select label="Tipo de documento" variant="formulario" placeholder="Seleccioná..." [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
       <app-ui-date-input label="Fecha del documento" [(model)]="form.fechaDocumento"></app-ui-date-input>
     </div>
 
     <app-ui-select
       label="Relacionado con (opcional)"
+      variant="formulario"
+      placeholder="Seleccioná..."
       [(model)]="form.relacionadoId"
       [options]="novedadOpciones"
     ></app-ui-select>

@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { ModalPago } from '../../components/modal-pago/modal-pago';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
+import { ModalVerComprobante } from '../../components/modal-ver-comprobante/modal-ver-comprobante';
 
 // 🔴 MOCK
 const MOCK_PREVISION = {
@@ -36,12 +37,9 @@ const MOCK_PREVISION = {
   montoBase:               '$5.000.000',
   fechaActualizacion:      '16/08/2026',
   observaciones:           'Previsión actualizada con tasa vigente al mes de agosto.',
-  observacionesSentencia:  'Sentencia definitiva dictada en primera instancia. Pendiente de apelación.',
   concepto:                'Capital',
   fechaBase:               '10/06/2026',
   fechaEstimadaPago:       '31/12/2026',
-  fechaSentencia:          '10/06/2026',
-  tipoSentencia:           'Definitiva',
 };
 
 const MOCK_ITEMS = [
@@ -73,19 +71,34 @@ const MOCK_TIMELINE: TimelineEvent[] = [
 @Component({
   selector: 'app-prevision-detail',
   standalone: true,
-  imports: [CommonModule, PrimaryBtn, UiTable, ModalLiquidacion, ModalPago, FormsModule, UiInput, UiDateInput, UiSelect],
+  imports: [CommonModule, PrimaryBtn, UiTable, ModalLiquidacion, ModalPago, ModalVerComprobante, FormsModule, UiInput, UiDateInput, UiSelect],
   templateUrl: './prevision-detail.html',
 })
 export class PrevisionDetail {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-    tab = signal<'resumen' | 'liquidaciones' | 'sentencia' | 'pagos' | 'documentos'>('resumen');
+  private cdr    = inject(ChangeDetectorRef);
+
+  tab = signal<'resumen' | 'liquidaciones' | 'pagos' | 'historial'>('resumen');
   prevision = MOCK_PREVISION;
   liquidaciones = MOCK_LIQUIDACIONES;
   pagos = MOCK_PAGOS;
 
   modalLiquidacionOpen = false;
   modalPagoOpen = false;
+
+  modalComprobanteOpen = false;
+  comprobanteAVer: { nombre: string; url: string } | null = null;
+
+  verComprobante(pago: any): void {
+    if (!pago.comprobante) return;
+    this.comprobanteAVer = {
+      nombre: pago.comprobante.name ?? pago.comprobante,
+      url: pago.comprobante instanceof File ? URL.createObjectURL(pago.comprobante) : pago.comprobante,
+    };
+    this.modalComprobanteOpen = true;
+    this.cdr.detectChanges();
+  }
 
   items = MOCK_ITEMS;
 
@@ -159,6 +172,100 @@ export class PrevisionDetail {
     return resultado;
   }
 
+  /**
+ * Motor de estados según sección 6.2 del documento funcional.
+ * El usuario NO elige "Listo para impulsar" ni "Pagado" — el sistema los calcula
+ * en base a las condiciones reales del ítem/previsión.
+ */
+  get estadoCalculado(): string {
+    // Si ya está acreditado y no hay pendientes → Cerrado
+    if (this.acreditacion.estado === 'Acreditado' && !this.notificacionPendiente && !this.pagos.length) {
+      return 'Cerrado';
+    }
+
+    // Si está acreditado pero puede haber notificación pendiente
+    if (this.acreditacion.estado === 'Acreditado') {
+      return 'Acreditado';
+    }
+
+    // Si hay al menos un pago registrado pero no acreditado
+    if (this.pagos.length > 0) {
+      return 'Pagado';
+    }
+
+    // Modo Seguimiento nunca calcula "Listo para impulsar" (esa etapa es solo modo Activo)
+    if (this.prevision.modo === 'Seguimiento') {
+      return 'En seguimiento';
+    }
+
+    // Modo Activo: "Listo para impulsar" = Con previsión + documentación completa + factura (si hay honorarios)
+    const liquidacionFirme = this.liquidaciones[0]?.estado === 'Vigente' || this.liquidaciones[0]?.estado === 'Aprobada / firme';
+    const facturaOk = !this.tieneHonorarios || this.facturaHonorarios.cargada;
+
+    if (this.prevision.montoPrevisto && this.prevision.montoPrevisto !== '$0' && liquidacionFirme && facturaOk) {
+      return 'Listo para impulsar';
+    }
+
+    // Hay previsión cargada pero todavía bloqueada por algo
+    if (this.prevision.montoPrevisto && this.prevision.montoPrevisto !== '$0') {
+      return 'Con previsión';
+    }
+
+    return 'Registrado';
+  }
+
+  get estadoCalculadoClase(): string {
+    const map: Record<string, string> = {
+      'Registrado':          'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',
+      'En seguimiento':      'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+      'Con previsión':       'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+      'Listo para impulsar': 'bg-warning/10 text-warning',
+      'Impulsado':           'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+      'Pagado':              'bg-success/10 text-success',
+      'Acreditado':          'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
+      'Cerrado':             'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400',
+    };
+    return map[this.estadoCalculado] ?? map['Registrado'];
+  }
+
+  /**
+ * Marcas según sección 6.3 del documento funcional — condiciones que pueden coexistir,
+ * a diferencia del estado principal (uno solo por vez).
+ */
+  get marcas(): { label: string; clase: string }[] {
+    const resultado: { label: string; clase: string }[] = [];
+
+    const docCompleta = this.items.every(i => i.estado !== 'Registrado');
+    resultado.push(
+      docCompleta
+        ? { label: 'Documentación completa', clase: 'bg-success/10 text-success' }
+        : { label: 'Observada', clase: 'bg-danger/10 text-danger' }
+    );
+
+    if (this.prorrateo.aprobado) {
+      resultado.push({ label: 'Con prorrateo art. 730 aplicado', clase: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' });
+    }
+
+    if (this.pagos.length > 0) {
+      resultado.push({ label: 'Pago de tercero informado', clase: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' });
+    }
+
+    if (this.tieneHonorarios && this.facturaHonorarios.cargada) {
+      resultado.push({ label: 'Factura cargada', clase: 'bg-success/10 text-success' });
+    }
+
+    const liquidacionFirme = this.liquidaciones[0]?.estado === 'Vigente' || this.liquidaciones[0]?.estado === 'Aprobada / firme';
+    if (!liquidacionFirme) {
+      resultado.push({ label: 'Liquidación no firme', clase: 'bg-warning/10 text-warning' });
+    }
+
+    if (this.notificacionPendiente) {
+      resultado.push({ label: 'Notificación pendiente', clase: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' });
+    }
+
+    return resultado;
+  }
+
   columnsItems: TableColumn[] = [
     { key: 'concepto', label: 'Concepto', type: 'text' },
     { key: 'monto',    label: 'Monto',    type: 'text' },
@@ -188,36 +295,7 @@ export class PrevisionDetail {
     },
   ];
 
-  columnasPagos: TableColumn[] = [
-    { key: 'fecha',     label: 'Fecha',        type: 'text' },
-    { key: 'monto',     label: 'Monto',        type: 'text' },
-    { key: 'medio',     label: 'Medio de pago',type: 'text' },
-    { key: 'referencia',label: 'Referencia',   type: 'text' },
-    { key: 'estado',    label: 'Estado',       type: 'text' },
-  ];
-
   editando = false;
-
-  // 🔴 MOCK — reemplazar por DocumentosService cuando esté disponible
-  documentos: { nombre: string; tipo: string; fecha: string; tamanio: string }[] = [
-    { nombre: 'sentencia-definitiva.pdf',    tipo: 'Sentencia',    fecha: '10/06/2026', tamanio: '2.1 MB' },
-    { nombre: 'liquidacion-aprobada.pdf',    tipo: 'Liquidación',  fecha: '16/08/2026', tamanio: '840 KB' },
-    { nombre: 'constancia-prevision.pdf',    tipo: 'Constancia',   fecha: '01/07/2026', tamanio: '320 KB' },
-  ];
-
-  agregarDocumento(): void {
-    // 🔴 MOCK — reemplazar por modal real de carga de documento
-    this.documentos = [
-      ...this.documentos,
-      {
-        nombre:  `documento-${this.documentos.length + 1}.pdf`,
-        tipo:    'Otro',
-        fecha:   new Date().toLocaleDateString('es-AR'),
-        tamanio: '—',
-      },
-    ];
-    this.agregarEventoTimeline('Adjuntó documento', `documento-${this.documentos.length}.pdf`);
-  }
 
   form = {
     concepto: MOCK_PREVISION.concepto,
@@ -255,9 +333,7 @@ export class PrevisionDetail {
     this.editando = false;
   }
 
-  editandoSentencia = false;
-
-    editandoProrrateo = false;
+  editandoProrrateo = false;
 
   // Factura de honorarios
   // TODO: derivar de los ítems reales cuando se conecte el backend
@@ -311,50 +387,6 @@ export class PrevisionDetail {
     this.editandoProrrateo = false;
   }
 
-  formSentencia = {
-    fechaSentencia:   MOCK_PREVISION.fechaSentencia,
-    tipoSentencia:    MOCK_PREVISION.tipoSentencia,
-    montoSentencia:   MOCK_PREVISION.montoSentencia,
-    observaciones:    MOCK_PREVISION.observacionesSentencia,
-    documento:        '',
-  };
-
-  tipoSentenciaOptions = [
-    { value: 'Definitiva',      label: 'Definitiva'      },
-    { value: 'Interlocutoria',  label: 'Interlocutoria'  },
-    { value: 'Homologatoria',   label: 'Homologatoria'   },
-  ];
-
-  archivoSeleccionado: string | null = null;
-
-  seleccionarArchivo(): void {
-    // 🔴 MOCK
-    this.archivoSeleccionado = 'sentencia-definitiva.pdf';
-  }
-
-  guardarSentencia(): void {
-    this.prevision = {
-      ...this.prevision,
-      fechaSentencia:         this.formSentencia.fechaSentencia,
-      tipoSentencia:          this.formSentencia.tipoSentencia,
-      montoSentencia:         this.formSentencia.montoSentencia,
-      observacionesSentencia: this.formSentencia.observaciones,
-    };
-    this.editandoSentencia = false;
-  }
-
-  cancelarSentencia(): void {
-    this.formSentencia = {
-      fechaSentencia:  this.prevision.fechaSentencia,
-      tipoSentencia:   this.prevision.tipoSentencia,
-      montoSentencia:  this.prevision.montoSentencia,
-      observaciones:   this.prevision.observacionesSentencia,
-      documento:       '',
-    };
-    this.archivoSeleccionado = null;
-    this.editandoSentencia = false;
-  }
-
   registrandoPago = false;
 
   onPagoGuardado(pago: any): void {
@@ -364,13 +396,9 @@ export class PrevisionDetail {
       medio: pago.medio,
       referencia: pago.referencia || '—',
       estado: 'Acreditado',
+      comprobante: pago.comprobante,
     };
     this.pagos = [...this.pagos, nuevoPago];
-    this.prevision = {
-      ...this.prevision,
-      estado: 'Pagada',
-      estadoClase: 'bg-success/10 text-success',
-    };
     this.agregarEventoTimeline('Registró pago', `Monto: ${pago.monto}`);
     this.modalPagoOpen = false;
   }

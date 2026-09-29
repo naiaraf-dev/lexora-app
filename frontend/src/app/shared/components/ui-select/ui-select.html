@@ -26,14 +26,16 @@
             [style.left]="panelStyle.left"
             [style.width]="panelStyle.width"
         >
-            <button
-                type="button"
-                (click)="elegir('')"
-                class="px-3 py-2 text-sm text-left transition-colors"
-                [class]="!model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
-            >
-                Todos
-            </button>
+            @if (variant === 'filtro') {
+                <button
+                    type="button"
+                    (click)="elegir('')"
+                    class="px-3 py-2 text-sm text-left transition-colors"
+                    [class]="!model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
+                >
+                    Todos
+                </button>
+            }
 
             @for (opt of options; track opt.value) {
                 <button

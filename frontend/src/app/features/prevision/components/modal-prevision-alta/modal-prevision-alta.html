@@ -109,13 +109,13 @@
       <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Datos de la previsión</p>
 
       <div class="grid grid-cols-2 gap-3">
-        <app-ui-select label="Modo *"             [(model)]="form.modo"           [options]="modoOptions"></app-ui-select>
-        <app-ui-select label="Tipo de obligación *" [(model)]="form.tipoObligacion" [options]="tipoObligacionOptions"></app-ui-select>
+        <app-ui-select label="Modo *" variant="formulario" placeholder="Seleccionar modo..." [(model)]="form.modo" [options]="modoOptions"></app-ui-select>
+        <app-ui-select label="Tipo de obligación *" variant="formulario" placeholder="Seleccionar tipo..." [(model)]="form.tipoObligacion" [options]="tipoObligacionOptions"></app-ui-select>
         <app-ui-date-input label="Fecha de resolución"        [(model)]="form.fechaResolucion"></app-ui-date-input>
         <app-ui-date-input label="Fecha de firmeza"           [(model)]="form.fechaFirmeza"></app-ui-date-input>
         <app-ui-date-input label="Fecha límite para previsionar" [(model)]="form.fechaLimitePrevisionar"></app-ui-date-input>
-        <app-ui-select label="Fuero"              [(model)]="form.fuero"          [options]="fueroOptions"></app-ui-select>
-        <app-ui-select label="Obligado al pago"   [(model)]="form.obligado"       [options]="obligadoOptions"></app-ui-select>
+        <app-ui-select label="Fuero"              variant="formulario" placeholder="Seleccionar fuero..." [(model)]="form.fuero"          [options]="fueroOptions"></app-ui-select>
+        <app-ui-select label="Obligado al pago"   variant="formulario" placeholder="Seleccionar obligado..." [(model)]="form.obligado"       [options]="obligadoOptions"></app-ui-select>
         <app-ui-input  label="Pagador efectivo"   placeholder="Pagador efectivo..."  [(model)]="form.pagadorEfectivo"></app-ui-input>
         <app-ui-input  label="Jurisdicción presupuestaria" placeholder="Ej: Dirección General..."  [(model)]="form.jurisdiccionPresupuestaria"></app-ui-input>
         <app-ui-input  label="Ejercicio / año"    placeholder="Ej: 2026"          [(model)]="form.ejercicio"></app-ui-input>
@@ -152,7 +152,7 @@
         @for (item of items; track $index) {
           <div class="grid grid-cols-12 gap-2 items-end">
             <div class="col-span-4">
-              <app-ui-select label="Concepto" [(model)]="item.concepto" [options]="conceptoItemOptions"></app-ui-select>
+              <app-ui-select label="Concepto" variant="formulario" placeholder="Seleccionar concepto..." [(model)]="item.concepto" [options]="conceptoItemOptions"></app-ui-select>
             </div>
             <div class="col-span-3">
               <app-ui-input label="Monto" placeholder="$ 0,00" [(model)]="item.monto"></app-ui-input>
@@ -182,6 +182,12 @@
           <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Cálculo inicial</p>
           <app-primary-btn variant="secondary" (click)="calcular()">Calcular previsión</app-primary-btn>
         </div>
+
+        @if (calculado) {
+          <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+            Estimación presupuestaria para reservar fondos. El cálculo formal con tasa oficial se practica al generar la liquidación.
+          </div>
+        }
 
         @if (calculado) {
           <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 flex flex-col gap-2 text-sm">

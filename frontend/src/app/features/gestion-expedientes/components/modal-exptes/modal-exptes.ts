@@ -5,6 +5,9 @@ import { HttpClient } from '@angular/common/http';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { environment } from '../../../../../environments/environment';
 import { Auth } from '../../../../core/services/auth';
+import { UiSelect } from "../../../../shared/components/ui-select/ui-select";
+import { UiInput } from "../../../../shared/components/ui-input/ui-input";
+
 interface ExpedienteForm {
   nroCausa: string;
   caratula: string;
@@ -35,7 +38,7 @@ interface Cliente {
 @Component({
   selector: 'app-modal-exptes',
   standalone: true,
-  imports: [CommonModule, FormsModule, UiModal],
+  imports: [CommonModule, FormsModule, UiModal, UiSelect, UiInput],
   templateUrl: './modal-exptes.html',
 })
 export class ModalExptes implements OnInit {
@@ -55,6 +58,14 @@ export class ModalExptes implements OnInit {
   clientes: Cliente[] = [];
   tipoOptions: OpcionEnum[] = [];
   prioridadOptions: OpcionEnum[] = [];
+
+  get tipoOptionsSelect() {
+    return this.tipoOptions.map(t => ({ value: String(t.id), label: t.nombre }));
+  }
+
+  get prioridadOptionsSelect() {
+    return this.prioridadOptions.map(p => ({ value: String(p.id), label: p.nombre }));
+  }
 
   areaOptions = [
     { value: 'CIVIL', label: 'Civil' },

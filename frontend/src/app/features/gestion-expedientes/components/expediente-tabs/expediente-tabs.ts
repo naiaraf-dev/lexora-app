@@ -4,7 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 export interface ExpedienteTab {
   label: string;
   path: string;
-  icon: 'datos' | 'documentos' | 'novedades' | 'estados' | 'prevision';
+  icon: 'datos' | 'documentos' | 'novedades' | 'estados' | 'prevision' | 'asistente';
 }
 
 /**
@@ -29,5 +29,6 @@ export class ExpedienteTabs {
     { label: 'Novedades',       path: 'novedades',       icon: 'novedades'  },
     { label: 'Estados',         path: 'estados',         icon: 'estados'    },
     { label: 'Previsión',       path: 'prevision',       icon: 'prevision'  },
+    { label: 'Asistente',       path: 'asistente',       icon: 'asistente'  },
   ];
 }

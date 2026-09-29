@@ -796,114 +796,64 @@ function extraerUltimoValor(
 // ============================================================
 // CONSULTAR TASA
 // ============================================================
+const cache = new Map(); // nombre -> { data, expira }
+const TTL_MS = 60 * 60 * 1000; // 1 hora
 
 async function obtenerTasaActualPorNombre(
     nombre
 ) {
+    const cacheado = cache.get(nombre);
+    if (cacheado && Date.now() < cacheado.expira) {
+        return cacheado.data;
+    }
 
-    /*
-     * Buscar solamente entre las tasas
-     * permitidas por Lexora.
-     */
     const tasaConfigurada =
         buscarTasaPorNombre(nombre);
 
-
     if (!tasaConfigurada) {
-
         const error =
-            new Error(
-                `La tasa "${nombre}" no está configurada`
-            );
-
-        error.statusCode =
-            404;
-
+            new Error(`La tasa "${nombre}" no está configurada`);
+        error.statusCode = 404;
         throw error;
     }
 
-
     await asegurarSesion();
 
-
     const id =
-        await resolverIdDesdeIndex(
-            tasaConfigurada
-        );
-
+        await resolverIdDesdeIndex(tasaConfigurada);
 
     const cliente =
         await crearCliente();
 
-
     let response =
-        await cliente.get(
-            `/vertasas/${id}`,
-            {
-                headers: {
-
-                    Referer:
-                        `${BASE_URL}/index`
-                }
-            }
-        );
-
+        await cliente.get(`/vertasas/${id}`, {
+            headers: { Referer: `${BASE_URL}/index` }
+        });
 
     let urlFinal =
         response.request?.res?.responseUrl ?? '';
 
-
-    /*
-     * Puede ocurrir que la sesión haya vencido
-     * entre la comprobación y esta consulta.
-     *
-     * Hacemos un solo reintento.
-     */
-    if (
-        urlFinal.includes('/login') ||
-        urlFinal.includes('/newLogin')
-    ) {
-
-        sesionIniciada =
-            false;
-
-
+    if (urlFinal.includes('/login') || urlFinal.includes('/newLogin')) {
+        sesionIniciada = false;
         await login();
-
-
-        response =
-            await cliente.get(
-                `/vertasas/${id}`,
-                {
-                    headers: {
-
-                        Referer:
-                            `${BASE_URL}/index`
-                    }
-                }
-            );
-
-
-        urlFinal =
-            response.request?.res?.responseUrl ?? '';
+        response = await cliente.get(`/vertasas/${id}`, {
+            headers: { Referer: `${BASE_URL}/index` }
+        });
+        urlFinal = response.request?.res?.responseUrl ?? '';
     }
 
-
-    if (
-        urlFinal.includes('/login') ||
-        urlFinal.includes('/newLogin')
-    ) {
-
-        throw new Error(
-            'No se pudo mantener la sesión con CPACF'
-        );
+    if (urlFinal.includes('/login') || urlFinal.includes('/newLogin')) {
+        throw new Error('No se pudo mantener la sesión con CPACF');
     }
-
-
-    return extraerUltimoValor(
+    
+    const resultado = extraerUltimoValor(
         response.data,
         tasaConfigurada.nombre
     );
+
+    cache.set(nombre, { data: resultado, expira: Date.now() + TTL_MS });
+
+    return resultado;
 }
 
 

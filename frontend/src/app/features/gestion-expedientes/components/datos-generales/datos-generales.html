@@ -24,7 +24,8 @@
 
             <app-ui-select
                 label="Área *"
-                variant="native"
+                variant="formulario"
+                placeholder="Seleccionar área..."
                 [options]="areaOptions"
                 [model]="form.get('area')?.value"
                 (modelChange)="form.get('area')?.setValue($event)"
@@ -37,6 +38,8 @@
 
             <app-ui-select
                 label="Tipo de expediente *"
+                variant="formulario"
+                placeholder="Seleccionar tipo..."
                 [options]="tipoOptions"
                 [model]="form.get('tipo')?.value"
                 (modelChange)="onTipoChange($event)"
@@ -44,6 +47,8 @@
 
             <app-ui-select
                 label="Cliente"
+                variant="formulario"
+                placeholder="Seleccionar cliente..."
                 [options]="clienteOptions"
                 [model]="form.get('clienteId')?.value"
                 (modelChange)="form.get('clienteId')?.setValue($event)"
@@ -51,6 +56,8 @@
 
             <app-ui-select
                 label="Rol del cliente"
+                variant="formulario"
+                placeholder="Seleccionar rol..."
                 [options]="rolOptions"
                 [model]="form.get('rolCliente')?.value"
                 (modelChange)="form.get('rolCliente')?.setValue($event)"
@@ -122,6 +129,8 @@
 
             <app-ui-select
                 label="Fuero"
+                variant="formulario"
+                placeholder="Seleccionar fuero..."
                 [options]="fueroOptions"
                 [model]="form.get('fuero')?.value"
                 (modelChange)="form.get('fuero')?.setValue($event)"
@@ -129,6 +138,8 @@
 
             <app-ui-select
                 label="Juzgado"
+                variant="formulario"
+                placeholder="Seleccionar juzgado..."
                 [options]="juzgadoOptions"
                 [model]="form.get('juzgado')?.value"
                 (modelChange)="form.get('juzgado')?.setValue($event)"
@@ -147,6 +158,8 @@
 
             <app-ui-select
                 label="Jurisdicción"
+                variant="formulario"
+                placeholder="Seleccionar jurisdicción..."
                 [options]="jurisdiccionOptions"
                 [model]="form.get('jurisdiccion')?.value"
                 (modelChange)="form.get('jurisdiccion')?.setValue($event)"
@@ -160,6 +173,8 @@
 
             <app-ui-select
                 label="Instancia"
+                variant="formulario"
+                placeholder="Seleccionar instancia..."
                 [options]="instanciaOptions"
                 [model]="form.get('instancia')?.value"
                 (modelChange)="form.get('instancia')?.setValue($event)"
@@ -182,6 +197,8 @@
 
             <app-ui-select
                 label="Abogado responsable"
+                variant="formulario"
+                placeholder="Seleccionar abogado..."
                 [options]="abogadoOptions"
                 [model]="form.get('abogadoResponsable')?.value"
                 (modelChange)="form.get('abogadoResponsable')?.setValue($event)"
@@ -189,6 +206,8 @@
 
             <app-ui-select
                 label="Abogado secundario"
+                variant="formulario"
+                placeholder="Seleccionar abogado..."
                 [options]="abogadoOptions"
                 [model]="form.get('abogadoSecundario')?.value"
                 (modelChange)="form.get('abogadoSecundario')?.setValue($event)"
@@ -259,6 +278,8 @@
 
             <app-ui-select
                 label="Prioridad"
+                variant="formulario"
+                placeholder="Seleccionar prioridad..."
                 [options]="prioridadOptions"
                 [model]="form.get('prioridad')?.value"
                 (modelChange)="form.get('prioridad')?.setValue($event)"

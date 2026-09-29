@@ -47,6 +47,12 @@ export const routes: Routes = [
             .then(m => m.PrevisionDetail),
       },
       {
+        path: 'asistente',
+        loadComponent: () =>
+          import('./features/asistente/pages/asistente-page/asistente-page')
+            .then((m) => m.AsistentePage),
+      },
+      {
         path: 'seguridad/log-view',
         loadComponent: () =>
           import('./features/log/pages/log-view/log-view')
@@ -107,6 +113,12 @@ export const routes: Routes = [
           { path: 'prevision', loadComponent: () => 
               import('./features/gestion-expedientes/components/prevision/prevision')
                 .then(m => m.Prevision) 
+          },
+          {
+            path: 'asistente',
+            loadComponent: () =>
+              import('./features/gestion-expedientes/components/asistente-expediente/asistente-expediente')
+                .then((m) => m.AsistenteExpediente),
           },
         ],
       },
