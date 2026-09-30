@@ -53,6 +53,9 @@ export class ExpedienteList implements OnInit {
   onEliminar(expediente: Expediente): void {
     this.expedientesService.eliminar(Number(expediente.id)).subscribe({
         next: () => this.cargarExpedientes(),
+        error: (err) => {
+            console.error('Error al eliminar expediente:', err);
+        },
     });
   }
 

@@ -13,72 +13,46 @@
 
     <!-- N° causa + Carátula -->
     <div class="grid grid-cols-3 gap-4">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">N° de causa</label>
-        <input
-          type="text"
-          [(ngModel)]="form.nroCausa"
-          placeholder="Ej: 45678/2025"
-          class="px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition bg-background dark:bg-slate-800 text-text-primary dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500"
-        />
-      </div>
-      <div class="col-span-2 flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-          Carátula <span class="text-danger">*</span>
-        </label>
-        <input
-          type="text"
-          [(ngModel)]="form.caratula"
+      <app-ui-input
+        label="N° de causa"
+        placeholder="Ej: 45678/2025"
+        [(model)]="form.nroCausa"
+      ></app-ui-input>
+
+      <div class="col-span-2">
+        <app-ui-input
+          label="Carátula *"
           placeholder="Ej: García c/ López s/ Daños y perjuicios"
-          class="px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition bg-background dark:bg-slate-800 text-text-primary dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500"
-        />
+          [(model)]="form.caratula"
+        ></app-ui-input>
       </div>
     </div>
 
-    <!-- Área + Tipo -->
-    <div class="grid grid-cols-3 gap-4">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-          Área <span class="text-danger">*</span>
-        </label>
-        <select
-          [(ngModel)]="form.area"
-          class="px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition bg-background dark:bg-slate-800 text-text-primary dark:text-slate-100"
-        >
-          <option value="" disabled>Seleccioná...</option>
-          <option *ngFor="let op of areaOptions" [value]="op.value">{{ op.label }}</option>
-        </select>
-      </div>
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-          Tipo de documento<span class="text-danger">*</span>
-        </label>
-        <select [(ngModel)]="form.tipoId"
-          class="px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition bg-background dark:bg-slate-800 text-text-primary dark:text-slate-100">
-          <option value="" disabled>Seleccioná...</option>
-          @for (op of tipoOptions; track op.id) {
-            <option [value]="op.id">{{ op.nombre }}</option>
-          }
-        </select>
-      </div>
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-          Prioridad <span class="text-danger">*</span>
-        </label>
+    <!-- Área + Tipo + Prioridad -->
+    <div class="grid grid-cols-3 gap-6 mt-2">
+      <app-ui-select
+        label="Área *"
+        variant="formulario"
+        placeholder="Seleccioná..."
+        [options]="areaOptions"
+        [(model)]="form.area"
+      ></app-ui-select>
 
-        <select
-          [(ngModel)]="form.prioridadId"
-          class="px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition bg-background dark:bg-slate-800 text-text-primary dark:text-slate-100"
-        >
-          <option value="" disabled>Seleccioná...</option>
+      <app-ui-select
+        label="Tipo de expediente *"
+        variant="formulario"
+        placeholder="Seleccioná..."
+        [options]="tipoOptionsSelect"
+        [(model)]="form.tipoId"
+      ></app-ui-select>
 
-          @for (op of prioridadOptions; track op.id) {
-            <option [value]="op.id">
-              {{ op.nombre }}
-            </option>
-          }
-        </select>
-      </div>
+      <app-ui-select
+        label="Prioridad *"
+        variant="formulario"
+        placeholder="Seleccioná..."
+        [options]="prioridadOptionsSelect"
+        [(model)]="form.prioridadId"
+      ></app-ui-select>
     </div>
 
     <!-- Clientes -->
@@ -99,22 +73,22 @@
         </div>
         <!-- Lista -->
         <div class="max-h-36 overflow-y-auto">
-            @for (cliente of clientesFiltrados(); track cliente.id) {
-                <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
-                <input
-                    type="radio"
-                    [checked]="clienteSeleccionado(cliente.id)"
-                    (change)="toggleCliente(cliente.id)"
-                    class="accent-primary w-4 h-4 rounded"
-                />
-                <div class="flex flex-col">
-                    <span class="text-sm text-text-primary dark:text-slate-100">{{ cliente.nombre }} {{ cliente.apellido }}</span>
-                    <span class="text-xs text-text-primary/50 dark:text-slate-400">{{ cliente.cuit }}</span>
-                </div>
-                </label>
-            } @empty {
-                <p class="px-3 py-3 text-xs text-gray-400 dark:text-slate-500 text-center">Sin resultados</p>
-            }
+          @for (cliente of clientesFiltrados(); track cliente.id) {
+            <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+              <input
+                type="radio"
+                [checked]="clienteSeleccionado(cliente.id)"
+                (change)="toggleCliente(cliente.id)"
+                class="accent-primary w-4 h-4 rounded"
+              />
+              <div class="flex flex-col">
+                <span class="text-sm text-text-primary dark:text-slate-100">{{ cliente.nombre }} {{ cliente.apellido }}</span>
+                <span class="text-xs text-text-primary/50 dark:text-slate-400">{{ cliente.cuit }}</span>
+              </div>
+            </label>
+          } @empty {
+            <p class="px-3 py-3 text-xs text-gray-400 dark:text-slate-500 text-center">Sin resultados</p>
+          }
         </div>
         <!-- Seleccionados -->
         @if (form.clienteId) {

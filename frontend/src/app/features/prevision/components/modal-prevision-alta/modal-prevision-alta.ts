@@ -127,18 +127,35 @@ export class ModalPrevisionAltaGlobal {
     this.items.splice(i, 1);
   }
 
-  calcular() {
-    // 🔴 MOCK — reemplazar por motor de cálculo real
-    this.calculado = true;
-    toast.success('Cálculo generado correctamente');
-  }
-
   calculo = {
-    montoBase:    '$5.000.000',
-    actualizacion:'$1.200.000',
-    intereses:    '$1.150.000',
-    total:        '$7.350.000',
+    montoBase:     '',
+    actualizacion: '',
+    intereses:     '',
+    total:         '',
   };
+
+  calcular() {
+    if (!this.form.montoBase) {
+      toast.error('Ingresá el monto base');
+      return;
+    }
+    const montoBase = this.parseMonto(this.form.montoBase);
+    
+    // Estimación gruesa para previsión presupuestaria — no usa tasa real del CPACF.
+    // Aplica un porcentaje estimado de actualización + intereses como reserva conservadora.
+    // El cálculo exacto y trazable se hace en el módulo de Liquidaciones (modal-liquidacion).
+    const actualizacionEstimada = montoBase * 0.15; // 15% estimado — TODO: definir criterio con legal
+    const interesesEstimados    = montoBase * 0.20; // 20% estimado — TODO: definir criterio con legal
+
+    this.calculo = {
+      montoBase:     this.formatMonto(montoBase),
+      actualizacion: this.formatMonto(actualizacionEstimada),
+      intereses:     this.formatMonto(interesesEstimados),
+      total:         this.formatMonto(montoBase + actualizacionEstimada + interesesEstimados),
+    };
+    this.calculado = true;
+    toast.info('Estimación presupuestaria — el cálculo exacto se realiza en la sección Liquidaciones');
+  }
 
   guardar() {
     if (!this.expedienteSeleccionado) { toast.error('Seleccioná un expediente'); return; }
@@ -164,5 +181,16 @@ export class ModalPrevisionAltaGlobal {
     this.items = [{ concepto: '', monto: '', obligado: '', observaciones: '' }];
     this.calculado = false;
     this.cerrar.emit();
+  }
+
+  private parseMonto(valor: string): number {
+    if (!valor) return 0;
+    const limpio = valor.replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
+    const n = Number(limpio);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  private formatMonto(n: number): string {
+    return '$' + n.toLocaleString('es-AR', { maximumFractionDigits: 0 });
   }
 }

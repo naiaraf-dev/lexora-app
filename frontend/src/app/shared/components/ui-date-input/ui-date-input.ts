@@ -115,6 +115,7 @@ export class UiDateInput {
 
     if (!this.abierto) {
       this.mesVisible = this.fechaSeleccionada ?? new Date();
+      this.vista = 'dias';
       this.calcularPosicion();
     }
     this.abierto = !this.abierto;
@@ -180,5 +181,53 @@ export class UiDateInput {
     if (this.abierto && !this.elementRef.nativeElement.contains(event.target as Node)) {
       this.abierto = false;
     }
+  }
+
+  /** 'dias' = calendario normal, 'meses' = grid de 12 meses, 'anios' = grid de años. */
+  vista: 'dias' | 'meses' | 'anios' = 'dias';
+
+  /** Año base para el grid de años (se navega de a 12 años). */
+  private anioBaseGrid = 0;
+
+  get anioVisible(): number {
+    return this.mesVisible.getFullYear();
+  }
+
+  /** Grid de 12 años a mostrar cuando vista === 'anios'. */
+  get celdasAnios(): number[] {
+    const base = this.anioBaseGrid || Math.floor(this.mesVisible.getFullYear() / 12) * 12;
+    return Array.from({ length: 12 }, (_, i) => base + i);
+  }
+
+  /** Nombres cortos de los 12 meses, para el grid de vista === 'meses'. */
+  get celdasMeses(): { nombre: string; indice: number }[] {
+    return this.MESES.map((nombre, indice) => ({ nombre: nombre.slice(0, 3), indice }));
+  }
+
+  abrirSelectorMes(): void {
+    this.vista = 'meses';
+  }
+
+  abrirSelectorAnio(): void {
+    this.anioBaseGrid = Math.floor(this.mesVisible.getFullYear() / 12) * 12;
+    this.vista = 'anios';
+  }
+
+  elegirMes(indice: number): void {
+    this.mesVisible = new Date(this.mesVisible.getFullYear(), indice, 1);
+    this.vista = 'dias';
+  }
+
+  elegirAnio(anio: number): void {
+    this.mesVisible = new Date(anio, this.mesVisible.getMonth(), 1);
+    this.vista = 'meses';
+  }
+
+  gridAnioAnterior(): void {
+    this.anioBaseGrid -= 12;
+  }
+
+  gridAnioSiguiente(): void {
+    this.anioBaseGrid += 12;
   }
 }

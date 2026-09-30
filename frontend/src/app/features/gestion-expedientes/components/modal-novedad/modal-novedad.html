@@ -11,7 +11,7 @@
 
         <!-- Fila 1: tipo + fecha -->
         <div class="grid grid-cols-2 gap-3">
-            <app-ui-select label="Tipo de novedad" [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
+            <app-ui-select label="Tipo de novedad" variant="formulario" placeholder="Seleccioná..." [(model)]="form.tipo" [options]="tipoOptions"></app-ui-select>
             <app-ui-date-input label="Fecha de la actuación" [(model)]="form.fechaActuacion"></app-ui-date-input>
         </div>
 
@@ -112,6 +112,8 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <app-ui-select
                                     label="Tipo de documento"
+                                    variant="formulario"
+                                    placeholder="Seleccioná..."
                                     [(model)]="documento.tipo"
                                     [options]="tipoDocumentoOptions"
                                 ></app-ui-select>
@@ -156,7 +158,7 @@
                 <!-- Título tarea + prioridad -->
                 <div class="grid grid-cols-2 gap-3">
                     <app-ui-input label="Título de la tarea" placeholder="Ej: Presentar escrito" [(model)]="tareaForm.titulo"></app-ui-input>
-                    <app-ui-select label="Prioridad" [(model)]="tareaForm.prioridad" [options]="prioridadOptions"></app-ui-select>
+                    <app-ui-select label="Prioridad" variant="formulario" placeholder="Seleccioná..." [(model)]="tareaForm.prioridad" [options]="prioridadOptions"></app-ui-select>
                 </div>
 
                 <!-- Fecha vencimiento + hora -->
@@ -173,7 +175,7 @@
                 </div>
 
                 <!-- Responsable -->
-                <app-ui-select label="Responsable" [options]="usuarioOptions" [(model)]="tareaForm.responsable"></app-ui-select>
+                <app-ui-select label="Responsable" variant="formulario" placeholder="Seleccioná..." [options]="usuarioOptions" [(model)]="tareaForm.responsable"></app-ui-select>
 
                 <!-- Descripción / instrucciones -->
                 <app-ui-input label="Descripción / Instrucciones" placeholder="Ej: Presentar escrito antes del vencimiento." [(model)]="tareaForm.descripcionInstrucciones"></app-ui-input>
