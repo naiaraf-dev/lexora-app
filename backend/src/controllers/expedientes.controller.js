@@ -78,7 +78,7 @@ async function actualizar(req, res) {
 async function eliminar(req, res) {
     try {
         const { id } = req.params;
-        await service.eliminar(Number(id));
+        await service.eliminar(Number(id), req.usuario?.id);
         res.json({ mensaje: 'Expediente eliminado correctamente' });
     } catch (error) {
         res.status(error.status ?? 500).json({
