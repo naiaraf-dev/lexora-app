@@ -29,50 +29,113 @@
             [style.width]="panelStyle.width"
         >
 
-            <!-- Header: mes + navegación -->
-            <div class="flex items-center justify-between px-1">
-                <button type="button" (click)="mesAnterior()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-
-                <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ etiquetaMes }}</span>
-
-                <button type="button" (click)="mesSiguiente()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Días de la semana -->
-            <div class="grid grid-cols-7 gap-1">
-                @for (dia of diasSemana; track dia) {
-                    <span class="text-[10px] font-semibold text-text-primary/40 dark:text-slate-500 text-center py-1">{{ dia }}</span>
-                }
-            </div>
-
-            <!-- Grid de días -->
-            <div class="grid grid-cols-7 gap-1">
-                @for (celda of celdas; track celda.fecha.getTime()) {
-                    <button
-                        type="button"
-                        (click)="elegirDia(celda)"
-                        [disabled]="!celda.delMesActual || celda.deshabilitada"
-                        class="h-8 w-8 rounded-lg text-xs flex items-center justify-center transition-colors"
-                        [class]="celda.seleccionado
-                            ? 'bg-primary text-white font-semibold'
-                            : (celda.deshabilitada
-                                ? 'text-text-primary/20 dark:text-slate-600 cursor-not-allowed'
-                                : (celda.delMesActual
-                                    ? (celda.esHoy ? 'text-primary font-semibold border border-primary/40 hover:bg-primary/10' : 'text-text-primary dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700')
-                                    : 'text-text-primary/20 dark:text-slate-600 cursor-default'))"
-                    >
-                        {{ celda.dia }}
+            <!-- Vista: DÍAS -->
+            @if (vista === 'dias') {
+                <!-- Header: mes + navegación -->
+                <div class="flex items-center justify-between px-1">
+                    <button type="button" (click)="mesAnterior()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
-                }
-            </div>
+
+                    <button type="button" (click)="abrirSelectorMes()" class="text-sm font-semibold text-text-primary dark:text-slate-100 hover:text-primary transition-colors px-2 py-0.5 rounded-md hover:bg-primary/5 dark:hover:bg-primary/10">
+                        {{ etiquetaMes }}
+                    </button>
+
+                    <button type="button" (click)="mesSiguiente()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Días de la semana -->
+                <div class="grid grid-cols-7 gap-1">
+                    @for (dia of diasSemana; track dia) {
+                        <span class="text-[10px] font-semibold text-text-primary/40 dark:text-slate-500 text-center py-1">{{ dia }}</span>
+                    }
+                </div>
+
+                <!-- Grid de días -->
+                <div class="grid grid-cols-7 gap-1">
+                    @for (celda of celdas; track celda.fecha.getTime()) {
+                        <button
+                            type="button"
+                            (click)="elegirDia(celda)"
+                            [disabled]="!celda.delMesActual || celda.deshabilitada"
+                            class="h-8 w-8 rounded-lg text-xs flex items-center justify-center transition-colors"
+                            [class]="celda.seleccionado
+                                ? 'bg-primary text-white font-semibold'
+                                : (celda.deshabilitada
+                                    ? 'text-text-primary/20 dark:text-slate-600 cursor-not-allowed'
+                                    : (celda.delMesActual
+                                        ? (celda.esHoy ? 'text-primary font-semibold border border-primary/40 hover:bg-primary/10' : 'text-text-primary dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700')
+                                        : 'text-text-primary/20 dark:text-slate-600 cursor-default'))"
+                        >
+                            {{ celda.dia }}
+                        </button>
+                    }
+                </div>
+            }
+
+            <!-- Vista: MESES -->
+            @if (vista === 'meses') {
+                <div class="flex items-center justify-center px-1">
+                    <button type="button" (click)="abrirSelectorAnio()" class="text-sm font-semibold text-text-primary dark:text-slate-100 hover:text-primary transition-colors px-2 py-0.5 rounded-md hover:bg-primary/5 dark:hover:bg-primary/10">
+                        {{ anioVisible }}
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 py-1">
+                    @for (mes of celdasMeses; track mes.indice) {
+                        <button
+                            type="button"
+                            (click)="elegirMes(mes.indice)"
+                            class="h-9 rounded-lg text-xs font-medium capitalize transition-colors"
+                            [class]="mes.indice === mesVisible.getMonth()
+                                ? 'bg-primary text-white'
+                                : 'text-text-primary dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700'"
+                        >
+                            {{ mes.nombre }}
+                        </button>
+                    }
+                </div>
+            }
+
+            <!-- Vista: AÑOS -->
+            @if (vista === 'anios') {
+                <div class="flex items-center justify-between px-1">
+                    <button type="button" (click)="gridAnioAnterior()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <span class="text-sm font-semibold text-text-primary dark:text-slate-100">
+                        {{ celdasAnios[0] }} – {{ celdasAnios[celdasAnios.length - 1] }}
+                    </span>
+                    <button type="button" (click)="gridAnioSiguiente()" class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-text-primary/50 dark:text-slate-400 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 py-1">
+                    @for (anio of celdasAnios; track anio) {
+                        <button
+                            type="button"
+                            (click)="elegirAnio(anio)"
+                            class="h-9 rounded-lg text-xs font-medium transition-colors"
+                            [class]="anio === mesVisible.getFullYear()
+                                ? 'bg-primary text-white'
+                                : 'text-text-primary dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700'"
+                        >
+                            {{ anio }}
+                        </button>
+                    }
+                </div>
+            }
 
             <!-- Footer: Borrar / Hoy -->
             <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-700">

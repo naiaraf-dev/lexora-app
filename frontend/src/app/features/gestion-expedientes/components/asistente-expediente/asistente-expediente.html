@@ -1,0 +1,9 @@
+@if (numero()) {
+  <app-asistente-chat class="h-[calc(100vh-16rem)] block" [contextoExpediente]="numero()" />
+}
+
+<div class="fixed bottom-0 right-0 px-6 py-4 z-10">
+  <app-primary-btn variant="secondary" (click)="volver()">
+    ← Volver a bandeja
+  </app-primary-btn>
+</div>

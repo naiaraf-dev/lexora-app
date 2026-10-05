@@ -1,5 +1,7 @@
 const repo = require('../repositories/expedientes.repository');
 
+const logsService = require('./logs.service');
+
 const causaService = require('./causa.service');
 const causaRepo = require('../repositories/causa.repository');
 
@@ -296,6 +298,14 @@ async function crear(data) {
 
         await transaction.commit();
 
+        await logsService.registrar({
+            usuario: data.usuario_creacion,
+            accion: 'Alta',
+            modulo: 'Expedientes',
+            descripcion: `Dio de alta el expediente N° ${expedienteId} (${data.caratula})`,
+            resultado: 'OK',
+        });
+
     } catch (error) {
         try {
             await transaction.rollback();
@@ -394,7 +404,17 @@ async function actualizar(id, data) {
      * No registra historial.
      */
     if (!cambiaEstado) {
-        return repo.actualizar(id, data);
+        const actualizado = await repo.actualizar(id, data);
+
+        await logsService.registrar({
+            usuario: data.usuario_creacion_tareas ?? data.usuario_ultima_modificacion ?? null,
+            accion: 'Edición',
+            modulo: 'Expedientes',
+            descripcion: `Modificó el expediente N° ${id}`,
+            resultado: 'OK',
+        });
+
+        return actualizado;
     }
 
     /*
@@ -492,6 +512,14 @@ async function actualizar(id, data) {
 
         await transaction.commit();
 
+        await logsService.registrar({
+            usuario: data.usuario_creacion_tareas,
+            accion: 'Edición',
+            modulo: 'Expedientes',
+            descripcion: `Modificó el estado del expediente N° ${id}`,
+            resultado: 'OK',
+        });
+
     } catch (error) {
         try {
             await transaction.rollback();
@@ -526,7 +554,7 @@ async function cerrar(
 
 
 // valida que exista y despues lo elimina
-async function eliminar(id) {
+async function eliminar(id, usuarioId) {
     const existente = await repo.getById(id);
 
     if (!existente) {
@@ -536,7 +564,17 @@ async function eliminar(id) {
         };
     }
 
-    return repo.eliminar(id);
+    const resultado = await repo.eliminar(id);
+
+    await logsService.registrar({
+        usuario: usuarioId,
+        accion: 'Eliminación',
+        modulo: 'Expedientes',
+        descripcion: `Dio de baja el expediente N° ${id} (${existente.caratula})`,
+        resultado: 'OK',
+    });
+
+    return resultado;
 }
 
 // trae el historial de estados de un expediente

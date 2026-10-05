@@ -30,16 +30,29 @@ async function getById(id) {
 
 // valida los datos obligatorios y crea el cliente
 async function create(datos) {
-    if (!datos.nombre?.trim()) throw new Error('El nombre es obligatorio');
-    if (!datos.apellido?.trim()) throw new Error('El apellido es obligatorio');
+    const esJuridica = Number(datos.tipo_cliente) === 2;
+
+    if (!datos.nombre?.trim()) {
+        throw new Error(esJuridica ? 'La razón social es obligatoria' : 'El nombre es obligatorio');
+    }
+    if (!esJuridica && !datos.apellido?.trim()) {
+        throw new Error('El apellido es obligatorio');
+    }
     return repo.create(datos);
 }
 
 // valida los datos, actualiza el cliente y controla que exista
 // devuelve el cliente actualizado y la lista de campos que cambiaron (para el log)
 async function update(id, datos) {
-    if (!datos.nombre?.trim()) throw new Error('El nombre es obligatorio');
-    if (!datos.apellido?.trim()) throw new Error('El apellido es obligatorio');
+    const esJuridica = Number(datos.tipo_cliente) === 2;
+
+    if (!datos.nombre?.trim()) {
+        throw new Error(esJuridica ? 'La razón social es obligatoria' : 'El nombre es obligatorio');
+    }
+    if (!esJuridica && !datos.apellido?.trim()) {
+        throw new Error('El apellido es obligatorio');
+    }
+
     const anterior = await getById(id);
     const actualizado = await repo.update(id, datos);
     if (!actualizado) throw new Error('Cliente no encontrado');

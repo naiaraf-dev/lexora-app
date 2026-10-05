@@ -23,7 +23,9 @@ export class ModalPago {
 
   form = { fecha: '', monto: '', medio: '', referencia: '', observaciones: '' };
 
-  // 🔴 MOCK
+  comprobante: File | null = null;
+
+  // 🔴 MOCK — reemplazar por datos reales de la previsión (input desde el padre)
   resumen = { montoPrevisto: '$7.350.000', montoPagado: '$0', saldoPendiente: '$7.350.000' };
 
   medioOptions = [
@@ -33,12 +35,43 @@ export class ModalPago {
     { value: 'otro',          label: 'Otro'                  },
   ];
 
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.[0]) this.comprobante = input.files[0];
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer?.files[0];
+    if (file) this.comprobante = file;
+  }
+
+  eliminarComprobante() {
+    this.comprobante = null;
+  }
+
   guardar() {
+    if (!this.form.fecha || !this.form.monto || !this.form.medio) {
+      toast.error('Completá los campos obligatorios');
+      return;
+    }
     this.guardando = true;
+    // 🔴 MOCK — reemplazar por PrevisionService.registrarPago() con FormData (incluye comprobante)
     setTimeout(() => {
       this.guardando = false;
-      this.guardarPago.emit({ ...this.form });
+      this.guardarPago.emit({ ...this.form, comprobante: this.comprobante });
+      this.resetForm();
       this.cerrar.emit();
     }, 800);
+  }
+
+  cerrarModal() {
+    this.resetForm();
+    this.cerrar.emit();
+  }
+
+  private resetForm() {
+    this.form = { fecha: '', monto: '', medio: '', referencia: '', observaciones: '' };
+    this.comprobante = null;
   }
 }

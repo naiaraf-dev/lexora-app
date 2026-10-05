@@ -82,9 +82,17 @@ export class ClienteModal implements OnChanges {
     };
   }
 
-  // cambia el tipo de cliente entre persona fisica y juridica
+  // cambia el tipo de cliente entre persona fisica y juridica, limpiando los campos propios de cada tipo
   cambiarTipo(tipo: TipoCliente): void {
-    this.formCliente.tipo = tipo;
+    this.formCliente = {
+      ...this.formCliente,
+      tipo,
+      nombre: '',
+      apellido: '',
+      razonSocial: '',
+      dni: '',
+      cuit: '',
+    };
   }
 
   // valida el formulario y emite el cliente al componente padre
