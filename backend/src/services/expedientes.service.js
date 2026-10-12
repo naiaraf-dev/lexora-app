@@ -149,6 +149,18 @@ async function obtener(id) {
                 id: r.prioridad,
                 nombre: r.prioridadNombre
             }
+            : null,
+
+        // causa a la que pertenece y cuál es su principal (la previsión vive en el principal)
+        causa: r.causa_id && r.numeroCausa
+            ? {
+                id: r.causa_id,
+                numero: r.numeroCausa,
+                expedientePrincipalId: r.expedientePrincipalId,
+                principalNumero: r.expedientePrincipalId
+                    ? `EXP-${new Date(r.principalFechaCreacion).getFullYear()}-${r.expedientePrincipalId}`
+                    : null
+            }
             : null
     };
 }

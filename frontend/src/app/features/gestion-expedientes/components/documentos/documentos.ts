@@ -142,6 +142,8 @@ export class Documentos implements OnInit {
       ? `Novedad: ${d.titulo_novedad}`
       : d.titulo_tarea
       ? `Tarea: ${d.titulo_tarea}`
+      : d.prevision
+      ? `Previsión: ${d.tipo_obligacion_prevision ?? '#' + d.prevision}`
       : '—';
 
     return {

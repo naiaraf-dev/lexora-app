@@ -1,436 +1,294 @@
-import { Component, signal, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, signal, inject, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiTable, TableColumn } from '../../../../shared/components/ui-table/ui-table';
-import { ModalLiquidacion } from '../../components/modal-liquidacion/modal-liquidacion';
-import { ModalPago } from '../../components/modal-pago/modal-pago';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
-import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
+import { UiSelect, UiSelectOption } from '../../../../shared/components/ui-select/ui-select';
+import { UiBadge } from '../../../../shared/components/ui-badge/ui-badge';
+import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
+import { ModalLiquidacion } from '../../components/modal-liquidacion/modal-liquidacion';
+import { ModalPago } from '../../components/modal-pago/modal-pago';
 import { ModalVerComprobante } from '../../components/modal-ver-comprobante/modal-ver-comprobante';
+import { ModalAccionPrevision, TipoAccion } from '../../components/modal-accion-prevision/modal-accion-prevision';
+import { PrevisionService } from '../../services/prevision.service';
+import {
+  Acreditacion, DocumentoRef, EstadoLiquidacion, EstadoPrevision, Intimacion, Liquidacion, PrevisionDetalle, Prorrateo,
+} from '../../models/prevision.model';
+import {
+  ACCIONES, BADGE_ESTADO, BADGE_LIQUIDACION, BADGE_MODO, MARCA_CLASES, MARCA_CLASE_DEFAULT, OBLIGADO_LABEL,
+  formatFecha, formatMonto,
+} from '../../models/prevision.constants';
 
-// 🔴 MOCK
-const MOCK_PREVISION = {
-  expediente:              'EXP-2026-00123',
-  tipo:                    'Demanda Civil',
-  cliente:                 'Empresa Constructora S.A.',
-  caratula:                'Empresa Constructora S.A. c/ Provincia s/ daños y perjuicios',
-  area:                    'Civil',
-  estado:                  'Listo para impulsar',
-  estadoClase:             'bg-warning/10 text-warning',
-  montoSentencia:          '$5.000.000',
-  montoPrevisto:           '$7.350.000',
-  ultimaLiquidacion:       '$7.350.000',
-  saldoPendiente:          '$7.350.000',
-  modo:                    'Activo',
-  tipoObligacion:          'Sentencia',
-  fechaResolucion:         '10/06/2026',
-  fechaFirmeza:            '25/06/2026',
-  fechaLimitePrevisionar:  '10/07/2026',
-  fuero:                   'Civil / Comercial',
-  obligado:                'EMPRESA',
-  pagadorEfectivo:         'EMPRESA',
-  jurisdiccion:            'Dirección General de Asuntos Jurídicos',
-  ejercicio:               '2026',
-  montoBase:               '$5.000.000',
-  fechaActualizacion:      '16/08/2026',
-  observaciones:           'Previsión actualizada con tasa vigente al mes de agosto.',
-  concepto:                'Capital',
-  fechaBase:               '10/06/2026',
-  fechaEstimadaPago:       '31/12/2026',
+/** Texto de ayuda: qué falta para avanzar en cada estado. */
+const PROXIMO_PASO: Record<EstadoPrevision, string> = {
+  'Registrado':          'Cuando el cliente reserve el monto en su presupuesto, usá "Registrar previsión".',
+  'En análisis':         'Cuando el cliente reserve el monto en su presupuesto, usá "Registrar previsión".',
+  'Con previsión':       'Para impulsar falta: liquidación aprobada / firme y, si hay honorarios, la factura.',
+  'Listo para impulsar': 'Pedile los fondos a la Administración del cliente con "Registrar solicitud de pago".',
+  'Impulsado':           'Cuando se deposite, registrá el pago.',
+  'Pagado':              'Cuando el juzgado tenga por acreditado el pago, registrá la acreditación.',
+  'Acreditado':          'Si no hay notificación pendiente, cerrá la previsión.',
+  'Cerrado':             'Previsión cerrada. Solo lectura.',
 };
-
-const MOCK_ITEMS = [
-  { concepto: 'Capital',    monto: '$5.000.000', obligado: 'EMPRESA', estado: 'Con previsión' },
-  { concepto: 'Intereses',  monto: '$2.200.000', obligado: 'EMPRESA', estado: 'Con previsión' },
-  { concepto: 'Otros',      monto: '$150.000',   obligado: 'EMPRESA', estado: 'Con previsión' },
-];
-
-const MOCK_LIQUIDACIONES = [
-  { numero: 1, fecha: '16/08/2026', periodo: 'Jun 2026 – Ago 2026', capital: '$5.000.000', intereses: '$1.200.000', otros: '$150.000', total: '$7.350.000', estado: 'Vigente' },
-  { numero: 0, fecha: '01/06/2026', periodo: 'Jun 2026',            capital: '$5.000.000', intereses: '$800.000',   otros: '$0',       total: '$5.800.000', estado: 'Reemplazada' },
-];
-
-const MOCK_PAGOS: any[] = [];
-
-interface TimelineEvent {
-  fecha: string;
-  usuario: string;
-  accion: string;
-  detalle?: string;
-}
-
-const MOCK_TIMELINE: TimelineEvent[] = [
-  { fecha: '10/07/2026', usuario: 'Juan Pérez',   accion: 'Generó liquidación inicial',  detalle: 'Monto: $6.800.000' },
-  { fecha: '01/08/2026', usuario: 'María López',  accion: 'Actualizó liquidación',       detalle: 'Monto: $7.100.000' },
-  { fecha: '16/08/2026', usuario: 'Juan Pérez',   accion: 'Generó nueva liquidación',    detalle: 'Monto: $7.350.000' },
-];
 
 @Component({
   selector: 'app-prevision-detail',
   standalone: true,
-  imports: [CommonModule, PrimaryBtn, UiTable, ModalLiquidacion, ModalPago, ModalVerComprobante, FormsModule, UiInput, UiDateInput, UiSelect],
+  imports: [
+    CommonModule, FormsModule, PrimaryBtn, UiTable, UiInput, UiDateInput, UiSelect, UiBadge, UiModal,
+    ModalLiquidacion, ModalPago, ModalVerComprobante, ModalAccionPrevision,
+  ],
   templateUrl: './prevision-detail.html',
 })
-export class PrevisionDetail {
+export class PrevisionDetail implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private cdr    = inject(ChangeDetectorRef);
+  private previsionService = inject(PrevisionService);
+  private cdr = inject(ChangeDetectorRef);
 
   tab = signal<'resumen' | 'liquidaciones' | 'pagos' | 'historial'>('resumen');
-  prevision = MOCK_PREVISION;
-  liquidaciones = MOCK_LIQUIDACIONES;
-  pagos = MOCK_PAGOS;
 
+  /** Lo que devuelve GET /api/previsiones/:id: datos + estado + marcas + alertas, todo calculado por el back. */
+  prevision: PrevisionDetalle | null = null;
+  cargando = true;
+
+  // Filas ya formateadas para las tablas (se arman una vez por respuesta)
+  filasItems: any[] = [];
+  filasLiquidaciones: any[] = [];
+
+  estadoLiquidacionOptions: UiSelectOption[] = [];
+
+  // Modales
   modalLiquidacionOpen = false;
   modalPagoOpen = false;
-
+  modalAccionOpen = false;
+  tipoAccion: TipoAccion = 'registrar';
+  confirmarCierreOpen = false;
+  cerrando = false;
   modalComprobanteOpen = false;
   comprobanteAVer: { nombre: string; url: string } | null = null;
 
-  verComprobante(pago: any): void {
-    if (!pago.comprobante) return;
-    this.comprobanteAVer = {
-      nombre: pago.comprobante.name ?? pago.comprobante,
-      url: pago.comprobante instanceof File ? URL.createObjectURL(pago.comprobante) : pago.comprobante,
-    };
-    this.modalComprobanteOpen = true;
-    this.cdr.detectChanges();
-  }
+  // Prorrateo (edición en línea)
+  editandoProrrateo = false;
+  guardandoProrrateo = false;
+  formProrrateo = this.prorrateoAForm(null);
 
-  items = MOCK_ITEMS;
-
-  get alertas(): { tipo: string; titulo: string; descripcion: string }[] {
-    const resultado: { tipo: string; titulo: string; descripcion: string }[] = [];
-
-    // Liquidación no firme
-    const ultimaLiq = this.liquidaciones[0];
-    if (ultimaLiq && ultimaLiq.estado !== 'Vigente' && ultimaLiq.estado !== 'Aprobada / firme') {
-      resultado.push({
-        tipo: 'warning',
-        titulo: 'Liquidación no firme',
-        descripcion: 'El saldo no puede impulsarse hasta que la liquidación sea aprobada.',
-      });
-    }
-
-    // Factura de honorarios pendiente
-    if (this.tieneHonorarios && !this.facturaHonorarios.cargada) {
-      resultado.push({
-        tipo: 'warning',
-        titulo: 'Factura de honorarios pendiente',
-        descripcion: 'Para impulsar el pago de honorarios debe existir factura.',
-      });
-    }
-
-    // Prorrateo aprobado sin verificar
-    if (this.prorrateo.aprobado && !this.prorrateo.verificado) {
-      resultado.push({
-        tipo: 'warning',
-        titulo: 'Prorrateo aprobado sin verificar',
-        descripcion: 'Verificar resolución antes de impulsar. No usar monto original.',
-      });
-    }
-
-    // Pago parcial con saldo pendiente
-    if (this.pagos.length && this.prevision.estado !== 'Pagada') {
-      resultado.push({
-        tipo: 'info',
-        titulo: 'Pago parcial con saldo pendiente',
-        descripcion: 'Se registró al menos un pago pero el ítem aún no está cerrado.',
-      });
-    }
-
-    // Notificación pendiente
-    if (this.notificacionPendiente) {
-      resultado.push({
-        tipo: 'info',
-        titulo: 'Notificación pendiente',
-        descripcion: 'Corresponde notificar la acreditación del pago a las partes interesadas.',
-      });
-    }
-
-    // Modo seguimiento con saldo a cargo de EMPRESA
-    if (this.prevision.modo === 'Seguimiento' && this.pagos.length) {
-      resultado.push({
-        tipo: 'info',
-        titulo: 'Saldo a cargo de EMPRESA',
-        descripcion: 'El ítem pasa a modo activo por saldo pendiente. EMPRESA debe impulsar la diferencia.',
-      });
-    }
-
-    // Obligación firme sin previsión
-    if (!this.prevision.montoPrevisto || this.prevision.montoPrevisto === '$0') {
-      resultado.push({
-        tipo: 'warning',
-        titulo: 'Obligación firme sin previsión',
-        descripcion: 'Existe una obligación firme que aún no tiene monto previsto registrado.',
-      });
-    }
-
-    return resultado;
-  }
-
-  /**
- * Motor de estados según sección 6.2 del documento funcional.
- * El usuario NO elige "Listo para impulsar" ni "Pagado" — el sistema los calcula
- * en base a las condiciones reales del ítem/previsión.
- */
-  get estadoCalculado(): string {
-    // Si ya está acreditado y no hay pendientes → Cerrado
-    if (this.acreditacion.estado === 'Acreditado' && !this.notificacionPendiente && !this.pagos.length) {
-      return 'Cerrado';
-    }
-
-    // Si está acreditado pero puede haber notificación pendiente
-    if (this.acreditacion.estado === 'Acreditado') {
-      return 'Acreditado';
-    }
-
-    // Si hay al menos un pago registrado pero no acreditado
-    if (this.pagos.length > 0) {
-      return 'Pagado';
-    }
-
-    // Modo Seguimiento nunca calcula "Listo para impulsar" (esa etapa es solo modo Activo)
-    if (this.prevision.modo === 'Seguimiento') {
-      return 'En seguimiento';
-    }
-
-    // Modo Activo: "Listo para impulsar" = Con previsión + documentación completa + factura (si hay honorarios)
-    const liquidacionFirme = this.liquidaciones[0]?.estado === 'Vigente' || this.liquidaciones[0]?.estado === 'Aprobada / firme';
-    const facturaOk = !this.tieneHonorarios || this.facturaHonorarios.cargada;
-
-    if (this.prevision.montoPrevisto && this.prevision.montoPrevisto !== '$0' && liquidacionFirme && facturaOk) {
-      return 'Listo para impulsar';
-    }
-
-    // Hay previsión cargada pero todavía bloqueada por algo
-    if (this.prevision.montoPrevisto && this.prevision.montoPrevisto !== '$0') {
-      return 'Con previsión';
-    }
-
-    return 'Registrado';
-  }
-
-  get estadoCalculadoClase(): string {
-    const map: Record<string, string> = {
-      'Registrado':          'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',
-      'En seguimiento':      'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-      'Con previsión':       'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-      'Listo para impulsar': 'bg-warning/10 text-warning',
-      'Impulsado':           'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-      'Pagado':              'bg-success/10 text-success',
-      'Acreditado':          'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
-      'Cerrado':             'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-400',
-    };
-    return map[this.estadoCalculado] ?? map['Registrado'];
-  }
-
-  /**
- * Marcas según sección 6.3 del documento funcional — condiciones que pueden coexistir,
- * a diferencia del estado principal (uno solo por vez).
- */
-  get marcas(): { label: string; clase: string }[] {
-    const resultado: { label: string; clase: string }[] = [];
-
-    const docCompleta = this.items.every(i => i.estado !== 'Registrado');
-    resultado.push(
-      docCompleta
-        ? { label: 'Documentación completa', clase: 'bg-success/10 text-success' }
-        : { label: 'Observada', clase: 'bg-danger/10 text-danger' }
-    );
-
-    if (this.prorrateo.aprobado) {
-      resultado.push({ label: 'Con prorrateo art. 730 aplicado', clase: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' });
-    }
-
-    if (this.pagos.length > 0) {
-      resultado.push({ label: 'Pago de tercero informado', clase: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' });
-    }
-
-    if (this.tieneHonorarios && this.facturaHonorarios.cargada) {
-      resultado.push({ label: 'Factura cargada', clase: 'bg-success/10 text-success' });
-    }
-
-    const liquidacionFirme = this.liquidaciones[0]?.estado === 'Vigente' || this.liquidaciones[0]?.estado === 'Aprobada / firme';
-    if (!liquidacionFirme) {
-      resultado.push({ label: 'Liquidación no firme', clase: 'bg-warning/10 text-warning' });
-    }
-
-    if (this.notificacionPendiente) {
-      resultado.push({ label: 'Notificación pendiente', clase: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' });
-    }
-
-    return resultado;
-  }
+  readonly BADGE_ESTADO = BADGE_ESTADO;
+  readonly BADGE_MODO = BADGE_MODO;
+  readonly BADGE_LIQUIDACION = BADGE_LIQUIDACION;
+  readonly OBLIGADO_LABEL = OBLIGADO_LABEL;
+  readonly PROXIMO_PASO = PROXIMO_PASO;
+  formatMonto = formatMonto;
+  formatFecha = formatFecha;
 
   columnsItems: TableColumn[] = [
-    { key: 'concepto', label: 'Concepto', type: 'text' },
-    { key: 'monto',    label: 'Monto',    type: 'text' },
-    { key: 'obligado', label: 'Obligado', type: 'text' },
-    { key: 'estado',   label: 'Estado',   type: 'badge',
-      badgeConfig: {
-        'Con previsión': { label: 'Con previsión', classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
-        'Impulsado':     { label: 'Impulsado',     classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' },
-        'Pagado':        { label: 'Pagado',        classes: 'bg-success/10 text-success',    dot: 'bg-success'    },
-      }
-    },
+    { key: 'concepto',      label: 'Concepto',      type: 'text' },
+    { key: 'monto',         label: 'Monto',         type: 'text' },
+    { key: 'instancia',     label: 'Instancia',     type: 'text' },
+    { key: 'observaciones', label: 'Observaciones', type: 'text' },
   ];
 
   columnsLiquidaciones: TableColumn[] = [
-    { key: 'numero',   label: 'N°',       type: 'text' },
-    { key: 'fecha',    label: 'Fecha',    type: 'text' },
-    { key: 'periodo',  label: 'Período',  type: 'text' },
-    { key: 'capital',  label: 'Capital',  type: 'text' },
-    { key: 'intereses',label: 'Intereses',type: 'text' },
-    { key: 'otros',    label: 'Otros',    type: 'text' },
-    { key: 'total',    label: 'Total',    type: 'text' },
-    { key: 'estado',   label: 'Estado',   type: 'badge',
+    { key: 'numero',            label: 'N°',              type: 'text' },
+    { key: 'fecha',             label: 'Fecha',           type: 'text' },
+    { key: 'periodo',           label: 'Período',         type: 'text' },
+    { key: 'capital',           label: 'Capital',         type: 'text' },
+    { key: 'intereses',         label: 'Intereses',       type: 'text' },
+    { key: 'otros',             label: 'Otros',           type: 'text' },
+    { key: 'total',             label: 'Total',           type: 'text' },
+    { key: 'estadoLiquidacion', label: 'Estado procesal', type: 'badge', badgeConfig: BADGE_LIQUIDACION },
+    { key: 'vigencia',          label: 'Vigencia',        type: 'badge',
       badgeConfig: {
-        'Vigente':      { label: 'Vigente',      classes: 'bg-success/10 text-success',  dot: 'bg-success'  },
-        'Reemplazada':  { label: 'Reemplazada',  classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
-      }
+        'Vigente':     { label: 'Vigente',     classes: 'bg-success/10 text-success', dot: 'bg-success' },
+        'Reemplazada': { label: 'Reemplazada', classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300', dot: 'bg-gray-400' },
+      },
     },
   ];
 
-  editando = false;
-
-  form = {
-    concepto: MOCK_PREVISION.concepto,
-    montoBase: MOCK_PREVISION.montoBase,
-    fechaBase: MOCK_PREVISION.fechaBase,
-    fechaEstimadaPago: MOCK_PREVISION.fechaEstimadaPago,
-    observaciones: MOCK_PREVISION.observaciones,
-  };
-
-  guardando = false;
-
-  guardar(): void {
-    this.guardando = true;
-    setTimeout(() => {
-      this.prevision = { ...this.prevision, ...this.form };
-      this.guardando = false;
-      this.editando = false;
-      this.agregarEventoTimeline('Editó previsión', `Monto base: ${this.form.montoBase}`);
-    }, 600);
+  ngOnInit(): void {
+    this.previsionService.obtenerCatalogo('estadoliquidacion').subscribe(o => (this.estadoLiquidacionOptions = o));
+    this.cargar();
   }
 
-  irAEditar(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    this.router.navigate(['/prevision-y-pago', id, 'editar']);
+  cargar(): void {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.cargando = true;
+    this.previsionService.obtener(id).subscribe({
+      next: (p) => this.actualizar(p),
+      error: (err) => {
+        toast.error(err?.error?.mensaje ?? 'No se pudo cargar la previsión');
+        this.volver();
+      },
+    });
   }
 
-  cancelarEdicion(): void {
-    this.form = {
-      concepto: this.prevision.concepto,
-      montoBase: this.prevision.montoBase,
-      fechaBase: this.prevision.fechaBase,
-      fechaEstimadaPago: this.prevision.fechaEstimadaPago,
-      observaciones: this.prevision.observaciones,
-    };
-    this.editando = false;
+  /** Toda acción devuelve la previsión actualizada: se reemplaza entera (estado, marcas y alertas incluidas). */
+  actualizar(p: PrevisionDetalle): void {
+    this.prevision = p;
+    this.cargando = false;
+    this.filasItems = p.items.map(i => ({
+      concepto: i.concepto,
+      monto: formatMonto(i.monto),
+      instancia: i.instancia ?? '—',
+      observaciones: i.observaciones ?? '—',
+    }));
+    this.filasLiquidaciones = p.liquidaciones.map(l => ({
+      numero: l.numero,
+      fecha: formatFecha(l.fechaLiquidacion),
+      periodo: `${formatFecha(l.fechaDesde)} – ${formatFecha(l.fechaHasta)}`,
+      capital: formatMonto(l.capital),
+      intereses: formatMonto(l.intereses),
+      otros: formatMonto(l.otros),
+      total: formatMonto(l.total),
+      estadoLiquidacion: l.estadoLiquidacion,
+      vigencia: l.vigente ? 'Vigente' : 'Reemplazada',
+    }));
+    this.cdr.detectChanges();
   }
 
-  editandoProrrateo = false;
+  // ---------- Getters de pantalla ----------
 
-  // Factura de honorarios
-  // TODO: derivar de los ítems reales cuando se conecte el backend
+  /** Qué botones se muestran. El back igual valida y responde 409 si no corresponde. */
+  puede(accion: keyof typeof ACCIONES): boolean {
+    return !!this.prevision && ACCIONES[accion](this.prevision);
+  }
+
   get tieneHonorarios(): boolean {
-    return this.items.some(item => item.concepto === 'Honorarios');
+    return !!this.prevision?.items.some(i => i.concepto === 'Honorarios');
   }
 
-  facturaHonorarios = {
-    cargada:     false,
-    profesional: '',
-    monto:       '',
-    fecha:       '',
-    documento:   '',
-  };
-
-  cargarFactura(): void {
-    // 🔴 MOCK — reemplazar por modal real de carga de factura
-    this.facturaHonorarios = {
-      cargada:     true,
-      profesional: 'Dr. Carlos Méndez',
-      monto:       '$850.000',
-      fecha:       new Date().toLocaleDateString('es-AR'),
-      documento:   'factura-honorarios.pdf',
-    };
-    this.agregarEventoTimeline('Cargó factura de honorarios', 'Dr. Carlos Méndez — $850.000');
+  get liquidacionVigente(): Liquidacion | null {
+    return this.prevision?.liquidaciones.find(l => l.vigente) ?? null;
   }
 
-  prorrateo = {
-    aprobado:           false,
-    verificado:         false,
-    fechaAprobacion:    '',
-    resolucion:         '',
-    baseCalculo:        '',
-    honorariosSujetos:  '',
-    coeficiente:        '',
-    montoProrrateado:   '',
-    resultado:          '',
-  };
+  get notificacionPendiente(): Acreditacion | null {
+    return this.prevision?.acreditaciones.find(a => a.ordenaNotificar && !a.notificacionCumplida) ?? null;
+  }
 
-  private _prorrateoSnapshot = { ...this.prorrateo };
+  /** Vencida = pasó la fecha y todavía queda saldo. Si ya se pagó, la intimación dejó de importar. */
+  intimacionVencida(i: Intimacion): boolean {
+    return !!this.prevision && this.prevision.saldo > 0 && i.fechaVencimiento < new Date().toISOString().slice(0, 10);
+  }
+
+  claseMarca(marca: string): string {
+    return MARCA_CLASES[marca] ?? MARCA_CLASE_DEFAULT;
+  }
+
+  // ---------- Acciones del flujo ----------
+
+  abrirAccion(tipo: TipoAccion): void {
+    this.tipoAccion = tipo;
+    this.modalAccionOpen = true;
+  }
+
+  cerrarPrevision(): void {
+    if (!this.prevision) return;
+    this.cerrando = true;
+    this.previsionService.cerrar(this.prevision.id).subscribe({
+      next: (p) => {
+        this.cerrando = false;
+        this.confirmarCierreOpen = false;
+        toast.success('Previsión cerrada');
+        this.actualizar(p);
+      },
+      error: (err) => {
+        this.cerrando = false;
+        this.confirmarCierreOpen = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudo cerrar');
+      },
+    });
+  }
+
+  cambiarModo(): void {
+    if (!this.prevision) return;
+    const nuevo = this.prevision.modo === 'ACTIVO' ? 'SEGUIMIENTO' : 'ACTIVO';
+    this.previsionService.cambiarModo(this.prevision.id, nuevo).subscribe({
+      next: (p) => this.actualizar(p),
+      error: (err) => toast.error(err?.error?.mensaje ?? 'No se pudo cambiar el modo'),
+    });
+  }
+
+  onEstadoLiquidacionChange(estado: EstadoLiquidacion): void {
+    const liq = this.liquidacionVigente;
+    if (!this.prevision || !liq || liq.estadoLiquidacion === estado) return;
+    this.previsionService.cambiarEstadoLiquidacion(this.prevision.id, liq.id, estado).subscribe({
+      next: (p) => this.actualizar(p),
+      error: (err) => toast.error(err?.error?.mensaje ?? 'No se pudo cambiar el estado de la liquidación'),
+    });
+  }
+
+  verDocumento(doc: DocumentoRef | null): void {
+    if (!doc) return;
+    this.comprobanteAVer = { nombre: doc.nombre, url: doc.url };
+    this.modalComprobanteOpen = true;
+  }
+
+  // ---------- Prorrateo art. 730 ----------
+
+  editarProrrateo(): void {
+    this.formProrrateo = this.prorrateoAForm(this.prevision?.prorrateo ?? null);
+    this.editandoProrrateo = true;
+  }
 
   guardarProrrateo(): void {
-    this.prorrateo.verificado = true;
-    this._prorrateoSnapshot = { ...this.prorrateo };
-    this.editandoProrrateo = false;
-    this.agregarEventoTimeline('Actualizó prorrateo Art. 730');
-  }
-
-  cancelarProrrateo(): void {
-    this.prorrateo = { ...this._prorrateoSnapshot };
-    this.editandoProrrateo = false;
-  }
-
-  registrandoPago = false;
-
-  onPagoGuardado(pago: any): void {
-    const nuevoPago = {
-      fecha: pago.fecha || new Date().toLocaleDateString('es-AR'),
-      monto: pago.monto,
-      medio: pago.medio,
-      referencia: pago.referencia || '—',
-      estado: 'Acreditado',
-      comprobante: pago.comprobante,
+    if (!this.prevision) return;
+    const f = this.formProrrateo;
+    const datos: Prorrateo = {
+      aprobado: f.aprobado,
+      verificado: true, // guardar = el abogado verificó la resolución
+      fechaAprobacion: f.fechaAprobacion || null,
+      resolucion: f.resolucion || null,
+      baseCalculo: this.parseMontoONull(f.baseCalculo),
+      honorariosSujetos: this.parseMontoONull(f.honorariosSujetos),
+      coeficiente: f.coeficiente ? Number(f.coeficiente.replace(',', '.')) : null,
+      montoProrrateado: this.parseMontoONull(f.montoProrrateado),
     };
-    this.pagos = [...this.pagos, nuevoPago];
-    this.agregarEventoTimeline('Registró pago', `Monto: ${pago.monto}`);
-    this.modalPagoOpen = false;
-  }
-
-  timeline: TimelineEvent[] = MOCK_TIMELINE;
-
-  agregarEventoTimeline(accion: string, detalle?: string): void {
-    this.timeline = [
-      {
-        fecha: new Date().toLocaleDateString('es-AR'),
-        usuario: 'Juan Pérez',
-        accion,
-        detalle,
+    this.guardandoProrrateo = true;
+    this.previsionService.guardarProrrateo(this.prevision.id, datos).subscribe({
+      next: (p) => {
+        this.guardandoProrrateo = false;
+        this.editandoProrrateo = false;
+        this.actualizar(p);
       },
-      ...this.timeline,
-    ];
+      error: (err) => {
+        this.guardandoProrrateo = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudo guardar el prorrateo');
+      },
+    });
   }
 
-  acreditacion = {
-    estado: 'Pendiente de acreditación' as 'Pendiente de acreditación' | 'Acreditado',
-    fechaAcreditacion: '',
-    documento: '',
-    comprobante: '',
-  };
-
-  notificacionPendiente = true; // 🔴 MOCK
-
-  generarTareaNotificacion(): void {
-    this.notificacionPendiente = false;
-    this.agregarEventoTimeline('Generó tarea de notificación', 'Notificación pendiente de envío');
-    // TODO: conectar con módulo de Agenda/Tareas de LEXORA cuando esté disponible
+  private prorrateoAForm(p: Prorrateo | null) {
+    const txt = (n: number | null | undefined) => (n === null || n === undefined ? '' : n.toLocaleString('es-AR'));
+    return {
+      aprobado: p?.aprobado ?? false,
+      fechaAprobacion: p?.fechaAprobacion ?? '',
+      resolucion: p?.resolucion ?? '',
+      baseCalculo: txt(p?.baseCalculo),
+      honorariosSujetos: txt(p?.honorariosSujetos),
+      coeficiente: p?.coeficiente === null || p?.coeficiente === undefined ? '' : String(p.coeficiente).replace('.', ','),
+      montoProrrateado: txt(p?.montoProrrateado),
+    };
   }
 
-  volver() { this.router.navigate(['/prevision-y-pago']); }
+  // ---------- Helpers ----------
+
+  /** "$ 5.000.000,50" → 5000000.5 */
+  private parseMonto(valor: string): number {
+    if (!valor) return 0;
+    const limpio = String(valor).replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
+    const n = Number(limpio);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  private parseMontoONull(valor: string): number | null {
+    return valor ? this.parseMonto(valor) : null;
+  }
+
+  volver(): void {
+    this.router.navigate(['/prevision-y-pago']);
+  }
 }

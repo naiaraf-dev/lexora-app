@@ -10,12 +10,15 @@
   <div slot="cuerpo" class="flex flex-col gap-4">
 
     <div class="grid grid-cols-2 gap-3">
-      <app-ui-date-input label="Fecha de liquidación" [(model)]="form.fechaLiquidacion"></app-ui-date-input>
-      <app-ui-input      label="Monto base" placeholder="$ 0,00" [(model)]="form.montoBase"></app-ui-input>
-      <app-ui-date-input label="Fecha desde" [(model)]="form.fechaDesde"></app-ui-date-input>
-      <app-ui-date-input label="Fecha hasta" [(model)]="form.fechaHasta"></app-ui-date-input>
-      <app-ui-select     label="Tipo de tasa" variant="formulario" placeholder="Seleccioná..." [(model)]="form.tipoTasa" [options]="tipoTasaOptions"></app-ui-select>
+      <app-ui-date-input label="Fecha de liquidación *" [(model)]="form.fechaLiquidacion"></app-ui-date-input>
+      <app-ui-select     label="Estado procesal *" variant="formulario" [(model)]="form.estadoLiquidacion" [options]="estadoLiquidacionOptions"></app-ui-select>
+      <app-ui-input      label="Monto base *" placeholder="$ 0,00" [(model)]="form.montoBase"></app-ui-input>
       <app-ui-input      label="Otros conceptos" placeholder="$ 0,00" [(model)]="form.otrosConceptos"></app-ui-input>
+      <app-ui-date-input label="Fecha desde *" [(model)]="form.fechaDesde"></app-ui-date-input>
+      <app-ui-date-input label="Fecha hasta *" [(model)]="form.fechaHasta"></app-ui-date-input>
+      <div class="col-span-2">
+        <app-ui-select   label="Tipo de tasa *" variant="formulario" placeholder="Seleccioná..." [(model)]="form.tipoTasa" [options]="tipoTasaOptions"></app-ui-select>
+      </div>
     </div>
 
     <!-- 🔴 Tramos deshabilitados en esta versión — el cálculo usa la tasa vigente única del CPACF.
@@ -69,76 +72,56 @@
         <app-primary-btn variant="secondary" [loading]="calculando" (click)="calcular()">Calcular</app-primary-btn>
       </div>
 
-      @if (calculado) {
-        @if (calculado && grupoTasaSeleccionada === 'SIMPLE') {
+      @if (calculo) {
+        @if (grupoTasaSeleccionada === 'SIMPLE') {
           <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
             Esta tasa es de tipo índice/referencia — se muestra el último valor publicado, sin cómputo de intereses sobre el período.
           </div>
         }
-        @if (calculado && grupoTasaSeleccionada === 'PARAMETRICA') {
+        @if (grupoTasaSeleccionada === 'PARAMETRICA') {
           <div class="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
             Cálculo aproximado por interés simple usando la tasa vigente. No reproduce el cálculo compuesto exacto de la calculadora del Colegio de Abogados.
           </div>
         }
 
         <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 flex flex-col gap-2 text-sm">
-          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Capital</span><span>{{ calculo.capital }}</span></div>
-          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Intereses</span><span>{{ calculo.intereses }}</span></div>
-          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Otros conceptos</span><span>{{ calculo.otros }}</span></div>
+          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Capital</span><span>{{ formatMonto(calculo.capital) }}</span></div>
+          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Intereses ({{ calculo.dias }} días)</span><span>{{ formatMonto(calculo.intereses) }}</span></div>
+          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Otros conceptos</span><span>{{ formatMonto(calculo.otros) }}</span></div>
           <div class="flex justify-between font-semibold text-text-primary dark:text-slate-100 border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
-            <span>TOTAL</span><span class="text-primary">{{ calculo.total }}</span>
+            <span>TOTAL</span><span class="text-primary">{{ formatMonto(calculo.total) }}</span>
           </div>
         </div>
 
         <!-- Trazabilidad -->
-        @if (detalle) {
-          <div class="flex flex-col gap-2">
-            <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Detalle y trazabilidad</p>
-            <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/40 dark:bg-slate-700/20 px-4 py-3 flex flex-col gap-2 text-xs">
-              <div class="grid grid-cols-2 gap-x-6 gap-y-2">
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Monto base</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.montoBase }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Tasa vigente</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.tasaValor }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Fecha desde</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.fechaDesde }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Fecha hasta</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.fechaHasta }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 col-span-2">
-                  <span class="text-text-primary/40 dark:text-slate-500">Tasa seleccionada</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.tasaSeleccionada }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Publicación de la tasa</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.tasaFechaPublicacion }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5">
-                  <span class="text-text-primary/40 dark:text-slate-500">Fecha de cálculo</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.fechaCalculo }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 col-span-2">
-                  <span class="text-text-primary/40 dark:text-slate-500">Fuente</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.fuente }}</span>
-                </div>
-                <div class="flex flex-col gap-0.5 col-span-2">
-                  <span class="text-text-primary/40 dark:text-slate-500">Metodología</span>
-                  <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ detalle.metodologia }}</span>
-                </div>
-              </div>
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Detalle y trazabilidad</p>
+          <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/40 dark:bg-slate-700/20 px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-text-primary/40 dark:text-slate-500">Tasa vigente</span>
+              <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ calculo.tasaValor !== null ? calculo.tasaValor + '%' : '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-text-primary/40 dark:text-slate-500">Publicación de la tasa</span>
+              <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ formatFecha(calculo.tasaFechaPublicacion) }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-text-primary/40 dark:text-slate-500">Período</span>
+              <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ formatFecha(form.fechaDesde) }} – {{ formatFecha(form.fechaHasta) }}</span>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-text-primary/40 dark:text-slate-500">Fuente</span>
+              <span class="text-text-primary/70 dark:text-slate-300 font-medium">CPACF (consulta en vivo, caché 1h)</span>
+            </div>
+            <div class="flex flex-col gap-0.5 col-span-2">
+              <span class="text-text-primary/40 dark:text-slate-500">Metodología</span>
+              <span class="text-text-primary/70 dark:text-slate-300 font-medium">{{ calculo.metodologia }}</span>
             </div>
           </div>
-        }
+        </div>
       } @else {
         <div class="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-4 text-center text-xs text-text-primary/30 dark:text-slate-500">
-          Presioná "Calcular" para ver el resumen.
+          Presioná "Calcular" para ver el resumen. La nueva liquidación reemplaza a la vigente.
         </div>
       }
     </div>
@@ -147,7 +130,7 @@
 
   <div slot="footer" class="flex justify-end gap-2">
     <app-primary-btn variant="secondary" (click)="cerrar.emit()">Cancelar</app-primary-btn>
-    <app-primary-btn variant="primary" [loading]="guardando" (click)="guardar()">Guardar liquidación</app-primary-btn>
+    <app-primary-btn variant="primary" [loading]="guardando" [disabled]="!calculo" (click)="guardar()">Guardar liquidación</app-primary-btn>
   </div>
 
 </app-ui-modal>
