@@ -4,7 +4,8 @@ const { request } = require('./previsiones.repository');
 async function getLiquidaciones(prevision = null, tx = null) {
  const r = await request(tx);
  if (prevision !== null) r.input('prevision', sql.Int, prevision);
- const out = await r.query(`SELECT l.*, el.nombre AS estadoNombre, t.nombre AS tasaNombre,
+ const out = await r.query(`SELECT l.*, CONVERT(VARCHAR(50), l.total) AS totalExacto,
+   el.nombre AS estadoNombre, t.nombre AS tasaNombre,
    p.expediente AS expedienteId, e.fecha_creacion AS expedienteFechaCreacion,
    c.nombre + ' ' + c.apellido AS clienteNombre
    FROM liquidacion l
@@ -35,7 +36,9 @@ async function getPagos(prevision = null, tx = null) {
 async function vigente(prevision, tx) {
  const r = await request(tx);
  const out = await r.input('id', sql.Int, prevision)
-  .query('SELECT * FROM liquidacion WITH (UPDLOCK, HOLDLOCK) WHERE prevision = @id AND vigente = 1');
+  .query(`SELECT *, CONVERT(VARCHAR(50), total) AS totalExacto
+      FROM liquidacion WITH (UPDLOCK, HOLDLOCK)
+      WHERE prevision = @id AND vigente = 1`);
  return out.recordset[0] ?? null;
 }
 async function totalPagado(prevision, tx) {
@@ -44,6 +47,46 @@ async function totalPagado(prevision, tx) {
   .query('SELECT COALESCE(SUM(monto), 0) AS total FROM pagoprevision WHERE prevision = @id');
  return Number(out.recordset[0].total);
 }
+// SUM devuelve un DECIMAL, enviado como cadena para evitar pérdida de
+// precisión al compararlo en el service. No incluye anulaciones porque la
+// tabla pagoprevision actual no tiene columna activo.
+async function resumenPagos(prevision, tx = null) {
+    const r = await request(tx);
+    const out = await r.input('prevision', sql.Int, prevision).query(`
+        SELECT COUNT(*) AS cantidadPagos,
+               CONVERT(VARCHAR(50),
+                 COALESCE(SUM(CAST(monto AS DECIMAL(38,2))), CAST(0 AS DECIMAL(38,2))))
+               AS totalPagadoExacto
+        FROM pagoprevision
+        WHERE prevision = @prevision
+    `);
+    return out.recordset[0];
+}
+
+async function existeMedioPago(id, tx = null) {
+    const r = await request(tx);
+    const out = await r.input('id', sql.Int, id)
+        .query('SELECT id FROM mediopago WHERE id = @id');
+    return out.recordset.length > 0;
+}
+
+async function getMediosPago() {
+    const r = await request();
+    const out = await r.query('SELECT id, nombre FROM mediopago ORDER BY id');
+    return out.recordset;
+}
+
+async function getPagoById(previsionId, pagoId, tx = null) {
+    const r = await request(tx);
+    const out = await r.input('prevision', sql.Int, previsionId)
+        .input('pagoId', sql.Int, pagoId)
+        .query(`SELECT pg.*, mp.nombre AS medioPagoNombre
+                FROM pagoprevision pg
+                JOIN mediopago mp ON mp.id = pg.medio_pago
+                WHERE pg.prevision = @prevision AND pg.id = @pagoId`);
+    return out.recordset[0] ?? null;
+}
+
 async function crearLiquidacion(d, tx) {
  const r = await request(tx);
  // Índice filtrado: primero desactiva la anterior, luego inserta la vigente.
@@ -95,4 +138,5 @@ async function crearPago(d, tx) {
  return out.recordset[0].id;
 }
 module.exports = { getLiquidaciones, getPagos, vigente, totalPagado,
- crearLiquidacion, cambiarEstadoLiquidacion, crearPago };
+ crearLiquidacion, cambiarEstadoLiquidacion, crearPago, resumenPagos,
+ existeMedioPago, getMediosPago, getPagoById };

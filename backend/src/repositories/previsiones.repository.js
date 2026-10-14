@@ -62,6 +62,17 @@ async function getById(id, tx = null) {
     return result.recordset[0] ?? null;
 }
 
+// Bloqueo por previsión para serializar pagos, liquidaciones y cambios de estado.
+// Se usa dentro de transacciones SERIALIZABLE para evitar pagos concurrentes
+// que individualmente entren en el saldo pero conjuntamente lo excedan.
+async function bloquear(id, tx) {
+    const r = await request(tx);
+    const out = await r.input('id', sql.Int, id).query(`
+        SELECT id FROM prevision WITH (UPDLOCK, HOLDLOCK) WHERE id = @id
+    `);
+    return out.recordset.length > 0;
+}
+
 async function getExpediente(id, tx = null) {
     const r = await request(tx);
     const result = await r.input('id', sql.Int, id).query(`
@@ -181,4 +192,4 @@ async function replaceItems(id, itemsArray, tx) {
     }
 }
 module.exports = { request, getAll, getById, getExpediente, getHabilitacion,
-    create, update, setEstado, registrar, items, replaceItems, error };
+    create, update, setEstado, registrar, items, replaceItems, bloquear, error };

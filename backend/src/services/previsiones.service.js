@@ -98,6 +98,9 @@ async function withTransaction(fn) {
  catch (e) { try { await tx.rollback(); } catch (_) {} throw e; }
 }
 async function exigirExistente(previsionId, tx = null) {
+ // En escrituras, bloquea primero la cabecera de la previsión. Así dos pagos
+ // concurrentes no pueden consumir el mismo saldo en transacciones separadas.
+ if (tx && !(await repo.bloquear(previsionId, tx))) fail(404, 'Previsión no encontrada');
  const p = await repo.getById(previsionId, tx);
  if (!p) fail(404, 'Previsión no encontrada');
  return p;
@@ -118,18 +121,71 @@ async function listar(f = {}) {
  const r = await repo.getAll({...f, pagina, pageSize});
  return { data: r.rows.map(formato), total: r.total, pagina, pageSize };
 }
+function mostrarCentavos(centavos) {
+ // La forma textual es exacta aun para los importes más grandes del DECIMAL(18,2).
+ const signo = centavos < 0n ? '-' : '';
+ const abs = centavos < 0n ? -centavos : centavos;
+ return `${signo}${abs / 100n}.${String(abs % 100n).padStart(2, '0')}`;
+}
+
+function armarResumenPagos(p, liq, resumen) {
+ const totalCentavos = estados.aCentavos(resumen.totalPagadoExacto);
+ const firme = liq?.estado_liquidacion === estados.LIQUIDACION_APROBADA && liq.total !== null;
+ const liquidacionCentavos = firme ? estados.aCentavos(liq.totalExacto) : null;
+ const saldoCentavos = liquidacionCentavos === null ? null : liquidacionCentavos - totalCentavos;
+
+ // El estado de pago no debe confundirse con el estado procesal de la previsión.
+ const estadoPago = liquidacionCentavos === null
+  ? (totalCentavos > 0n ? 'sin_liquidacion_firme' : 'sin_pagos')
+  : totalCentavos === 0n ? 'pendiente'
+  : saldoCentavos > 0n ? 'parcial' : 'completo';
+
+ return {
+  cantidadPagos: Number(resumen.cantidadPagos),
+  totalPagado: Number(resumen.totalPagadoExacto),
+  totalPagadoExacto: mostrarCentavos(totalCentavos),
+  totalLiquidacionFirme: liquidacionCentavos === null ? null : Number(mostrarCentavos(liquidacionCentavos)),
+  saldo: saldoCentavos === null ? null : Number(mostrarCentavos(saldoCentavos)),
+  saldoExacto: saldoCentavos === null ? null : mostrarCentavos(saldoCentavos),
+  estadoPago,
+  // Referencia presupuestaria. No se confunde con saldo exigible.
+  montoPrevistoReferencia: p.monto_previsto ?? null
+ };
+}
+
 async function obtener(idPrevision) {
  const p = await exigirExistente(id(idPrevision, 'id'));
- const [items, liquidaciones, pagos] = await Promise.all([
-  repo.items(p.id), mov.getLiquidaciones(p.id), mov.getPagos(p.id)
+ const [items, liquidaciones, pagos, resumen] = await Promise.all([
+  repo.items(p.id), mov.getLiquidaciones(p.id), mov.getPagos(p.id), mov.resumenPagos(p.id)
  ]);
  const vigente = liquidaciones.find(x => x.vigente) ?? null;
- const totalPagado = pagos.reduce((s,x) => s + Math.round(Number(x.monto)*100), 0) / 100;
- const saldo = vigente?.total == null ? null :
-   (Math.round(Number(vigente.total)*100) - Math.round(totalPagado*100))/100;
- return { ...formato(p), items, liquidaciones, pagos, liquidacionVigente: vigente,
-   totalPagado, saldo };
+ const resumenPagos = armarResumenPagos(p, vigente, resumen);
+ return {
+  ...formato(p),
+  items, liquidaciones, pagos, liquidacionVigente: vigente,
+  totalPagado: resumenPagos.totalPagado,
+  saldo: resumenPagos.saldo,
+  resumenPagos
+ };
 }
+
+async function obtenerPagos(previsionId) {
+ const pid = id(previsionId, 'id');
+ await exigirExistente(pid);
+ return mov.getPagos(pid);
+}
+
+async function obtenerPago(previsionId, pagoId) {
+ const pid = id(previsionId, 'id');
+ const pago = await mov.getPagoById(pid, id(pagoId, 'pagoId'));
+ if (!pago) fail(404, 'Pago no encontrado para esta previsión');
+ return pago;
+}
+
+async function listarMediosPago() {
+ return mov.getMediosPago();
+}
+
 async function crear(body) {
  const d = normalizarPrevision(body);
  validarObligado(d);
@@ -213,8 +269,18 @@ async function crearLiquidacion(previsionId, body) {
  await withTransaction(async tx => {
   const p = await exigirExistente(pid, tx);
   estados.exigirEditable(p);
-  const pagos = await mov.totalPagado(pid, tx);
-  if (pagos > 0) fail(409, 'No se puede sustituir la liquidación después de registrar pagos sin un mecanismo de conciliación');
+  // mssql utiliza una conexión por transacción; ejecutar solicitudes en secuencia.
+  const pagos = await mov.resumenPagos(pid, tx);
+  const vigente = await mov.vigente(pid, tx);
+  const totalPagado = estados.aCentavos(pagos.totalPagadoExacto);
+  if (vigente && totalPagado > 0n) {
+   fail(409, 'No se puede reemplazar una liquidación vigente con pagos registrados');
+  }
+  // Seguimiento: pueden haberse registrado cobros antes de una liquidación.
+  // Permitimos la primera liquidación pero nunca menor a los cobros existentes.
+  if (!vigente && d.total !== null && totalPagado > estados.aCentavos(d.total.toFixed(2))) {
+   fail(409, 'La liquidación no puede ser inferior a los pagos registrados');
+  }
   await mov.crearLiquidacion(d, tx);
   await estados.recalcular(pid, repo, mov, tx);
  });
@@ -227,43 +293,86 @@ async function cambiarEstadoLiquidacion(previsionId, liqId, body) {
  await withTransaction(async tx => {
   const p = await exigirExistente(pid, tx);
   estados.exigirEditable(p);
-  const ok = await mov.cambiarEstadoLiquidacion(pid, lid, estado, tx);
-  if (!ok) fail(404, 'Liquidación vigente no encontrada');
+  const vigente = await mov.vigente(pid, tx);
+  if (!vigente || vigente.id !== lid) fail(404, 'Liquidación vigente no encontrada');
+  const pagado = await mov.resumenPagos(pid, tx);
+  const totalPagadoCentavos = estados.aCentavos(pagado.totalPagadoExacto);
+  if (vigente.estado_liquidacion === estados.LIQUIDACION_APROBADA &&
+      estado !== estados.LIQUIDACION_APROBADA && totalPagadoCentavos > 0n) {
+   fail(409, 'No se puede quitar la aprobación de una liquidación con pagos registrados');
+  }
+  if (estado === estados.LIQUIDACION_APROBADA) {
+   if (vigente.total === null) fail(409, 'La liquidación necesita un total antes de aprobarse');
+   if (totalPagadoCentavos > estados.aCentavos(vigente.totalExacto)) {
+    fail(409, 'Los pagos registrados superan el total que se intenta aprobar');
+   }
+  }
+  await mov.cambiarEstadoLiquidacion(pid, lid, estado, tx);
   await estados.recalcular(pid, repo, mov, tx);
  });
  return obtener(pid);
 }
 async function crearPago(previsionId, body) {
  const pid = id(previsionId, 'id');
- if (!body) fail(400, 'Body obligatorio');
+ if (!body || typeof body !== 'object' || Array.isArray(body)) fail(400, 'Body obligatorio');
  const pagador = String(body.pagador ?? '').toUpperCase();
  if (!['CLIENTE','CONTRAPARTE','TERCERO'].includes(pagador)) fail(400, 'pagador inválido');
  const monto = decimal(body.monto, 'monto');
  if (monto <= 0) fail(400, 'monto debe ser positivo');
+ // DECIMAL(18,2) permite más valores que los centavos exactos de JS Number.
+ // Limitamos el request a valores que pueden validarse sin pérdida de precisión.
+ if (!Number.isSafeInteger(Math.round(monto * 100))) {
+  fail(400, 'monto demasiado grande para procesarlo con precisión');
+ }
  const d = {
-  prevision: pid, fecha_pago: fecha(body.fecha_pago, 'fecha_pago', true), monto, pagador,
+  prevision: pid,
+  fecha_pago: fecha(body.fecha_pago, 'fecha_pago', true),
+  monto,
+  pagador,
   pagador_detalle: texto(body.pagador_detalle, 'pagador_detalle', 200),
   medio_pago: id(body.medio_pago, 'medio_pago'),
   referencia: texto(body.referencia, 'referencia', 200),
   storage_key: texto(body.storage_key, 'storage_key', 500),
-  observaciones: body.observaciones ?? null
+  observaciones: texto(body.observaciones, 'observaciones', 2147483647)
  };
- if (pagador !== 'CLIENTE' && !d.pagador_detalle) fail(400, 'pagador_detalle obligatorio');
+ if (pagador !== 'CLIENTE' && !d.pagador_detalle) {
+  fail(400, 'pagador_detalle es obligatorio para CONTRAPARTE o TERCERO');
+ }
+ let pagoCreadoId;
  await withTransaction(async tx => {
   const p = await exigirExistente(pid, tx);
   estados.exigirEditable(p);
-  if (!p.fecha_provisionado) fail(409,'Primero debe registrarse la previsión');
-  const l = await mov.vigente(pid, tx);
-  if (!l || l.estado_liquidacion !== 4 || l.total === null)
-    fail(409, 'Se requiere una liquidación vigente aprobada/firme con total');
-  const pagado = await mov.totalPagado(pid, tx);
-  if (Math.round((pagado + monto)*100) > Math.round(Number(l.total)*100))
-    fail(409, 'El pago supera el saldo de la liquidación vigente');
-  await mov.crearPago(d, tx);
+  if (!p.fecha_provisionado) fail(409, 'Primero debe registrarse la previsión');
+  if (!(await mov.existeMedioPago(d.medio_pago, tx))) fail(400, 'medio_pago inexistente');
+
+  const liq = await mov.vigente(pid, tx);
+  const resumen = await mov.resumenPagos(pid, tx);
+  const firme = liq && liq.estado_liquidacion === estados.LIQUIDACION_APROBADA && liq.total !== null;
+
+  if (p.modo === 'activo' && !firme) {
+   fail(409, 'En modo activo se requiere una liquidación vigente aprobada/firme');
+  }
+  // En modo seguimiento se permiten cobros aun sin liquidación firme.
+  // No se limita el cobro por monto_previsto porque es solo una estimación.
+  if (firme) {
+   const saldoCentavos = estados.aCentavos(liq.totalExacto) -
+     estados.aCentavos(resumen.totalPagadoExacto);
+   const pagoCentavos = estados.aCentavos(monto.toFixed(2));
+   if (saldoCentavos <= 0n) fail(409, 'La liquidación ya está totalmente pagada');
+   if (pagoCentavos > saldoCentavos) {
+    fail(409, `El pago supera el saldo disponible (${mostrarCentavos(saldoCentavos)})`);
+   }
+  }
+  pagoCreadoId = await mov.crearPago(d, tx);
   await estados.recalcular(pid, repo, mov, tx);
  });
- return obtener(pid);
+ const detalle = await obtener(pid);
+ return { ...detalle, pagoCreadoId };
 }
-module.exports = { listar, obtener, crear, actualizar, registrar, cambiarModo,
+
+module.exports = {
+ listar, obtener, obtenerPagos, obtenerPago, listarMediosPago,
+ crear, actualizar, registrar, cambiarModo,
  listarLiquidaciones, listarPagos, crearLiquidacion, cambiarEstadoLiquidacion,
- crearPago, calcular: calculo.previsualizar };
+ crearPago, calcular: calculo.previsualizar
+};
