@@ -1,0 +1,17 @@
+const router = require('express').Router();
+const controller = require('../controllers/previsiones.controller');
+const authMiddleware = require('../middlewares/auth.middleware');
+router.use(authMiddleware);
+router.get('/', controller.listar);
+router.get('/liquidaciones', controller.listarLiquidaciones);
+router.get('/pagos', controller.listarPagos);
+router.post('/calcular', controller.calcular);
+router.get('/:id', controller.obtener);
+router.post('/', controller.crear);
+router.put('/:id', controller.actualizar);
+router.post('/:id/registrar', controller.registrar);
+router.post('/:id/liquidaciones', controller.crearLiquidacion);
+router.patch('/:id/liquidaciones/:liqId', controller.cambiarEstadoLiquidacion);
+router.post('/:id/pagos', controller.crearPago);
+router.patch('/:id/modo', controller.cambiarModo);
+module.exports = router;
