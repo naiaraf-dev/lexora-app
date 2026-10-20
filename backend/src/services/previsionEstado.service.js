@@ -85,7 +85,8 @@ function contexto(p, d) {
         saldo,
         haySaldo: saldo !== null && saldo > 0,
         tieneHonorarios: d.items.some(i => i.conceptoNombre === 'Honorarios'),
-        notificacion: d.acreditaciones.find(a => a.ordena_notificar && a.tareaEstado !== 2) ?? null,
+        // estado_tarea 2 = Cumplido y 4 = No procedente resuelven la notificación.
+        notificacion: d.acreditaciones.find(a => a.ordena_notificar && ![2, 4].includes(a.tareaEstado)) ?? null,
         vencimiento,
         intimacionVencida: !!vencimiento && vencimiento < hoy(),
     };

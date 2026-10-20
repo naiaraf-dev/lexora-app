@@ -7,7 +7,7 @@ import { toast } from 'ngx-sonner';
 import { environment } from '../../../../../environments/environment';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { EstadosService } from '../../services/estados.service';
-import { EstadoDefinicion, EstadoExpedienteRuntime, EstadoRegistrado, TareaChecklist } from '../../models/estado.model';
+import { EstadoDefinicion, EstadoExpedienteRuntime, EstadoRegistrado, TareaChecklist, esEstadoFinalizado } from '../../models/estado.model';
 import { TareaChecklistItem } from '../tarea-checklist-item/tarea-checklist-item';
 import { TareaChecklistDetalle, TareaChecklistPayload } from '../tarea-checklist-detalle/tarea-checklist-detalle';
 import { Auth } from '../../../../core/services/auth';
@@ -102,13 +102,16 @@ export class Estados implements OnInit {
     return tareas.length > 0 && tareas.every(t => t.estado !== 'EN_CURSO');
   }
 
+  /** Opciones del modal "Avanzar estado": solo las transiciones de transicion_estado (Finalizado ya viene al final). */
   get opcionesAvance(): string[] {
-    if (this.runtime?.estadoActual === 'FINALIZADO') return [];
+    if (esEstadoFinalizado(this.runtime?.estadoActual)) return [];
 
     const definicion = this.flujo.find(e => e.nombre === this.runtime?.estadoActual);
-    const siguientes = definicion?.siguientes ?? [];
+    return definicion?.siguientes ?? [];
+  }
 
-    return siguientes.includes('FINALIZADO') ? siguientes : [...siguientes, 'FINALIZADO'];
+  esFinalizado(nombre: string): boolean {
+    return esEstadoFinalizado(nombre);
   }
 
   /** True si el expediente ya transitó por este estado (hay datos cargados para mostrar). */

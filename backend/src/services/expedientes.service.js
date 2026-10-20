@@ -493,12 +493,13 @@ async function actualizar(id, data) {
 
         /*
          * Antes de cambiar de estado verifica que no haya
-         * tareas automáticas sin cumplir.
+         * tareas automáticas sin resolver.
          *
          * estado_tarea:
-         * 1 = Pendiente  -> bloquea
-         * 2 = Cumplido   -> permite
-         * 3 = Vencido    -> bloquea
+         * 1 = Pendiente      -> bloquea
+         * 2 = Cumplido       -> permite
+         * 3 = Vencido        -> bloquea
+         * 4 = No procedente  -> permite
          */
         await tareasAutomaticasService.validarPuedeCambiarEstado(
             Number(id),

@@ -350,7 +350,7 @@ export class PrevisionService {
       documento: this.documento(a.documento, a.documentoNombre),
       ordenaNotificar: !!a.ordena_notificar,
       tareaId: a.tarea ?? null,
-      notificacionCumplida: a.tareaEstado === 2,   // estado_tarea 2 = Cumplido
+      notificacionCumplida: a.tareaEstado === 2 || a.tareaEstado === 4,   // estado_tarea 2 = Cumplido, 4 = No procedente
     };
   }
 

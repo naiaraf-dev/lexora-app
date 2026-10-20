@@ -7,7 +7,8 @@ export interface TareaAsociada {
   titulo: string;
   fechaVencimiento: string; // ISO
   hora?: string;
-  prioridad: string;
+  prioridad: string;          // id para el select al editar
+  prioridadNombre?: string;   // nombre (Baja, Media, Alta, Urgente) para el color del badge
   responsable: string;        // id para el select al editar
   responsableNombre: string;  // nombre para mostrar en la card
   descripcionInstrucciones: string;
@@ -35,15 +36,16 @@ export interface Novedad {
   tarea?: TareaAsociada;    // opcional — novedad puede no tener tarea
 }
 
-// Badge config por tipo de novedad
+// Badge config por tipo de novedad.
+// Variantes dark: mismo criterio que BADGE_ESTADO de previsión (fondo 900/30, texto 400; gris → slate).
 export const NOVEDAD_BADGE: Record<string, { label: string; classes: string }> = {
-  Audiencia:     { label: 'Audiencia',     classes: 'bg-yellow-100 text-yellow-700' },
-  Presentación:  { label: 'Presentación',  classes: 'bg-blue-100 text-blue-600' },
-  Notificación:  { label: 'Notificación',  classes: 'bg-orange-100 text-orange-600' },
-  Vencimiento:   { label: 'Vencimiento',   classes: 'bg-red-100 text-red-600' },
-  Llamada:       { label: 'Llamada',       classes: 'bg-green-100 text-green-700' },
-  Reunión:       { label: 'Reunión',       classes: 'bg-purple-100 text-purple-600' },
-  Observación:   { label: 'Observación',   classes: 'bg-gray-100 text-gray-500' },
+  Audiencia:     { label: 'Audiencia',     classes: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+  Presentación:  { label: 'Presentación',  classes: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+  Notificación:  { label: 'Notificación',  classes: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' },
+  Vencimiento:   { label: 'Vencimiento',   classes: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
+  Llamada:       { label: 'Llamada',       classes: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+  Reunión:       { label: 'Reunión',       classes: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
+  Observación:   { label: 'Observación',   classes: 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300' },
 };
 
 /**
@@ -68,20 +70,20 @@ export class NovedadesCard {
   get badge() {
     return NOVEDAD_BADGE[this.novedad.tipoLabel] ?? {
       label: this.novedad.tipoLabel,
-      classes: 'bg-gray-100 text-gray-500',
+      classes: 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300',
     };
   }
 
   /** Retorna las clases Tailwind del badge de prioridad de la tarea asociada. */
   get prioridadClasses(): string {
     const map: Record<string, string> = {
-      Alta:    'bg-red-100 text-red-600',
-      Media:   'bg-yellow-100 text-yellow-700',
-      Baja:    'bg-green-100 text-green-700',
-      Urgente: 'bg-rose-100 text-rose-700',
+      Alta:    'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+      Media:   'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      Baja:    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+      Urgente: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
     };
 
-    return this.novedad.tarea ? (map[this.novedad.tarea.prioridad] ?? '') : '';
+    return this.novedad.tarea ? (map[this.novedad.tarea.prioridadNombre ?? ''] ?? '') : '';
   }
 
   /** Abre el documento en nueva pestaña usando el endpoint de descarga por ID. */

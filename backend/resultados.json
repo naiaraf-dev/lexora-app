@@ -1,0 +1,201 @@
+{
+  "ctx": {
+    "usuario": {
+      "id": 8,
+      "email": "prueba.fixestados@lexora.test"
+    },
+    "A": 34,
+    "tareasInicio": 18,
+    "B": 35,
+    "C": 36,
+    "previsionC": 1,
+    "D": 37,
+    "D_tareaPendiente": 386,
+    "agendaApi": {
+      "marcar": 200,
+      "estadoTrasMarcar": 2,
+      "desmarcar": 200,
+      "estadoTrasDesmarcar": 1,
+      "listadoTareas": 200
+    }
+  },
+  "resultados": [
+    {
+      "caso": 2,
+      "descripcion": "Inicio con 1 tarea Pendiente, avanzar a Traba de litis",
+      "esperado": "409, sin cambios",
+      "obtenido": "409 \"Todavía tiene 1 tarea automática pendiente o vencida. Cada una tiene que estar Cumplida o No procedente antes de cambiar de estado.\"",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        },
+        "despues": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        }
+      }
+    },
+    {
+      "caso": 3,
+      "descripcion": "Inicio con 1 tarea Vencido (estado 3), avanzar a Traba de litis",
+      "esperado": "409, sin cambios",
+      "obtenido": "409 \"Todavía tiene 1 tarea automática pendiente o vencida. Cada una tiene que estar Cumplida o No procedente antes de cambiar de estado.\"",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        },
+        "despues": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        }
+      }
+    },
+    {
+      "caso": 1,
+      "descripcion": "Inicio con 16 Cumplidas + 2 No procedente, avanzar a Traba de litis (intermedio)",
+      "esperado": "200, estado 5, +7 tareas, +1 historial",
+      "obtenido": "200, estado 5, tareas 18→25, historial 1→2",
+      "ok": true,
+      "detalle": {
+        "putTareaNoProcedente": 200,
+        "distribucionAntes": [
+          {
+            "estado_tarea": 2,
+            "n": 16
+          },
+          {
+            "estado_tarea": 4,
+            "n": 2
+          }
+        ],
+        "antes": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        },
+        "despues": {
+          "estado": 5,
+          "tareas": 25,
+          "historial": 2
+        }
+      }
+    },
+    {
+      "caso": 4,
+      "descripcion": "Inicio con todas las tareas en No procedente, avanzar a Traba de litis",
+      "esperado": "200, estado 5",
+      "obtenido": "200, estado 5, historial 1→2",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 1,
+          "tareas": 18,
+          "historial": 1
+        },
+        "despues": {
+          "estado": 5,
+          "tareas": 25,
+          "historial": 2
+        }
+      }
+    },
+    {
+      "caso": 5,
+      "descripcion": "Traba de litis con automáticas Cumplidas + 1 tarea automatica=0 Pendiente, avanzar a Prueba",
+      "esperado": "200 (la manual no bloquea)",
+      "obtenido": "200, estado 6, manuales pendientes 1",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 5,
+          "tareas": 26,
+          "historial": 2
+        },
+        "despues": {
+          "estado": 6,
+          "tareas": 39,
+          "historial": 3
+        }
+      }
+    },
+    {
+      "caso": 9,
+      "descripcion": "Ejecución de sentencia con 11 tareas Pendientes y 1 previsión abierta, finalizar",
+      "esperado": "409 de previsiones primero, sin cambios",
+      "obtenido": "409 \"El expediente tiene 1 previsión sin cerrar. Cerralas antes de finalizarlo.\"",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 17,
+          "tareas": 70,
+          "historial": 8
+        },
+        "despues": {
+          "estado": 17,
+          "tareas": 70,
+          "historial": 8
+        }
+      }
+    },
+    {
+      "caso": 7,
+      "descripcion": "Tareas resueltas (Cumplidas + 1 No procedente) y 1 previsión abierta, finalizar",
+      "esperado": "409 de previsiones; sin cambio de estado, tareas ni historial",
+      "obtenido": "409 \"El expediente tiene 1 previsión sin cerrar. Cerralas antes de finalizarlo.\"",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 17,
+          "tareas": 70,
+          "historial": 8
+        },
+        "despues": {
+          "estado": 17,
+          "tareas": 70,
+          "historial": 8
+        }
+      }
+    },
+    {
+      "caso": 11,
+      "descripcion": "Previsión Acreditada con notificación: tarea Pendiente → cerrar; tarea No procedente → cerrar",
+      "esperado": "Pendiente: 409 y marca \"Notificación pendiente\"; No procedente: sin marca y cierra (estado 8)",
+      "obtenido": "Pendiente: 409 \"Hay una notificación pendiente: cumplí la tarea antes de cerrar\", marca=true; No procedente: marca=false, cerrar 200, estado 8",
+      "ok": true,
+      "detalle": {
+        "marcasPendiente": [
+          "Notificación pendiente"
+        ],
+        "marcasNP": [],
+        "alertasNP": []
+      }
+    },
+    {
+      "caso": 8,
+      "descripcion": "Previsión cerrada (estado 8) y tareas resueltas, finalizar",
+      "esperado": "200, estado 21, +6 tareas de Finalizado, +1 historial",
+      "obtenido": "200, estado 21, tareas 71→77, historial 8→9",
+      "ok": true,
+      "detalle": {
+        "antes": {
+          "estado": 17,
+          "tareas": 71,
+          "historial": 8
+        },
+        "despues": {
+          "estado": 21,
+          "tareas": 77,
+          "historial": 9
+        }
+      }
+    }
+  ]
+}

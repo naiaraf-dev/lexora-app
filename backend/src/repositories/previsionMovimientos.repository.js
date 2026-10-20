@@ -210,12 +210,13 @@ async function getAcreditaciones(prevision, tx = null) {
  return out.recordset;
 }
 
-// Hay una acreditación que ordenó notificar y su tarea todavía no está Cumplida.
+// Hay una acreditación que ordenó notificar y su tarea todavía no está resuelta
+// (estado_tarea 2 = Cumplido y 4 = No procedente la resuelven).
 async function notificacionPendiente(prevision, tx = null) {
  const r = await request(tx);
  const out = await r.input('prevision', sql.Int, prevision)
   .query(`SELECT TOP 1 1 AS hay FROM acreditacion a JOIN tarea t ON t.id = a.tarea
-      WHERE a.prevision = @prevision AND a.activo = 1 AND a.ordena_notificar = 1 AND t.estado_tarea <> 2`);
+      WHERE a.prevision = @prevision AND a.activo = 1 AND a.ordena_notificar = 1 AND t.estado_tarea NOT IN (2, 4)`);
  return out.recordset.length > 0;
 }
 
