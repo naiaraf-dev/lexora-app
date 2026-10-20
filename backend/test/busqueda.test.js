@@ -64,6 +64,7 @@ describe('normalizarFiltros', () => {
     test('convierte un numero interno del texto en id de expediente', () => {
         const f = normalizarFiltros({ texto: 'EXP-2025-128' });
         assert.equal(f.expedienteId, 128);
+        assert.equal(f.anioExpediente, 2025);
         assert.equal(f.texto, undefined);
     });
 
@@ -130,10 +131,16 @@ describe('armarFiltroExpedientes', () => {
         assert.deepEqual(valores(filtro), ['%12345/2025%']);
     });
 
-    test('un numero interno filtra por id', () => {
+    test('un numero interno filtra por id y por el año de creacion', () => {
         const filtro = armarFiltroExpedientes(normalizarFiltros({ texto: 'EXP-2025-128' }));
         assert.ok(filtro.condiciones.includes('e.id = @p0'));
-        assert.deepEqual(valores(filtro), [128]);
+        assert.ok(filtro.condiciones.includes('YEAR(e.fecha_creacion) = @p1'));
+        assert.deepEqual(valores(filtro), [128, 2025]);
+    });
+
+    test('un expedienteId suelto no filtra por año', () => {
+        const filtro = armarFiltroExpedientes(normalizarFiltros({ expedienteId: 128 }));
+        assert.ok(!filtro.condiciones.some((c) => c.includes('YEAR(')));
     });
 
     test('filtra por estado y area', () => {

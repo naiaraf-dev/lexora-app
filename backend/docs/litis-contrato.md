@@ -157,6 +157,9 @@ Las herramientas son las funciones del backend que la IA puede pedir que se ejec
 | `description` | Cuándo usar la herramienta. La lee la IA para decidir. |
 | `input_schema` | JSON Schema de los parámetros que acepta. |
 | `ejecutar(input, ctx)` | Función asíncrona que ejecuta la herramienta y devuelve `{ resumen, items }`. |
+| `soloModoExpediente` | Opcional. Si es `true`, la herramienta solo se ofrece a la IA cuando Litis se usa desde un expediente (HU37). |
+
+Las herramientas se registran en `backend/src/asistente/herramientas/index.js`. Sumar una no requiere tocar el ciclo de conversación.
 
 `ctx` contiene:
 
@@ -164,6 +167,7 @@ Las herramientas son las funciones del backend que la IA puede pedir que se ejec
 |---|---|
 | `usuario` | Usuario logueado (`req.usuario`). Las herramientas siempre trabajan con su identidad. |
 | `expedienteId` | Expediente resuelto desde `contexto`, si Litis se usa en modo expediente (HU37). |
+| `numeroExpediente` | Número interno de ese expediente (`EXP-año-id`), para armar los `items`. |
 
 `ejecutar` devuelve:
 
@@ -171,6 +175,7 @@ Las herramientas son las funciones del backend que la IA puede pedir que se ejec
 |---|---|
 | `resumen` | Lo que ve la IA: datos mínimos de cada resultado (id, título, tipo, fecha). Nunca contenido de archivos, DNI ni CUIT. |
 | `items` | Lo que va al front como tarjetas, con el formato `ResultadoLitis`. |
+| `contenido` | Opcional. Bloques de contenido (documento PDF o imagen en base64) que se le envían a la IA junto con el `resumen`. Solo lo usa `leer_documento` (HU45): el archivo se lee en el momento, no se guarda y nunca va al front. |
 
 ```js
 /**
@@ -181,11 +186,13 @@ Las herramientas son las funciones del backend que la IA puede pedir que se ejec
  * @typedef {Object} ResultadoHerramienta
  * @property {Object[]} resumen         - lo que ve la IA
  * @property {Object[]} items           - ResultadoLitis[] para el front
+ * @property {Object[]} [contenido]     - bloques que solo ve la IA (HU45)
  *
  * @typedef {Object} Herramienta
  * @property {string} name
  * @property {string} description
  * @property {Object} input_schema
+ * @property {boolean} [soloModoExpediente]
  * @property {(input: Object, ctx: ContextoHerramienta) => Promise<ResultadoHerramienta>} ejecutar
  */
 ```

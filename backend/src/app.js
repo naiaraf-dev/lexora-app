@@ -19,6 +19,7 @@ const enumsRoutes = require('./routes/enums.routes');
 const tareasAutomaticasRoutes = require('./routes/tareasAutomaticas.routes');
 const tasasRoutes = require('./routes/tasas.routes');
 const asistenteDocumentosRoutes = require('./routes/asistenteDocumentos.routes');
+const asistenteRoutes = require('./routes/asistente.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -100,6 +101,7 @@ app.use('/api', enumsRoutes);
     ASISTENTE LITIS
 */
 app.use('/api/asistente/documentos', asistenteDocumentosRoutes);
+app.use('/api/asistente', asistenteRoutes);
 
 
 module.exports = app;
