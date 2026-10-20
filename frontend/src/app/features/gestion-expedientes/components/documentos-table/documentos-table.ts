@@ -65,6 +65,13 @@ export class DocumentosTable {
         SENTENCIA: { label: 'Sentencia', classes: 'bg-rose-100 text-rose-600',     dot: 'bg-rose-500' },
         NOTIFICACION: { label: 'Notificación', classes: 'bg-orange-100 text-orange-600', dot: 'bg-orange-500' },
         PODER:        { label: 'Poder',        classes: 'bg-teal-100 text-teal-600',     dot: 'bg-teal-500'   },
+        // Tipos que agrega el módulo Previsión y pago (script 001)
+        RESOLUCION:        { label: 'Resolución',          classes: 'bg-rose-100 text-rose-600',       dot: 'bg-rose-500'    },
+        LIQUIDACION:       { label: 'Liquidación',         classes: 'bg-cyan-100 text-cyan-600',       dot: 'bg-cyan-500'    },
+        NOTA:              { label: 'Nota',                classes: 'bg-sky-100 text-sky-600',         dot: 'bg-sky-500'     },
+        COMPROBANTEDEPAGO: { label: 'Comprobante de pago', classes: 'bg-green-100 text-green-600',     dot: 'bg-green-500'   },
+        FACTURA:           { label: 'Factura',             classes: 'bg-lime-100 text-lime-700',       dot: 'bg-lime-500'    },
+        PROVEIDO:          { label: 'Proveído',            classes: 'bg-fuchsia-100 text-fuchsia-600', dot: 'bg-fuchsia-500' },
         OTRO:         { label: 'Otro',         classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400'   },
       }
     },

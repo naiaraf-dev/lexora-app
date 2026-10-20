@@ -41,6 +41,7 @@ export class LogView implements OnInit {
   moduloOpts    = [
     { label: 'Expedientes', value: 'Expedientes' },
     { label: 'Clientes',    value: 'Clientes'    },
+    { label: 'Previsiones', value: 'Previsiones' },
     { label: 'Documentos',  value: 'Documentos'  },
     { label: 'Agenda',      value: 'Agenda'      },
     { label: 'Reportes',    value: 'Reportes'    },
@@ -79,6 +80,7 @@ export class LogView implements OnInit {
       badgeConfig: {
         'Expedientes': { label: 'Expedientes', classes: 'bg-primary/10 text-primary',   dot: 'bg-primary'   },
         'Clientes':    { label: 'Clientes',    classes: 'bg-pink-100 dark:bg-pink-900/30 text-pink-500 dark:text-pink-400',     dot: 'bg-pink-400'  },
+        'Previsiones': { label: 'Previsiones', classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
         'Agenda':      { label: 'Agenda',      classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400', dot: 'bg-purple-400'},
         'Reportes':    { label: 'Reportes',    classes: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',     dot: 'bg-teal-500'  },
         'Sistema':     { label: 'Sistema',     classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',     dot: 'bg-gray-400'  },

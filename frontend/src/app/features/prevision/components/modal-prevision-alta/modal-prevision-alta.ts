@@ -9,8 +9,8 @@ import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { ExpedientesService } from '../../../gestion-expedientes/services/expedientes.service';
 import { PrevisionService } from '../../services/prevision.service';
-import { CalculoResultado, ModoPrevision, NuevaPrevision, Obligado, PrevisionDetalle } from '../../models/prevision.model';
-import { MODO_OPTIONS, OBLIGADO_OPTIONS, formatMonto, modoPorObligado } from '../../models/prevision.constants';
+import { ModoPrevision, NuevaPrevision, Obligado, PrevisionDetalle, TasaVigente } from '../../models/prevision.model';
+import { MODO_OPTIONS, OBLIGADO_OPTIONS, formatFecha, formatMonto, modoPorObligado } from '../../models/prevision.constants';
 import { TASAS_CONFIG } from '../../models/tasas-config';
 
 /** Lo que el modal necesita del expediente (sale de GET /api/expedientes y /api/expedientes/:id). */
@@ -56,7 +56,7 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
 
   paso: 1 | 2 = 1;
   guardando = false;
-  calculando = false;
+  consultandoTasa = false;
   buscando = false;
 
   // ---------- Paso 1: búsqueda ----------
@@ -79,9 +79,11 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
 
   form = this.formVacio();
   items: ItemForm[] = [this.itemVacio()];
-  calculo: CalculoResultado | null = null;
+  /** Último valor publicado de la tasa elegida: referencia que se guarda con la previsión. */
+  tasaVigente: TasaVigente | null = null;
 
   formatMonto = formatMonto;
+  formatFecha = formatFecha;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) this.iniciar();
@@ -168,8 +170,8 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
       estado: e.estado?.nombre ?? '',
       cliente: e.cliente?.nombre ?? '—',
       contraparte: e.contraparte ?? '',
-      // 🔴 Hasta que el back devuelva habilitaPrevision (sale de tipoestadoexpediente), se asume true
-      habilitaPrevision: e.habilitaPrevision ?? true,
+      // Sale de tipoestadoexpediente.habilita_prevision para el tipo y el estado actual (sección 3)
+      habilitaPrevision: e.habilitaPrevision === true,
       principalNumero: e.causa?.expedientePrincipalId && e.causa.expedientePrincipalId !== e.id
         ? (e.causa.principalNumero ?? String(e.causa.expedientePrincipalId))
         : null,
@@ -213,33 +215,33 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
     return this.items.reduce((s, i) => s + this.parseMonto(i.monto), 0);
   }
 
-  // ---------- Cálculo ----------
+  // ---------- Monto previsto ----------
 
-  /** Proyecta el monto base hasta la fecha estimada de pago con la tasa elegida (POST /calcular). */
-  calcular(): void {
-    const montoBase = this.parseMonto(this.form.montoBase);
-    if (!montoBase) { toast.error('Ingresá el monto base'); return; }
-    if (!this.form.fechaResolucion || !this.form.fechaEstimadaPago) {
-      toast.error('Completá la fecha de resolución y la fecha estimada de pago');
-      return;
-    }
+  /** Monto previsto = monto base + intereses estimados (los intereses los ingresa el abogado). */
+  get montoPrevisto(): number {
+    return this.parseMonto(this.form.montoBase) + this.parseMonto(this.form.interesesEstimados);
+  }
+
+  /** Si se cambia la tasa, la referencia traída deja de corresponder. */
+  onTasaChange(tasa: string): void {
+    this.form.tasa = tasa;
+    this.tasaVigente = null;
+  }
+
+  /** Trae el último valor publicado de la tasa en el CPACF. No calcula nada: es una referencia. */
+  traerTasaVigente(): void {
     if (!this.form.tasa) { toast.error('Elegí una tasa'); return; }
-
-    this.calculando = true;
-    this.previsionService.calcular({
-      montoBase,
-      tasa: this.form.tasa,
-      fechaDesde: this.form.fechaResolucion,
-      fechaHasta: this.form.fechaEstimadaPago,
-    }).subscribe({
-      next: (r) => {
-        this.calculo = r;
-        this.calculando = false;
+    this.consultandoTasa = true;
+    this.previsionService.obtenerTasaVigente(this.form.tasa).subscribe({
+      next: (t) => {
+        this.tasaVigente = t;
+        this.consultandoTasa = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.calculando = false;
-        toast.error(err?.error?.mensaje ?? 'No se pudo calcular');
+        this.consultandoTasa = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudo consultar la tasa en el CPACF');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -257,6 +259,7 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
       toast.error('Indicá el nombre del obligado');
       return;
     }
+    if (!this.form.tasa) { toast.error('Elegí una tasa'); return; }
     const itemsValidos = this.items.filter(i => i.concepto && this.parseMonto(i.monto) > 0);
     if (!itemsValidos.length) {
       toast.error('Cargá al menos un ítem con concepto y monto');
@@ -274,7 +277,9 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
       fechaEstimadaPago: this.form.fechaEstimadaPago || null,
       ejercicio: this.form.ejercicio ? Number(this.form.ejercicio) : null,
       montoBase,
-      tasa: this.form.tasa || null,
+      interesesEstimados: this.form.interesesEstimados ? this.parseMonto(this.form.interesesEstimados) : null,
+      tasa: this.form.tasa,
+      tasaValor: this.tasaVigente?.nombre === this.form.tasa ? this.tasaVigente.valor : null,
       observaciones: this.form.observaciones || null,
       items: itemsValidos.map(i => ({
         concepto: i.concepto,
@@ -314,7 +319,7 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
     this.expediente = null;
     this.form = this.formVacio();
     this.items = [this.itemVacio()];
-    this.calculo = null;
+    this.tasaVigente = null;
   }
 
   private formVacio() {
@@ -328,6 +333,7 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
       fechaEstimadaPago: `${new Date().getFullYear()}-12-31`,
       ejercicio: '',
       montoBase: '',
+      interesesEstimados: '',
       tasa: TASA_DEFAULT,
       observaciones: '',
     };
@@ -338,7 +344,7 @@ export class ModalPrevisionAltaGlobal implements OnChanges {
   }
 
   /** "$ 5.000.000,50" → 5000000.5 */
-  private parseMonto(valor: string): number {
+  protected parseMonto(valor: string): number {
     if (!valor) return 0;
     const limpio = String(valor).replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
     const n = Number(limpio);

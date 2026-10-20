@@ -122,6 +122,7 @@ async function subirEInsertarDocumento(datos, file) {
         expediente,
         novedad,
         tarea,
+        prevision,
         usuario_creacion,
         tipo_documento
     } = datos;
@@ -204,6 +205,7 @@ async function subirEInsertarDocumento(datos, file) {
         expediente: Number(expediente),
         novedad: novedad ? Number(novedad) : null,
         tarea: tarea ? Number(tarea) : null,
+        prevision: prevision ? Number(prevision) : null,
         usuario_creacion: Number(usuario_creacion),
         tipo_documento: Number(tipo_documento)
     };
@@ -252,6 +254,16 @@ async function obtenerUrlDescargaDocumento(idDocumento) {
     };
 }
 
+// mensajes para cuando se intenta borrar un archivo que usa una prevision
+const MENSAJES_USO_PREVISION = {
+    pago: 'Este archivo es el comprobante de un pago de la previsión: anulá el pago antes de borrarlo.',
+    impulso: 'Este archivo es la nota de una solicitud de pago de la previsión y no se puede borrar desde Documentos.',
+    acreditacion: 'Este archivo es el proveído de una acreditación de la previsión y no se puede borrar desde Documentos.',
+    intimacion: 'Este archivo es la cédula o el proveído de una intimación de la previsión y no se puede borrar desde Documentos.',
+    factura: 'Este archivo es la factura de honorarios de la previsión: reemplazala desde la previsión.',
+    anulado: 'Este archivo respalda un movimiento anulado de la previsión y se conserva como registro.'
+};
+
 // elimina el archivo de cloudinary y despues borra el registro de la base
 async function eliminarDocumento(idDocumento) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
@@ -265,6 +277,16 @@ async function eliminarDocumento(idDocumento) {
     if (!documento) {
         const error = new Error(`No existe un documento con id ${idDocumento}`);
         error.statusCode = 404;
+        throw error;
+    }
+
+    // si el archivo respalda un movimiento de una prevision, no se borra desde aca:
+    // se corrige desde la prevision (por ejemplo, anulando el pago)
+    const uso = await documentosRepository.obtenerUsoEnPrevision(Number(idDocumento));
+
+    if (uso) {
+        const error = new Error(MENSAJES_USO_PREVISION[uso]);
+        error.statusCode = 409;
         throw error;
     }
 

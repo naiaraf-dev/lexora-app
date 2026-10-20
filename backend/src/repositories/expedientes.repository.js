@@ -58,7 +58,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
             ee.id                          AS estadoId,
             ee.nombre                      AS estadoNombre,
             c.id                           AS clienteId,
-            c.nombre + ' ' + c.apellido    AS clienteNombre,
+            LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+            CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
             u.id                           AS usuarioPrincipalId,
             u.nombre + ' ' + u.apellido    AS usuarioPrincipalNombre,
             COUNT(*) OVER()                AS totalRegistros
@@ -67,6 +68,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
         LEFT JOIN estadoexpediente ee ON ee.id = e.estado_expediente
         LEFT JOIN cliente          c  ON c.id  = e.cliente
         LEFT JOIN usuario          u  ON u.id  = e.usuario_principal
+        LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                          AND tee.estadoexpediente = e.estado_expediente
         ${where}
         ORDER BY e.fecha_ultima_modificacion DESC
         OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
@@ -87,7 +90,8 @@ async function getById(id) {
                 te.nombre                       AS tipoNombre,
                 ee.nombre                       AS estadoNombre,
                 c.id                            AS clienteId,
-                c.nombre + ' ' + c.apellido     AS clienteNombre,
+                LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+                CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
                 up.id                           AS usuarioPrincipalId,
                 up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre,
                 us.id                           AS usuarioSecundarioId,
@@ -108,6 +112,8 @@ async function getById(id) {
             LEFT JOIN rolcliente       rc  ON rc.id  = e.rol_cliente
             LEFT JOIN causa            ca  ON ca.id  = e.causa_id AND ca.activo = 1
             LEFT JOIN expediente       ep  ON ep.id  = ca.expediente_principal_id
+            LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                              AND tee.estadoexpediente = e.estado_expediente
             WHERE e.id = @id AND e.activo = 1
         `);
 

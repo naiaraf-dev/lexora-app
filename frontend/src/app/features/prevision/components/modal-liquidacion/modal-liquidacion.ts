@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
@@ -9,8 +9,8 @@ import { UiSelect, UiSelectOption } from '../../../../shared/components/ui-selec
 import { toast } from 'ngx-sonner';
 import { TASAS_CONFIG, getTasaConfig, GrupoTasa } from '../../models/tasas-config';
 import { PrevisionService } from '../../services/prevision.service';
-import { CalculoResultado, EstadoLiquidacion, PrevisionDetalle } from '../../models/prevision.model';
-import { formatFecha, formatMonto } from '../../models/prevision.constants';
+import { EstadoLiquidacion, PrevisionDetalle, TasaVigente } from '../../models/prevision.model';
+import { formatFecha, formatMonto, hoyISO } from '../../models/prevision.constants';
 
 interface Tramo {
   id: string;
@@ -33,18 +33,19 @@ export class ModalLiquidacion implements OnChanges {
   @Output() guardado = new EventEmitter<PrevisionDetalle>();
 
   private previsionService = inject(PrevisionService);
+  private cdr = inject(ChangeDetectorRef);
 
   guardando = false;
-  calculando = false;
+  consultandoTasa = false;
 
   form = this.formVacio();
 
-  // Catálogo real de tasas (viene de tasas-config.ts, que refleja lo que el back puede consultar en CPACF)
+  // Catálogo real de tasas (viene de tasas-config.ts, con los mismos nombres que la tabla tasa)
   tipoTasaOptions = TASAS_CONFIG.map(t => ({ value: t.nombre, label: t.nombre }));
   estadoLiquidacionOptions: UiSelectOption[] = [];
 
-  /** Vista previa del back. Al guardar, el back vuelve a calcular con los mismos datos. */
-  calculo: CalculoResultado | null = null;
+  /** Último valor publicado de la tasa elegida: referencia que se guarda en la liquidación. */
+  tasaVigente: TasaVigente | null = null;
 
   formatMonto = formatMonto;
   formatFecha = formatFecha;
@@ -54,9 +55,16 @@ export class ModalLiquidacion implements OnChanges {
     return cfg?.grupo ?? null;
   }
 
-  // Ítems calculadora propia (Grupo C) — placeholder, no se calcula por scraping
+  // Calculadoras propias (Grupo C): el CPACF no publica un valor de tasa
   esCalculadoraPropia(): boolean {
     return this.grupoTasaSeleccionada === 'CALCULADORA';
+  }
+
+  /** Total = capital + intereses + otros. Es una suma; el back la vuelve a verificar al guardar. */
+  get total(): number {
+    const centavos = [this.form.capital, this.form.intereses, this.form.otros]
+      .reduce((s, v) => s + Math.round(this.parseMonto(v) * 100), 0);
+    return centavos / 100;
   }
 
   tramos: Tramo[] = [
@@ -76,46 +84,44 @@ export class ModalLiquidacion implements OnChanges {
     if (changes['open'] && this.open) this.precargar();
   }
 
-  /** Arranca con los datos de la previsión: mismo monto base, desde la resolución hasta hoy, misma tasa. */
+  /** Arranca con los datos de la previsión: capital = monto base, desde la resolución hasta hoy, misma tasa. */
   private precargar(): void {
     if (!this.estadoLiquidacionOptions.length) {
       this.previsionService.obtenerCatalogo('estadoliquidacion').subscribe(o => (this.estadoLiquidacionOptions = o));
     }
     this.form = this.formVacio();
-    this.calculo = null;
+    this.tasaVigente = null;
     const p = this.prevision;
     if (!p) return;
-    this.form.montoBase = p.montoBase.toLocaleString('es-AR');
+    this.form.capital = p.montoBase.toLocaleString('es-AR');
     this.form.fechaDesde = p.fechaResolucion ?? '';
     this.form.tipoTasa = p.tasa ?? '';
   }
 
-  calcular() {
+  /** Si se cambia la tasa, la referencia traída deja de corresponder. */
+  onTasaChange(tasa: string): void {
+    this.form.tipoTasa = tasa;
+    this.tasaVigente = null;
+  }
+
+  /** Trae el último valor publicado de la tasa en el CPACF. No calcula intereses: es una referencia. */
+  traerTasaVigente(): void {
     if (!this.form.tipoTasa) { toast.error('Seleccioná una tasa'); return; }
-    const montoBase = this.parseMonto(this.form.montoBase);
-    if (!montoBase) { toast.error('Ingresá el monto base'); return; }
-    if (!this.form.fechaDesde || !this.form.fechaHasta) { toast.error('Completá fecha desde y hasta'); return; }
     if (this.esCalculadoraPropia()) {
-      toast.error('Esta tasa requiere una calculadora especial — todavía no está implementada en el sistema');
+      toast.error('Esta opción del CPACF es una calculadora y no publica un valor de tasa. Ingresá los montos a mano.');
       return;
     }
-
-    this.calculando = true;
-    this.previsionService.calcular({
-      montoBase,
-      tasa: this.form.tipoTasa,
-      fechaDesde: this.form.fechaDesde,
-      fechaHasta: this.form.fechaHasta,
-      otros: this.parseMonto(this.form.otrosConceptos),
-    }).subscribe({
-      next: (r) => {
-        this.calculando = false;
-        this.calculo = r;
-        toast.success('Cálculo generado');
+    this.consultandoTasa = true;
+    this.previsionService.obtenerTasaVigente(this.form.tipoTasa).subscribe({
+      next: (t) => {
+        this.consultandoTasa = false;
+        this.tasaVigente = t;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.calculando = false;
+        this.consultandoTasa = false;
         toast.error(err?.error?.mensaje ?? 'No se pudo consultar la tasa en el CPACF');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -123,20 +129,28 @@ export class ModalLiquidacion implements OnChanges {
   guardar() {
     const p = this.prevision;
     if (!p) return;
-    if (!this.calculo) { toast.error('Calculá la liquidación antes de guardar'); return; }
     if (!this.form.fechaLiquidacion || !this.form.estadoLiquidacion) {
       toast.error('Completá la fecha y el estado procesal');
       return;
     }
+    if (!this.form.tipoTasa) { toast.error('Seleccioná una tasa'); return; }
+    if (!this.form.fechaDesde || !this.form.fechaHasta) { toast.error('Completá fecha desde y hasta'); return; }
+    if (this.form.fechaDesde > this.form.fechaHasta) { toast.error('La fecha desde no puede ser posterior a la fecha hasta'); return; }
+    if (!this.form.capital) { toast.error('Ingresá el capital'); return; }
 
+    const referencia = this.tasaVigente?.nombre === this.form.tipoTasa ? this.tasaVigente : null;
     this.guardando = true;
     this.previsionService.crearLiquidacion(p.id, {
-      montoBase: this.parseMonto(this.form.montoBase),
-      tasa: this.form.tipoTasa,
+      fechaLiquidacion: this.form.fechaLiquidacion,
       fechaDesde: this.form.fechaDesde,
       fechaHasta: this.form.fechaHasta,
-      otros: this.parseMonto(this.form.otrosConceptos),
-      fechaLiquidacion: this.form.fechaLiquidacion,
+      tasa: this.form.tipoTasa,
+      tasaValor: referencia?.valor ?? null,
+      tasaFechaPublicacion: referencia?.fechaPublicacion ?? null,
+      capital: this.parseMonto(this.form.capital),
+      intereses: this.parseMonto(this.form.intereses),
+      otros: this.parseMonto(this.form.otros),
+      total: this.total,
       estadoLiquidacion: this.form.estadoLiquidacion as EstadoLiquidacion,
       observaciones: this.form.observaciones || undefined,
     }).subscribe({
@@ -155,20 +169,22 @@ export class ModalLiquidacion implements OnChanges {
   }
 
   private formVacio() {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyISO();
     return {
       fechaLiquidacion: hoy,
       fechaDesde: '',
       fechaHasta: hoy,
-      montoBase: '',
+      capital: '',
+      intereses: '',
+      otros: '',
       tipoTasa: '',
-      otrosConceptos: '',
       estadoLiquidacion: 'Practicada',
       observaciones: '',
     };
   }
 
-  private parseMonto(valor: string): number {
+  /** "$ 5.000.000,50" → 5000000.5 */
+  protected parseMonto(valor: string): number {
     if (!valor) return 0;
     const limpio = String(valor).replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
     const n = Number(limpio);

@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { toast } from 'ngx-sonner';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { UiBadge } from '../../../../shared/components/ui-badge/ui-badge';
 import { ModalPrevisionAltaGlobal } from '../../../prevision/components/modal-prevision-alta/modal-prevision-alta';
@@ -53,8 +54,8 @@ export class Prevision implements OnInit {
     this.expedientesService.obtener(this.expedienteId).subscribe({
       next: (exp) => {
         this.expedienteNumero = exp.numeroInterno; // EXP-año-id, igual que en Gestión de expedientes
-        // 🔴 Hasta que el back devuelva habilitaPrevision (sale de tipoestadoexpediente), se asume true
-        this.habilitaPrevision = exp.habilitaPrevision ?? true;
+        // Sale de tipoestadoexpediente.habilita_prevision para el tipo y el estado actual (sección 3)
+        this.habilitaPrevision = exp.habilitaPrevision === true;
 
         const causa = exp.causa; // { id, numero, expedientePrincipalId, principalNumero } o null
         if (causa?.expedientePrincipalId && causa.expedientePrincipalId !== exp.id) {
@@ -74,10 +75,17 @@ export class Prevision implements OnInit {
   cargar(): void {
     this.cargando = true;
     const id = this.principal?.id ?? this.expedienteId;
-    this.previsionService.listarPorExpediente(id).subscribe(lista => {
-      this.previsiones = [...lista].sort((a, b) => b.id - a.id);
-      this.cargando = false;
-      this.cdr.detectChanges();
+    this.previsionService.listarPorExpediente(id).subscribe({
+      next: (lista) => {
+        this.previsiones = [...lista].sort((a, b) => b.id - a.id);
+        this.cargando = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.cargando = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudieron cargar las previsiones del expediente');
+        this.cdr.detectChanges();
+      },
     });
   }
 

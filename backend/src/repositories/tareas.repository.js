@@ -214,10 +214,14 @@ async function existeEstadoTarea(idEstadoTarea) {
 }
 
 // inserta una tarea nueva
-async function insertarTarea(tarea) {
-    const pool = await conectarBD();
+// si recibe una transaccion, inserta dentro de ella (lo usa previsiones: la tarea de
+// notificacion o de vencimiento se crea junto con la acreditacion o la intimacion)
+async function insertarTarea(tarea, transaction = null) {
+    const request = transaction
+        ? new sql.Request(transaction)
+        : (await conectarBD()).request();
 
-    const resultado = await pool.request()
+    const resultado = await request
         .input('expediente', sql.Int, tarea.expediente)
         .input('novedad', sql.Int, tarea.novedad || null)
         .input('usuario_creacion', sql.Int, tarea.usuario_creacion)

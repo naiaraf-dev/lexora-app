@@ -9,7 +9,7 @@ import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-bt
 import { toast } from 'ngx-sonner';
 import { PrevisionService } from '../../services/prevision.service';
 import { Obligado, PrevisionDetalle } from '../../models/prevision.model';
-import { OBLIGADO_LABEL, OBLIGADO_OPTIONS, formatMonto } from '../../models/prevision.constants';
+import { OBLIGADO_LABEL, OBLIGADO_OPTIONS, formatMonto, hoyISO } from '../../models/prevision.constants';
 
 @Component({
   selector: 'app-modal-pago',
@@ -51,8 +51,10 @@ export class ModalPago implements OnChanges {
     return !!this.prevision && this.form.pagador !== this.prevision.obligado;
   }
 
+  /** Solo avisa: el back acepta pagar de más (el saldo queda ≤ 0 y la previsión pasa a Pagado). */
   get superaSaldo(): boolean {
-    return !!this.prevision && this.parseMonto(this.form.monto) > this.prevision.saldo;
+    const saldo = this.prevision?.saldo;
+    return saldo !== null && saldo !== undefined && this.parseMonto(this.form.monto) > saldo;
   }
 
   private precargar(): void {
@@ -63,7 +65,8 @@ export class ModalPago implements OnChanges {
     }
     const p = this.prevision;
     if (!p) return;
-    this.form.monto = p.saldo.toLocaleString('es-AR');
+    // Monto sugerido = saldo (si hay saldo positivo)
+    this.form.monto = p.saldo !== null && p.saldo > 0 ? p.saldo.toLocaleString('es-AR') : '';
     this.onPagadorChange(p.obligado);
   }
 
@@ -133,7 +136,7 @@ export class ModalPago implements OnChanges {
 
   private formVacio() {
     return {
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: hoyISO(),
       monto: '',
       pagador: 'CLIENTE' as Obligado,
       pagadorDetalle: '',

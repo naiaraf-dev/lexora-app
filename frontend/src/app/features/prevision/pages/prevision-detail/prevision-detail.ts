@@ -10,17 +10,18 @@ import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date
 import { UiSelect, UiSelectOption } from '../../../../shared/components/ui-select/ui-select';
 import { UiBadge } from '../../../../shared/components/ui-badge/ui-badge';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 import { ModalLiquidacion } from '../../components/modal-liquidacion/modal-liquidacion';
 import { ModalPago } from '../../components/modal-pago/modal-pago';
 import { ModalVerComprobante } from '../../components/modal-ver-comprobante/modal-ver-comprobante';
 import { ModalAccionPrevision, TipoAccion } from '../../components/modal-accion-prevision/modal-accion-prevision';
 import { PrevisionService } from '../../services/prevision.service';
 import {
-  Acreditacion, DocumentoRef, EstadoLiquidacion, EstadoPrevision, Intimacion, Liquidacion, PrevisionDetalle, Prorrateo,
+  Acreditacion, DocumentoRef, EstadoLiquidacion, EstadoPrevision, Intimacion, Liquidacion, Pago, PrevisionDetalle, Prorrateo,
 } from '../../models/prevision.model';
 import {
   ACCIONES, BADGE_ESTADO, BADGE_LIQUIDACION, BADGE_MODO, MARCA_CLASES, MARCA_CLASE_DEFAULT, OBLIGADO_LABEL,
-  formatFecha, formatMonto,
+  formatCoeficiente, formatFecha, formatMonto, hoyISO,
 } from '../../models/prevision.constants';
 
 /** Texto de ayuda: qué falta para avanzar en cada estado. */
@@ -39,7 +40,7 @@ const PROXIMO_PASO: Record<EstadoPrevision, string> = {
   selector: 'app-prevision-detail',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, PrimaryBtn, UiTable, UiInput, UiDateInput, UiSelect, UiBadge, UiModal,
+    CommonModule, FormsModule, PrimaryBtn, UiTable, UiInput, UiDateInput, UiSelect, UiBadge, UiModal, UiConfirmModal,
     ModalLiquidacion, ModalPago, ModalVerComprobante, ModalAccionPrevision,
   ],
   templateUrl: './prevision-detail.html',
@@ -72,6 +73,10 @@ export class PrevisionDetail implements OnInit {
   modalComprobanteOpen = false;
   comprobanteAVer: { nombre: string; url: string } | null = null;
 
+  // Anulación de un pago o una liquidación cargados por error (con confirmación)
+  aAnular: { tipo: 'pago' | 'liquidacion'; id: number; descripcion: string } | null = null;
+  anulando = false;
+
   // Prorrateo (edición en línea)
   editandoProrrateo = false;
   guardandoProrrateo = false;
@@ -84,6 +89,7 @@ export class PrevisionDetail implements OnInit {
   readonly PROXIMO_PASO = PROXIMO_PASO;
   formatMonto = formatMonto;
   formatFecha = formatFecha;
+  formatCoeficiente = formatCoeficiente;
 
   columnsItems: TableColumn[] = [
     { key: 'concepto',      label: 'Concepto',      type: 'text' },
@@ -107,6 +113,8 @@ export class PrevisionDetail implements OnInit {
         'Reemplazada': { label: 'Reemplazada', classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300', dot: 'bg-gray-400' },
       },
     },
+    { key: 'acciones',          label: 'Acciones',        type: 'actions',
+      getActions: () => (this.puede('anularMovimiento') ? ['delete'] : []) },
   ];
 
   ngOnInit(): void {
@@ -137,6 +145,7 @@ export class PrevisionDetail implements OnInit {
       observaciones: i.observaciones ?? '—',
     }));
     this.filasLiquidaciones = p.liquidaciones.map(l => ({
+      id: l.id,
       numero: l.numero,
       fecha: formatFecha(l.fechaLiquidacion),
       periodo: `${formatFecha(l.fechaDesde)} – ${formatFecha(l.fechaHasta)}`,
@@ -171,7 +180,7 @@ export class PrevisionDetail implements OnInit {
 
   /** Vencida = pasó la fecha y todavía queda saldo. Si ya se pagó, la intimación dejó de importar. */
   intimacionVencida(i: Intimacion): boolean {
-    return !!this.prevision && this.prevision.saldo > 0 && i.fechaVencimiento < new Date().toISOString().slice(0, 10);
+    return (this.prevision?.saldo ?? 0) > 0 && i.fechaVencimiento < hoyISO();
   }
 
   claseMarca(marca: string): string {
@@ -221,10 +230,76 @@ export class PrevisionDetail implements OnInit {
     });
   }
 
+  /**
+   * La descarga de Documentos exige el token, y un <img> o <iframe> no lo envía:
+   * se trae el archivo con HttpClient (pasa por el interceptor) y se muestra desde una URL local.
+   */
+  // ---------- Anular pago o liquidación ----------
+
+  /** Acción "delete" de la tabla de liquidaciones. */
+  onAccionLiquidacion(event: { type: string; row: any }): void {
+    if (event.type !== 'delete') return;
+    this.aAnular = {
+      tipo: 'liquidacion',
+      id: event.row.id,
+      descripcion: `la liquidación N° ${event.row.numero} (${event.row.total})`,
+    };
+  }
+
+  pedirAnularPago(pago: Pago): void {
+    this.aAnular = {
+      tipo: 'pago',
+      id: pago.id,
+      descripcion: `el pago de ${formatMonto(pago.monto)} del ${formatFecha(pago.fechaPago)}`,
+    };
+  }
+
+  get mensajeAnulacion(): string {
+    if (!this.aAnular) return '';
+    return `Vas a anular ${this.aAnular.descripcion}. No se borra: queda registrado en el historial ` +
+      `y el saldo y el estado se recalculan.`;
+  }
+
+  confirmarAnulacion(): void {
+    const p = this.prevision;
+    const a = this.aAnular;
+    if (!p || !a || this.anulando) return;
+    this.anulando = true;
+    const llamada = a.tipo === 'pago'
+      ? this.previsionService.anularPago(p.id, a.id)
+      : this.previsionService.anularLiquidacion(p.id, a.id);
+    llamada.subscribe({
+      next: (actualizada) => {
+        this.anulando = false;
+        this.aAnular = null;
+        toast.success(a.tipo === 'pago' ? 'Pago anulado' : 'Liquidación anulada');
+        this.actualizar(actualizada);
+      },
+      error: (err) => {
+        this.anulando = false;
+        this.aAnular = null;
+        toast.error(err?.error?.mensaje ?? 'No se pudo anular');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   verDocumento(doc: DocumentoRef | null): void {
     if (!doc) return;
-    this.comprobanteAVer = { nombre: doc.nombre, url: doc.url };
-    this.modalComprobanteOpen = true;
+    this.previsionService.descargarDocumento(doc).subscribe({
+      next: (archivo) => {
+        this.comprobanteAVer = archivo;
+        this.modalComprobanteOpen = true;
+        this.cdr.detectChanges();
+      },
+      error: () => toast.error('No se pudo abrir el documento'),
+    });
+  }
+
+  cerrarComprobante(): void {
+    if (this.comprobanteAVer) URL.revokeObjectURL(this.comprobanteAVer.url);
+    this.comprobanteAVer = null;
+    this.modalComprobanteOpen = false;
   }
 
   // ---------- Prorrateo art. 730 ----------

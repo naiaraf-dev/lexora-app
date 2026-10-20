@@ -6,7 +6,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     </div>
-    <span class="font-semibold text-text-primary dark:text-slate-100">{{ config.titulo }}</span>
+    <span class="font-semibold text-text-primary dark:text-slate-100">{{ titulo }}</span>
   </div>
 
   <div slot="cuerpo" class="flex flex-col gap-4">
@@ -75,6 +75,11 @@
     @if (config.labelArchivo) {
       <div class="flex flex-col gap-1">
         <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ config.labelArchivo }}</label>
+        @if (archivoActual && !archivo) {
+          <span class="text-xs text-text-primary/50 dark:text-slate-400">
+            Archivo actual: {{ archivoActual }}. Si no adjuntás otro, se conserva.
+          </span>
+        }
         @if (archivo) {
           <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-primary/20 dark:border-primary/30 bg-primary/5 dark:bg-primary/10">
             <span class="text-sm text-primary font-medium flex-1 truncate">{{ archivo.name }}</span>

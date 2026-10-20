@@ -77,13 +77,30 @@ export const ACCIONES = {
   cerrar:             (p: PrevisionResumen) => p.estado === 'Acreditado',
   // No cambia el estado: se puede registrar mientras quede algo por pagar
   registrarIntimacion:(p: PrevisionResumen) => !['Pagado', 'Acreditado', 'Cerrado'].includes(p.estado),
+  // Pagos y liquidaciones cargados por error se anulan (no se editan); no una vez acreditada o cerrada
+  anularMovimiento:   (p: PrevisionResumen) => !['Acreditado', 'Cerrado'].includes(p.estado),
 };
 
-const FORMATO_MONTO = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+const FORMATO_MONTO = new Intl.NumberFormat('es-AR', {
+  style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2,
+});
 
-/** 5600000 → "$ 5.600.000". Montos en pesos (decisión de la sección 10). */
+/** 5600000 → "$ 5.600.000,00". Montos en pesos (decisión de la sección 10), con centavos. */
 export function formatMonto(valor: number | null | undefined): string {
   return valor === null || valor === undefined ? '—' : FORMATO_MONTO.format(valor);
+}
+
+/**
+ * Fecha de hoy en YYYY-MM-DD, en la hora local. toISOString() da la fecha en UTC:
+ * en Argentina, después de las 21 h ya devuelve el día siguiente.
+ */
+export function hoyISO(): string {
+  return new Date().toLocaleDateString('en-CA');
+}
+
+/** 0.25 → "0,25" (coeficiente del prorrateo). */
+export function formatCoeficiente(valor: number | null | undefined): string {
+  return valor === null || valor === undefined ? '—' : String(valor).replace('.', ',');
 }
 
 /** "2026-08-16" → "16/08/2026". Sin pasar por Date para no correrse un día por la zona horaria. */

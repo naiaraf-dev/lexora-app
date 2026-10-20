@@ -9,7 +9,7 @@ import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
 import { PrevisionService } from '../../services/prevision.service';
 import { PrevisionDetalle } from '../../models/prevision.model';
-import { formatMonto } from '../../models/prevision.constants';
+import { formatMonto, hoyISO } from '../../models/prevision.constants';
 
 /** Las acciones del flujo que se cargan con un formulario corto. */
 export type TipoAccion = 'registrar' | 'impulso' | 'acreditacion' | 'factura' | 'intimacion';
@@ -96,6 +96,16 @@ export class ModalAccionPrevision implements OnChanges {
     return CONFIG[this.tipo];
   }
 
+  /** Si ya hay factura, el modal es para reemplazarla. */
+  get titulo(): string {
+    return this.tipo === 'factura' && this.prevision?.factura ? 'Reemplazar factura de honorarios' : this.config.titulo;
+  }
+
+  /** Al reemplazar la factura: nombre del archivo que se conserva si no se adjunta otro. */
+  get archivoActual(): string | null {
+    return this.tipo === 'factura' ? this.prevision?.factura?.documento?.nombre ?? null : null;
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) this.precargar();
   }
@@ -107,7 +117,14 @@ export class ModalAccionPrevision implements OnChanges {
     const p = this.prevision;
     if (!p) return;
     if (this.tipo === 'registrar') this.form.monto = p.montoPrevisto.toLocaleString('es-AR');
-    if (this.tipo === 'impulso') this.form.monto = p.saldo.toLocaleString('es-AR'); // la diferencia, si ya hubo pagos
+    // la diferencia, si ya hubo pagos
+    if (this.tipo === 'impulso' && p.saldo !== null && p.saldo > 0) this.form.monto = p.saldo.toLocaleString('es-AR');
+    // Reemplazar factura: arranca con los datos de la factura actual
+    if (this.tipo === 'factura' && p.factura) {
+      this.form.profesional = p.factura.profesional;
+      this.form.monto = p.factura.monto.toLocaleString('es-AR');
+      this.form.fecha = p.factura.fecha || hoyISO();
+    }
   }
 
   onFileChange(event: Event): void {
@@ -164,7 +181,7 @@ export class ModalAccionPrevision implements OnChanges {
     llamada.subscribe({
       next: (actualizada) => {
         this.guardando = false;
-        toast.success(`${this.config.titulo}: listo`);
+        toast.success(`${this.titulo}: listo`);
         this.guardado.emit(actualizada);
         this.cerrar.emit();
       },
@@ -177,7 +194,7 @@ export class ModalAccionPrevision implements OnChanges {
 
   private formVacio() {
     return {
-      fecha: new Date().toISOString().slice(0, 10),
+      fecha: hoyISO(),
       monto: '',
       profesional: '',
       ordenaNotificar: false,

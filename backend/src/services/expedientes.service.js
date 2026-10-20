@@ -4,6 +4,7 @@ const logsService = require('./logs.service');
 
 const causaService = require('./causa.service');
 const causaRepo = require('../repositories/causa.repository');
+const previsionesRepo = require('../repositories/previsiones.repository');
 
 const tareasAutomaticasService =
     require('./tareasAutomaticas.service');
@@ -55,6 +56,9 @@ async function listar(filtros) {
             id: r.clienteId,
             nombre: r.clienteNombre
         },
+
+        // si el estado actual permite registrar una previsión (tipoestadoexpediente.habilita_prevision)
+        habilitaPrevision: !!r.habilitaPrevision,
 
         usuarioPrincipal: {
             id: r.usuarioPrincipalId,
@@ -129,6 +133,9 @@ async function obtener(id) {
                 nombre: r.clienteNombre
             }
             : null,
+
+        // si el estado actual permite registrar una previsión (tipoestadoexpediente.habilita_prevision)
+        habilitaPrevision: !!r.habilitaPrevision,
 
         usuarioPrincipal: r.usuarioPrincipalId
             ? {
@@ -398,6 +405,21 @@ async function actualizar(id, data) {
         estadoFinal !== estadoActual;
 
     /*
+     * No se puede pasar a FINALIZADO con previsiones sin cerrar
+     * (mismo criterio que las tareas automáticas pendientes).
+     */
+    if (cambiaEstado && await previsionesRepo.esEstadoFinalizado(estadoFinal)) {
+        const abiertas = await previsionesRepo.contarAbiertasPorExpediente(Number(id));
+
+        if (abiertas > 0) {
+            throw {
+                status: 409,
+                mensaje: `El expediente tiene ${abiertas} previsi${abiertas === 1 ? 'ón' : 'ones'} sin cerrar. Cerralas antes de finalizarlo.`
+            };
+        }
+    }
+
+    /*
      * Si se intenta cambiar el tipo o el estado,
      * valida que la combinación resultante sea válida.
      */
@@ -573,6 +595,15 @@ async function eliminar(id, usuarioId) {
         throw {
             status: 404,
             mensaje: 'Expediente no encontrado'
+        };
+    }
+
+    const abiertas = await previsionesRepo.contarAbiertasPorExpediente(Number(id));
+
+    if (abiertas > 0) {
+        throw {
+            status: 409,
+            mensaje: `No se puede dar de baja: el expediente tiene ${abiertas} previsi${abiertas === 1 ? 'ón' : 'ones'} sin cerrar.`
         };
     }
 

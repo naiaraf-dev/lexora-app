@@ -160,10 +160,14 @@
       <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Monto y proyección</p>
       <div class="grid grid-cols-2 gap-3">
         <app-ui-input label="Monto base *" placeholder="$ 0,00" [(model)]="form.montoBase"></app-ui-input>
-        <app-ui-select label="Tasa" variant="formulario" placeholder="Seleccionar tasa..." [(model)]="form.tasa" [options]="tasaOptions"></app-ui-select>
+        <app-ui-input label="Intereses estimados" placeholder="$ 0,00" [(model)]="form.interesesEstimados"></app-ui-input>
+        <app-ui-select label="Tasa *" variant="formulario" placeholder="Seleccionar tasa..." [model]="form.tasa" (modelChange)="onTasaChange($event)" [options]="tasaOptions"></app-ui-select>
         <app-ui-date-input label="Fecha estimada de pago" [(model)]="form.fechaEstimadaPago"></app-ui-date-input>
         <app-ui-input label="Ejercicio (opcional)" placeholder="Ej: 2027" type="number" [(model)]="form.ejercicio"></app-ui-input>
       </div>
+      <p class="text-xs text-text-primary/40 dark:text-slate-500 -mt-2">
+        Los intereses estimados los calculás vos (por ejemplo, con la calculadora del CPACF) hasta la fecha estimada de pago. El sistema no aplica ninguna fórmula.
+      </p>
 
       <hr class="border-gray-100 dark:border-slate-700" />
 
@@ -218,31 +222,30 @@
 
       <hr class="border-gray-100 dark:border-slate-700" />
 
-      <!-- Cálculo del monto previsto -->
+      <!-- Monto previsto = monto base + intereses estimados -->
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
           <p class="text-xs font-semibold text-text-primary/50 dark:text-slate-400 uppercase tracking-widest">Monto previsto</p>
-          <app-primary-btn variant="secondary" [loading]="calculando" (click)="calcular()">Calcular previsión</app-primary-btn>
+          <app-primary-btn variant="secondary" [loading]="consultandoTasa" (click)="traerTasaVigente()">Traer tasa vigente</app-primary-btn>
         </div>
 
-        @if (calculo) {
-          <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
-            Estimación para que el cliente reserve fondos: proyecta el monto base hasta la fecha estimada de pago. El monto exacto a pagar sale de la liquidación.
+        <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+          Estimación para que el cliente reserve fondos. El monto exacto a pagar sale de la liquidación.
+        </div>
+        <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 flex flex-col gap-2 text-sm">
+          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Monto base</span><span>{{ formatMonto(parseMonto(form.montoBase)) }}</span></div>
+          <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Intereses estimados</span><span>{{ formatMonto(parseMonto(form.interesesEstimados)) }}</span></div>
+          <div class="flex justify-between font-semibold text-text-primary dark:text-slate-100 border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
+            <span>Monto previsto</span>
+            <span class="text-primary">{{ formatMonto(montoPrevisto) }}</span>
           </div>
-          <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 flex flex-col gap-2 text-sm">
-            <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Monto base</span><span>{{ formatMonto(calculo.capital) }}</span></div>
-            <div class="flex justify-between text-text-primary/60 dark:text-slate-400"><span>Intereses proyectados ({{ calculo.dias }} días)</span><span>{{ formatMonto(calculo.intereses) }}</span></div>
-            <div class="flex justify-between font-semibold text-text-primary dark:text-slate-100 border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
-              <span>Monto previsto</span>
-              <span class="text-primary">{{ formatMonto(calculo.total) }}</span>
-            </div>
-            <p class="text-xs text-text-primary/40 dark:text-slate-500">{{ calculo.metodologia }}</p>
-          </div>
-        } @else {
-          <div class="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-4 text-center text-xs text-text-primary/30 dark:text-slate-500">
-            Completá monto base, tasa y fechas, y presioná "Calcular previsión". Si no calculás, el back lo calcula al guardar.
-          </div>
-        }
+          @if (tasaVigente) {
+            <p class="text-xs text-text-primary/40 dark:text-slate-500">
+              Tasa de referencia: {{ tasaVigente.valor !== null ? tasaVigente.valor + '%' : 'sin valor publicado' }}
+              @if (tasaVigente.fechaPublicacion) { (publicada el {{ formatFecha(tasaVigente.fechaPublicacion) }}) } · CPACF. Se guarda con la previsión.
+            </p>
+          }
+        </div>
       </div>
 
     }

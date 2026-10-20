@@ -8,6 +8,7 @@ const ACCIONES = {
 
 const MODULOS = {
     CLIENTES: 'Clientes',
+    PREVISIONES: 'Previsiones',
 };
 
 const RESULTADOS = {

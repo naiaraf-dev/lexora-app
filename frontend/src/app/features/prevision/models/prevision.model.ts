@@ -1,7 +1,8 @@
 /**
- * Contrato entre el front y el back del módulo Previsión y pago.
- * Es la forma del JSON que devuelve /api/previsiones (sección 5 del documento técnico).
- * Si el back cambia un nombre de campo, se cambia acá y el compilador marca dónde impacta.
+ * Modelo del módulo Previsión y pago tal como lo usan los componentes.
+ * El back responde en snake_case, con ids y objetos { id, nombre } (sección 5 del documento técnico);
+ * prevision.service.ts traduce entre las dos formas (mapFromBackend / mapToBackend), como clientes.
+ * Si el back cambia un nombre de campo, se cambia el mapeo del service y los componentes no se enteran.
  */
 
 export type EstadoPrevision =
@@ -44,7 +45,8 @@ export interface PrevisionResumen {
   montoPrevisto: number;
   totalLiquidacionVigente: number | null;
   totalPagado: number;
-  saldo: number;
+  /** Liquidación vigente (o monto previsto si no hay) − pagos. null si no hay ninguno de los dos. */
+  saldo: number | null;
 }
 
 export interface PrevisionItem {
@@ -154,6 +156,10 @@ export interface PrevisionDetalle extends PrevisionResumen {
   fechaEstimadaPago: string | null;
   ejercicio: number | null;
   tasa: string | null;
+  /** Valor de la tasa del CPACF al momento del alta, solo como referencia. */
+  tasaValor: number | null;
+  /** Intereses que ingresó el abogado en el alta: monto previsto = monto base + intereses estimados. */
+  interesesEstimados: number | null;
   fechaPrevisionado: string | null;
   observaciones: string | null;
   items: PrevisionItem[];
@@ -183,6 +189,7 @@ export interface PagoListado extends Pago {
   cliente: string;
 }
 
+/** Filtros del listado. Estado, tipo de obligación y modo van por nombre; el service resuelve los ids. */
 export interface PrevisionFiltros {
   expediente?: string;
   cliente?: string;
@@ -190,6 +197,25 @@ export interface PrevisionFiltros {
   tipoObligacion?: string;
   modo?: string;
   expedienteId?: number;
+  pagina?: number;
+  pageSize?: number;
+}
+
+/** Tarjetas del listado: el back las calcula sobre todo el resultado filtrado, no solo la página. */
+export interface ResumenPrevisiones {
+  activas: number;
+  totalPrevisto: number;
+  pendientesPago: number;
+  pagadas: number;
+}
+
+/** Respuesta de GET /api/previsiones (paginada, como expedientes). */
+export interface PrevisionListado {
+  data: PrevisionResumen[];
+  total: number;
+  pagina: number;
+  pageSize: number;
+  resumen: ResumenPrevisiones;
 }
 
 /** Body de POST /api/previsiones */
@@ -204,27 +230,33 @@ export interface NuevaPrevision {
   fechaEstimadaPago: string | null;
   ejercicio: number | null;
   montoBase: number;
-  tasa: string | null;
+  /** Los ingresa el abogado (por ejemplo, desde la calculadora del CPACF). */
+  interesesEstimados: number | null;
+  tasa: string;
+  tasaValor: number | null;
   observaciones: string | null;
   items: PrevisionItem[];
 }
 
-/** Body y respuesta de POST /api/previsiones/calcular */
-export interface CalculoRequest {
-  montoBase: number;
-  tasa: string;
-  fechaDesde: string;
-  fechaHasta: string;
-  otros?: number;
+/** Último valor publicado de una tasa del CPACF (GET /api/tasa?nombre=). Solo de referencia. */
+export interface TasaVigente {
+  nombre: string;
+  valor: number | null;
+  fechaPublicacion: string | null;   // YYYY-MM-DD
 }
 
-export interface CalculoResultado {
+/** Body de POST /api/previsiones/:id/liquidaciones: el desglose lo ingresa el abogado. */
+export interface NuevaLiquidacion {
+  fechaLiquidacion: string;
+  fechaDesde: string;
+  fechaHasta: string;
+  tasa: string;
+  tasaValor: number | null;
+  tasaFechaPublicacion: string | null;
   capital: number;
   intereses: number;
   otros: number;
   total: number;
-  tasaValor: number | null;
-  tasaFechaPublicacion: string | null;
-  dias: number;
-  metodologia: string;
+  estadoLiquidacion: EstadoLiquidacion;
+  observaciones?: string;
 }

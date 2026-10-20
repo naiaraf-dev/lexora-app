@@ -53,7 +53,7 @@
 
     <!-- Filtros -->
     <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700 px-5 py-4 flex flex-wrap items-end gap-3">
-      <app-ui-input label="Expediente" placeholder="N° (ej. 12/2025)" [model]="filtros.expediente" (modelChange)="onFiltroChange('expediente', $event)"></app-ui-input>
+      <app-ui-input label="Expediente" placeholder="N° (ej. EXP-2026-29)" [model]="filtros.expediente" (modelChange)="onFiltroChange('expediente', $event)"></app-ui-input>
       <app-ui-input label="Cliente" placeholder="Nombre del cliente..." [model]="filtros.cliente" (modelChange)="onFiltroChange('cliente', $event)"></app-ui-input>
       <app-ui-select label="Estado" [model]="filtros.estado" (modelChange)="onFiltroChange('estado', $event)" [options]="estadoOptions"></app-ui-select>
       <app-ui-select label="Obligación" [model]="filtros.tipoObligacion" (modelChange)="onFiltroChange('tipoObligacion', $event)" [options]="tipoObligacionOptions"></app-ui-select>
@@ -72,6 +72,11 @@
         (action)="onAction($event)"
       ></app-ui-table>
     </div>
+
+    @if (totalPaginas > 1) {
+      <app-ui-pagination [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
+        (cambio)="onPageChange($event)"></app-ui-pagination>
+    }
 
   }
 
