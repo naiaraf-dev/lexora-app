@@ -140,7 +140,7 @@ async function obtenerPendientesPorExpediente(expedienteId) {
 }
 
 
-// valida que no quede ninguna tarea automatica sin cumplir
+// valida que no quede ninguna tarea automatica pendiente o vencida
 async function validarPuedeCambiarEstado(
     expedienteId,
     transaction = null
@@ -158,7 +158,7 @@ async function validarPuedeCambiarEstado(
 
     if (cantidad > 0) {
         throw crearError(
-            `Todavía tiene ${cantidad} tarea${cantidad === 1 ? '' : 's'} automática${cantidad === 1 ? '' : 's'} sin cumplir en el estado actual. Debe completar todas antes de cambiar de estado.`,
+            `Todavía tiene ${cantidad} tarea${cantidad === 1 ? '' : 's'} automática${cantidad === 1 ? '' : 's'} pendiente${cantidad === 1 ? '' : 's'} o vencida${cantidad === 1 ? '' : 's'}. Cada una tiene que estar Cumplida o No procedente antes de cambiar de estado.`,
             409
         );
     }

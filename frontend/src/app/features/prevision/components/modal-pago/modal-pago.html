@@ -1,4 +1,4 @@
-<app-ui-modal [open]="open" (cerrar)="cerrar.emit()">
+<app-ui-modal [open]="open" (cerrar)="cerrarModal()">
 
   <div slot="titulo" class="flex items-center gap-2">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white bg-primary rounded p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -10,27 +10,53 @@
   <div slot="cuerpo" class="flex flex-col gap-4">
 
     <!-- Resumen saldos -->
-    <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 grid grid-cols-3 gap-4 text-sm">
-      <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40 dark:text-slate-500">Monto previsto</span>
-        <span class="font-semibold text-text-primary dark:text-slate-100">{{ resumen.montoPrevisto }}</span>
+    @if (prevision) {
+      <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 grid grid-cols-3 gap-4 text-sm">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">{{ prevision.totalLiquidacionVigente !== null ? 'Liquidación vigente' : 'Monto previsto' }}</span>
+          <span class="font-semibold text-text-primary dark:text-slate-100">{{ formatMonto(montoAPagar) }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Ya pagado</span>
+          <span class="font-semibold text-success">{{ formatMonto(prevision.totalPagado) }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Saldo pendiente</span>
+          <span class="font-semibold text-warning">{{ formatMonto(prevision.saldo) }}</span>
+        </div>
       </div>
-      <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40 dark:text-slate-500">Monto pagado</span>
-        <span class="font-semibold text-success">{{ resumen.montoPagado }}</span>
-      </div>
-      <div class="flex flex-col gap-0.5">
-        <span class="text-xs text-text-primary/40 dark:text-slate-500">Saldo pendiente</span>
-        <span class="font-semibold text-warning">{{ resumen.saldoPendiente }}</span>
+    }
+
+    <!-- Quién pagó -->
+    <div class="grid grid-cols-3 gap-3">
+      <app-ui-select label="Pagador *" variant="formulario" [model]="form.pagador" (modelChange)="onPagadorChange($event)" [options]="pagadorOptions"></app-ui-select>
+      <div class="col-span-2">
+        @if (form.pagador === 'CLIENTE') {
+          <app-ui-input label="Nombre" [model]="prevision?.cliente ?? ''" [disabled]="true"></app-ui-input>
+        } @else {
+          <app-ui-input label="Nombre de quien pagó *" placeholder="Tal como figura en el comprobante" [(model)]="form.pagadorDetalle"></app-ui-input>
+        }
       </div>
     </div>
 
+    @if (pagaOtro && prevision) {
+      <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+        El obligado es {{ prevision.obligadoNombre }} ({{ OBLIGADO_LABEL[prevision.obligado] }}). Se registra como pago de otro y queda la marca "Pago de tercero informado".
+      </div>
+    }
+
     <div class="grid grid-cols-2 gap-3">
-      <app-ui-date-input label="Fecha de pago" [(model)]="form.fecha"></app-ui-date-input>
-      <app-ui-input      label="Monto" placeholder="$ 0,00" [(model)]="form.monto"></app-ui-input>
-      <app-ui-select     label="Medio de pago" variant="formulario" placeholder="Seleccioná..." [(model)]="form.medio" [options]="medioOptions"></app-ui-select>
+      <app-ui-date-input label="Fecha de pago *" [(model)]="form.fecha"></app-ui-date-input>
+      <app-ui-input      label="Monto *" placeholder="$ 0,00" [(model)]="form.monto"></app-ui-input>
+      <app-ui-select     label="Medio de pago *" variant="formulario" placeholder="Seleccioná..." [(model)]="form.medio" [options]="medioOptions"></app-ui-select>
       <app-ui-input      label="Referencia" placeholder="N° de operación, cheque, etc." [(model)]="form.referencia"></app-ui-input>
     </div>
+
+    @if (superaSaldo) {
+      <div class="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+        El monto supera el saldo pendiente. Revisalo antes de guardar.
+      </div>
+    }
 
     <div class="flex flex-col gap-1">
       <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">Observaciones</label>

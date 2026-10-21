@@ -5,6 +5,7 @@ import { map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import {
   EstadoDefinicion, EstadoExpedienteRuntime, EstadoTareaChecklist, TareaChecklist, ArchivoChecklist,
+  esEstadoFinalizado,
 } from '../models/estado.model';
 import { Auth } from '../../../core/services/auth';
 
@@ -27,11 +28,11 @@ export class EstadosService {
       map(({ estados, transiciones }) =>
         estados.map(e => ({
           nombre: e.estadoNombre,
-          // Se excluye el atajo directo a FINALIZADO: opcionesAvance() ya lo agrega
-          // automáticamente al final de la lista de opciones.
+          // Solo las transiciones reales de transicion_estado; Finalizado (si está) va al final.
           siguientes: transiciones
-            .filter(t => t.estadoOrigenId === e.estadoId && t.estadoDestinoNombre !== 'FINALIZADO')
-            .map(t => t.estadoDestinoNombre),
+            .filter(t => t.estadoOrigenId === e.estadoId)
+            .map(t => t.estadoDestinoNombre as string)
+            .sort((a, b) => Number(esEstadoFinalizado(a)) - Number(esEstadoFinalizado(b))),
         }))
       )
     );
@@ -53,7 +54,7 @@ export class EstadosService {
     }).pipe(
       map(({ expediente, historial, tareas, documentos }) => {
         const estadoActual = expediente.estado?.nombre ?? '';
-        const archivado    = estadoActual === 'FINALIZADO';
+        const archivado    = esEstadoFinalizado(estadoActual);
 
         const documentosPorTarea = this.agruparDocumentosPorTarea(documentos);
 
@@ -117,7 +118,7 @@ export class EstadosService {
     return {
       id:               String(t.id),
       descripcion:      t.titulo,
-      estado:           this.mapearEstadoTarea(t.nombre_estado_tarea),
+      estado:           this.mapearEstadoTarea(t.estado_tarea),
       observacion:      t.descripcion ?? '',
       fechaRegistro:    t.fecha_ultima_modificacion ?? t.fecha_creacion,
       fechaVencimiento: t.fecha_vencimiento ? t.fecha_vencimiento.slice(0, 10) : undefined,
@@ -126,10 +127,14 @@ export class EstadosService {
     };
   }
 
-  private mapearEstadoTarea(nombre: string): EstadoTareaChecklist {
-    if (nombre === 'Cumplido')      return 'COMPLETADO';
-    if (nombre === 'No procedente') return 'NO_PROCEDENTE';
-    return 'EN_CURSO'; // Pendiente o Vencido
+  /**
+ * Misma regla que el back (tareasAutomaticas.repository.js, contarNoCumplidasPorExpediente):
+ * estado_tarea 2 = Cumplido y 4 = No procedente no bloquean; el resto (Pendiente, Vencido) sí.
+ */
+  private mapearEstadoTarea(estadoTareaId: number): EstadoTareaChecklist {
+    if (Number(estadoTareaId) === 2) return 'COMPLETADO';
+    if (Number(estadoTareaId) === 4) return 'NO_PROCEDENTE';
+    return 'EN_CURSO'; // Pendiente (1) o Vencido (3)
   }
 
   /**

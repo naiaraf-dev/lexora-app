@@ -43,6 +43,11 @@ export interface EstadoExpedienteRuntime {
   historial: EstadoRegistrado[]; // orden cronológico, el último es el estado actual
 }
 
+/** True si el nombre corresponde al estado terminal Finalizado (en la base es 'Finalizado'; no distingue mayúsculas). */
+export function esEstadoFinalizado(nombre: string | null | undefined): boolean {
+  return (nombre ?? '').trim().toUpperCase() === 'FINALIZADO';
+}
+
 /** Config visual de cada estado de tarea, para usar en badges (mismo patrón que NOVEDAD_BADGE). */
 export const ESTADO_TAREA_BADGE: Record<EstadoTareaChecklist, { label: string; classes: string }> = {
   EN_CURSO:       { label: 'En curso',       classes: 'bg-yellow-100 text-yellow-700' },

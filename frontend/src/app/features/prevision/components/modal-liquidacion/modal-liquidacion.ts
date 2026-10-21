@@ -1,15 +1,16 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
-import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
+import { UiSelect, UiSelectOption } from '../../../../shared/components/ui-select/ui-select';
 import { toast } from 'ngx-sonner';
-import { environment } from '../../../../../environments/environment';
 import { TASAS_CONFIG, getTasaConfig, GrupoTasa } from '../../models/tasas-config';
+import { PrevisionService } from '../../services/prevision.service';
+import { EstadoLiquidacion, PrevisionDetalle, TasaVigente } from '../../models/prevision.model';
+import { formatFecha, formatMonto, hoyISO } from '../../models/prevision.constants';
 
 interface Tramo {
   id: string;
@@ -19,56 +20,51 @@ interface Tramo {
   resultado: string;
 }
 
-interface DetalleTrazabilidad {
-  montoBase: string;
-  fechaDesde: string;
-  fechaHasta: string;
-  tasaSeleccionada: string;
-  tasaValor: string;
-  tasaFechaPublicacion: string;
-  fuente: string;
-  metodologia: string;
-  fechaCalculo: string;
-}
-
 @Component({
   selector: 'app-modal-liquidacion',
   standalone: true,
   imports: [CommonModule, FormsModule, UiModal, UiInput, UiDateInput, PrimaryBtn, UiSelect],
   templateUrl: './modal-liquidacion.html',
 })
-export class ModalLiquidacion {
+export class ModalLiquidacion implements OnChanges {
   @Input() open = false;
+  @Input() prevision: PrevisionDetalle | null = null;
   @Output() cerrar = new EventEmitter<void>();
+  @Output() guardado = new EventEmitter<PrevisionDetalle>();
 
-  private http = inject(HttpClient);
+  private previsionService = inject(PrevisionService);
+  private cdr = inject(ChangeDetectorRef);
 
   guardando = false;
-  calculado = false;
-  calculando = false;
-  errorTasa = '';
+  consultandoTasa = false;
 
-  form = {
-    fechaLiquidacion: '',
-    fechaDesde: '',
-    fechaHasta: '',
-    montoBase: '',
-    tipoTasa: '',
-    otrosConceptos: '',
-    observaciones: '',
-  };
+  form = this.formVacio();
 
-  // Catálogo real de tasas (viene de tasas-config.ts, que refleja lo que el back puede consultar en CPACF)
+  // Catálogo real de tasas (viene de tasas-config.ts, con los mismos nombres que la tabla tasa)
   tipoTasaOptions = TASAS_CONFIG.map(t => ({ value: t.nombre, label: t.nombre }));
+  estadoLiquidacionOptions: UiSelectOption[] = [];
+
+  /** Último valor publicado de la tasa elegida: referencia que se guarda en la liquidación. */
+  tasaVigente: TasaVigente | null = null;
+
+  formatMonto = formatMonto;
+  formatFecha = formatFecha;
 
   get grupoTasaSeleccionada(): GrupoTasa | null {
     const cfg = getTasaConfig(this.form.tipoTasa);
     return cfg?.grupo ?? null;
   }
 
-  // Ítems calculadora propia (Grupo C) — placeholder, no se calcula por scraping
+  // Calculadoras propias (Grupo C): el CPACF no publica un valor de tasa
   esCalculadoraPropia(): boolean {
     return this.grupoTasaSeleccionada === 'CALCULADORA';
+  }
+
+  /** Total = capital + intereses + otros. Es una suma; el back la vuelve a verificar al guardar. */
+  get total(): number {
+    const centavos = [this.form.capital, this.form.intereses, this.form.otros]
+      .reduce((s, v) => s + Math.round(this.parseMonto(v) * 100), 0);
+    return centavos / 100;
   }
 
   tramos: Tramo[] = [
@@ -84,118 +80,114 @@ export class ModalLiquidacion {
     this.tramos = this.tramos.filter(t => t.id !== id);
   }
 
-  calculo = { capital: '', intereses: '', otros: '', total: '' };
-  detalle: DetalleTrazabilidad | null = null;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['open'] && this.open) this.precargar();
+  }
 
-  calcular() {
-    this.errorTasa = '';
+  /** Arranca con los datos de la previsión: capital = monto base, desde la resolución hasta hoy, misma tasa. */
+  private precargar(): void {
+    if (!this.estadoLiquidacionOptions.length) {
+      this.previsionService.obtenerCatalogo('estadoliquidacion').subscribe(o => (this.estadoLiquidacionOptions = o));
+    }
+    this.form = this.formVacio();
+    this.tasaVigente = null;
+    const p = this.prevision;
+    if (!p) return;
+    this.form.capital = p.montoBase.toLocaleString('es-AR');
+    this.form.fechaDesde = p.fechaResolucion ?? '';
+    this.form.tipoTasa = p.tasa ?? '';
+  }
 
-    if (!this.form.tipoTasa) {
-      toast.error('Seleccioná una tasa');
+  /** Si se cambia la tasa, la referencia traída deja de corresponder. */
+  onTasaChange(tasa: string): void {
+    this.form.tipoTasa = tasa;
+    this.tasaVigente = null;
+  }
+
+  /** Trae el último valor publicado de la tasa en el CPACF. No calcula intereses: es una referencia. */
+  traerTasaVigente(): void {
+    if (!this.form.tipoTasa) { toast.error('Seleccioná una tasa'); return; }
+    if (this.esCalculadoraPropia()) {
+      toast.error('Esta opción del CPACF es una calculadora y no publica un valor de tasa. Ingresá los montos a mano.');
       return;
     }
-    if (!this.form.montoBase) {
-      toast.error('Ingresá el monto base');
-      return;
-    }
-
-    const grupo = this.grupoTasaSeleccionada;
-
-    if (grupo === 'CALCULADORA') {
-      toast.error('Esta tasa requiere una calculadora especial — todavía no está implementada en el sistema');
-      return;
-    }
-
-    this.calculando = true;
-
-    // Consulta real al back → back hace scraping (con caché de 1h) al CPACF
-    this.http.get<{ nombre: string; fecha: string; valor: number }>(
-      `${environment.apiUrl}/tasa`,
-      { params: { nombre: this.form.tipoTasa } }
-    ).subscribe({
-      next: (res) => {
-        this.calculando = false;
-        this.procesarResultado(res, grupo!);
+    this.consultandoTasa = true;
+    this.previsionService.obtenerTasaVigente(this.form.tipoTasa).subscribe({
+      next: (t) => {
+        this.consultandoTasa = false;
+        this.tasaVigente = t;
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.calculando = false;
-        this.errorTasa = err.error?.error ?? 'No se pudo consultar la tasa en el CPACF';
-        toast.error(this.errorTasa);
-      }
+        this.consultandoTasa = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudo consultar la tasa en el CPACF');
+        this.cdr.detectChanges();
+      },
     });
   }
 
-  private procesarResultado(tasaRes: { nombre: string; fecha: string; valor: number }, grupo: GrupoTasa) {
-    const montoBase = this.parseMonto(this.form.montoBase);
-    const otros = this.parseMonto(this.form.otrosConceptos);
-
-    let intereses = 0;
-    let metodologia = '';
-
-    if (grupo === 'SIMPLE') {
-      // Grupo A: solo informativo — no calcula interés sobre período, muestra el valor vigente
-      intereses = 0;
-      metodologia = `Consulta directa — valor vigente de "${tasaRes.nombre}" al ${tasaRes.fecha}, sin cómputo de período. Esta tasa es de tipo índice/referencia.`;
-    } else {
-      // Grupo B: aproximación de interés simple usando la tasa vigente traída del CPACF
-      const dias = this.calcularDias(this.form.fechaDesde, this.form.fechaHasta);
-      const tasaAnualDecimal = tasaRes.valor / 100;
-      intereses = montoBase * tasaAnualDecimal * (dias / 365);
-      metodologia = `Aproximación de interés simple: Capital × Tasa vigente (${tasaRes.valor}%) × (días/365). Días del período: ${dias}. Esta es una aproximación — no reproduce el cálculo compuesto exacto de la calculadora del Colegio de Abogados.`;
+  guardar() {
+    const p = this.prevision;
+    if (!p) return;
+    if (!this.form.fechaLiquidacion || !this.form.estadoLiquidacion) {
+      toast.error('Completá la fecha y el estado procesal');
+      return;
     }
+    if (!this.form.tipoTasa) { toast.error('Seleccioná una tasa'); return; }
+    if (!this.form.fechaDesde || !this.form.fechaHasta) { toast.error('Completá fecha desde y hasta'); return; }
+    if (this.form.fechaDesde > this.form.fechaHasta) { toast.error('La fecha desde no puede ser posterior a la fecha hasta'); return; }
+    if (!this.form.capital) { toast.error('Ingresá el capital'); return; }
 
-    const total = montoBase + intereses + otros;
-
-    this.calculo = {
-      capital:   this.formatMonto(montoBase),
-      intereses: this.formatMonto(intereses),
-      otros:     this.formatMonto(otros),
-      total:     this.formatMonto(total),
-    };
-
-    this.detalle = {
-      montoBase:            this.formatMonto(montoBase),
-      fechaDesde:           this.form.fechaDesde || '—',
-      fechaHasta:           this.form.fechaHasta || '—',
-      tasaSeleccionada:     tasaRes.nombre,
-      tasaValor:            `${tasaRes.valor}%`,
-      tasaFechaPublicacion: tasaRes.fecha,
-      fuente:               'CPACF — Calculadora del Colegio de Abogados (consulta en vivo, caché 1h)',
-      metodologia,
-      fechaCalculo:         new Date().toLocaleDateString('es-AR'),
-    };
-
-    this.calculado = true;
-    toast.success('Cálculo generado');
+    const referencia = this.tasaVigente?.nombre === this.form.tipoTasa ? this.tasaVigente : null;
+    this.guardando = true;
+    this.previsionService.crearLiquidacion(p.id, {
+      fechaLiquidacion: this.form.fechaLiquidacion,
+      fechaDesde: this.form.fechaDesde,
+      fechaHasta: this.form.fechaHasta,
+      tasa: this.form.tipoTasa,
+      tasaValor: referencia?.valor ?? null,
+      tasaFechaPublicacion: referencia?.fechaPublicacion ?? null,
+      capital: this.parseMonto(this.form.capital),
+      intereses: this.parseMonto(this.form.intereses),
+      otros: this.parseMonto(this.form.otros),
+      total: this.total,
+      estadoLiquidacion: this.form.estadoLiquidacion as EstadoLiquidacion,
+      observaciones: this.form.observaciones || undefined,
+    }).subscribe({
+      next: (actualizada) => {
+        this.guardando = false;
+        toast.success('Liquidación guardada correctamente');
+        this.tramos = [{ id: crypto.randomUUID(), desde: '', hasta: '', tasa: '', resultado: '' }];
+        this.guardado.emit(actualizada);
+        this.cerrar.emit();
+      },
+      error: (err) => {
+        this.guardando = false;
+        toast.error(err?.error?.mensaje ?? 'No se pudo guardar la liquidación');
+      },
+    });
   }
 
-  private parseMonto(valor: string): number {
+  private formVacio() {
+    const hoy = hoyISO();
+    return {
+      fechaLiquidacion: hoy,
+      fechaDesde: '',
+      fechaHasta: hoy,
+      capital: '',
+      intereses: '',
+      otros: '',
+      tipoTasa: '',
+      estadoLiquidacion: 'Practicada',
+      observaciones: '',
+    };
+  }
+
+  /** "$ 5.000.000,50" → 5000000.5 */
+  protected parseMonto(valor: string): number {
     if (!valor) return 0;
-    const limpio = valor.replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
+    const limpio = String(valor).replace(/\$/g, '').replace(/\./g, '').replace(',', '.').trim();
     const n = Number(limpio);
     return Number.isFinite(n) ? n : 0;
-  }
-
-  private formatMonto(n: number): string {
-    return '$' + n.toLocaleString('es-AR', { maximumFractionDigits: 0 });
-  }
-
-  private calcularDias(desde: string, hasta: string): number {
-    if (!desde || !hasta) return 0;
-    const d1 = new Date(desde).getTime();
-    const d2 = new Date(hasta).getTime();
-    return Math.max(0, Math.round((d2 - d1) / (1000 * 60 * 60 * 24)));
-  }
-
-  guardar() {
-    this.guardando = true;
-    // 🔴 MOCK — reemplazar por PrevisionService.crearLiquidacion() cuando exista el endpoint
-    setTimeout(() => {
-      this.guardando = false;
-      toast.success('Liquidación guardada correctamente');
-      this.tramos = [{ id: crypto.randomUUID(), desde: '', hasta: '', tasa: '', resultado: '' }];
-      this.calculado = false;
-      this.cerrar.emit();
-    }, 800);
   }
 }

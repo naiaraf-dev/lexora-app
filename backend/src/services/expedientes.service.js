@@ -4,6 +4,7 @@ const logsService = require('./logs.service');
 
 const causaService = require('./causa.service');
 const causaRepo = require('../repositories/causa.repository');
+const previsionesRepo = require('../repositories/previsiones.repository');
 
 const tareasAutomaticasService =
     require('./tareasAutomaticas.service');
@@ -55,6 +56,9 @@ async function listar(filtros) {
             id: r.clienteId,
             nombre: r.clienteNombre
         },
+
+        // si el estado actual permite registrar una previsión (tipoestadoexpediente.habilita_prevision)
+        habilitaPrevision: !!r.habilitaPrevision,
 
         usuarioPrincipal: {
             id: r.usuarioPrincipalId,
@@ -130,6 +134,9 @@ async function obtener(id) {
             }
             : null,
 
+        // si el estado actual permite registrar una previsión (tipoestadoexpediente.habilita_prevision)
+        habilitaPrevision: !!r.habilitaPrevision,
+
         usuarioPrincipal: r.usuarioPrincipalId
             ? {
                 id: r.usuarioPrincipalId,
@@ -148,6 +155,18 @@ async function obtener(id) {
             ? {
                 id: r.prioridad,
                 nombre: r.prioridadNombre
+            }
+            : null,
+
+        // causa a la que pertenece y cuál es su principal (la previsión vive en el principal)
+        causa: r.causa_id && r.numeroCausa
+            ? {
+                id: r.causa_id,
+                numero: r.numeroCausa,
+                expedientePrincipalId: r.expedientePrincipalId,
+                principalNumero: r.expedientePrincipalId
+                    ? `EXP-${new Date(r.principalFechaCreacion).getFullYear()}-${r.expedientePrincipalId}`
+                    : null
             }
             : null
     };
@@ -386,6 +405,21 @@ async function actualizar(id, data) {
         estadoFinal !== estadoActual;
 
     /*
+     * No se puede pasar a FINALIZADO con previsiones sin cerrar
+     * (mismo criterio que las tareas automáticas pendientes).
+     */
+    if (cambiaEstado && await previsionesRepo.esEstadoFinalizado(estadoFinal)) {
+        const abiertas = await previsionesRepo.contarAbiertasPorExpediente(Number(id));
+
+        if (abiertas > 0) {
+            throw {
+                status: 409,
+                mensaje: `El expediente tiene ${abiertas} previsi${abiertas === 1 ? 'ón' : 'ones'} sin cerrar. Cerralas antes de finalizarlo.`
+            };
+        }
+    }
+
+    /*
      * Si se intenta cambiar el tipo o el estado,
      * valida que la combinación resultante sea válida.
      */
@@ -459,12 +493,13 @@ async function actualizar(id, data) {
 
         /*
          * Antes de cambiar de estado verifica que no haya
-         * tareas automáticas sin cumplir.
+         * tareas automáticas sin resolver.
          *
          * estado_tarea:
-         * 1 = Pendiente  -> bloquea
-         * 2 = Cumplido   -> permite
-         * 3 = Vencido    -> bloquea
+         * 1 = Pendiente      -> bloquea
+         * 2 = Cumplido       -> permite
+         * 3 = Vencido        -> bloquea
+         * 4 = No procedente  -> permite
          */
         await tareasAutomaticasService.validarPuedeCambiarEstado(
             Number(id),
@@ -561,6 +596,15 @@ async function eliminar(id, usuarioId) {
         throw {
             status: 404,
             mensaje: 'Expediente no encontrado'
+        };
+    }
+
+    const abiertas = await previsionesRepo.contarAbiertasPorExpediente(Number(id));
+
+    if (abiertas > 0) {
+        throw {
+            status: 409,
+            mensaje: `No se puede dar de baja: el expediente tiene ${abiertas} previsi${abiertas === 1 ? 'ón' : 'ones'} sin cerrar.`
         };
     }
 

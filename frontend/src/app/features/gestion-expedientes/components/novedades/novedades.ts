@@ -116,6 +116,7 @@ export class Novedades implements OnInit {
               id:                       String(t.id),
               titulo:                   t.titulo,
               prioridad:                t.prioridad ? String(t.prioridad) : '',
+              prioridadNombre:          t.nombre_prioridad ?? '',
               fechaVencimiento: t.fecha_vencimiento ? String(t.fecha_vencimiento).slice(0, 10) : '',
               hora:                     t.hora ?? '',
               responsableNombre:        t.nombre_usuario_completado

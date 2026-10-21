@@ -10,7 +10,7 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
 
     if (numero) {
         req.input('numero', sql.NVarChar, `%${numero}%`);
-        where += ` AND (CAST(e.id AS NVARCHAR) + '/' + CAST(YEAR(e.fecha_inicio) AS NVARCHAR)) LIKE @numero`;
+        where += ` AND ('EXP-' + CAST(YEAR(e.fecha_creacion) AS NVARCHAR) + '-' + CAST(e.id AS NVARCHAR)) LIKE @numero`;
     }
     if (causa) {
         req.input('causa', sql.NVarChar, `%${causa}%`);
@@ -58,7 +58,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
             ee.id                          AS estadoId,
             ee.nombre                      AS estadoNombre,
             c.id                           AS clienteId,
-            c.nombre + ' ' + c.apellido    AS clienteNombre,
+            LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+            CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
             u.id                           AS usuarioPrincipalId,
             u.nombre + ' ' + u.apellido    AS usuarioPrincipalNombre,
             COUNT(*) OVER()                AS totalRegistros
@@ -67,6 +68,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
         LEFT JOIN estadoexpediente ee ON ee.id = e.estado_expediente
         LEFT JOIN cliente          c  ON c.id  = e.cliente
         LEFT JOIN usuario          u  ON u.id  = e.usuario_principal
+        LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                          AND tee.estadoexpediente = e.estado_expediente
         ${where}
         ORDER BY e.fecha_ultima_modificacion DESC
         OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
@@ -87,14 +90,18 @@ async function getById(id) {
                 te.nombre                       AS tipoNombre,
                 ee.nombre                       AS estadoNombre,
                 c.id                            AS clienteId,
-                c.nombre + ' ' + c.apellido     AS clienteNombre,
+                LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+                CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
                 up.id                           AS usuarioPrincipalId,
                 up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre,
                 us.id                           AS usuarioSecundarioId,
                 us.nombre + ' ' + us.apellido   AS usuarioSecundarioNombre,
                 p.nombre                        AS prioridadNombre,
                 rc.id                           AS rolClienteId,
-                rc.nombre                       AS rolClienteNombre
+                rc.nombre                       AS rolClienteNombre,
+                ca.numero_causa                 AS numeroCausa,
+                ca.expediente_principal_id      AS expedientePrincipalId,
+                ep.fecha_creacion               AS principalFechaCreacion
             FROM expediente e
             LEFT JOIN tipoexpediente   te  ON te.id  = e.tipo_expediente
             LEFT JOIN estadoexpediente ee  ON ee.id  = e.estado_expediente
@@ -103,6 +110,10 @@ async function getById(id) {
             LEFT JOIN usuario          us  ON us.id  = e.usuario_secundario
             LEFT JOIN prioridad        p   ON p.id   = e.prioridad
             LEFT JOIN rolcliente       rc  ON rc.id  = e.rol_cliente
+            LEFT JOIN causa            ca  ON ca.id  = e.causa_id AND ca.activo = 1
+            LEFT JOIN expediente       ep  ON ep.id  = ca.expediente_principal_id
+            LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                              AND tee.estadoexpediente = e.estado_expediente
             WHERE e.id = @id AND e.activo = 1
         `);
 

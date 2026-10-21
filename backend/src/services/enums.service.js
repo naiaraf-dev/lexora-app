@@ -37,6 +37,30 @@ const mensajes = {
     prioridad: {
         getError: 'Error al obtener prioridades',
         createError: 'Error al crear prioridad'
+    },
+    estadoprevision: {
+        getError: 'Error al obtener estados de previsión',
+        createError: 'Error al crear estado de previsión'
+    },
+    tipoobligacion: {
+        getError: 'Error al obtener tipos de obligación',
+        createError: 'Error al crear tipo de obligación'
+    },
+    conceptoprevision: {
+        getError: 'Error al obtener conceptos de previsión',
+        createError: 'Error al crear concepto de previsión'
+    },
+    estadoliquidacion: {
+        getError: 'Error al obtener estados de liquidación',
+        createError: 'Error al crear estado de liquidación'
+    },
+    mediopago: {
+        getError: 'Error al obtener medios de pago',
+        createError: 'Error al crear medio de pago'
+    },
+    tasa: {
+        getError: 'Error al obtener tasas',
+        createError: 'Error al crear tasa'
     }
 };
 

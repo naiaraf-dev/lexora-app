@@ -9,7 +9,13 @@ const tablasPermitidas = {
     tiponovedad: 'tiponovedad',
     estadotarea: 'estadotarea',
     estadoexpediente: 'estadoexpediente',
-    prioridad: 'prioridad'
+    prioridad: 'prioridad',
+    estadoprevision: 'estadoprevision',
+    tipoobligacion: 'tipoobligacion',
+    conceptoprevision: 'conceptoprevision',
+    estadoliquidacion: 'estadoliquidacion',
+    mediopago: 'mediopago',
+    tasa: 'tasa'
 };
 
 function obtenerTabla(nombreEnum) {

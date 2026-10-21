@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { toast } from 'ngx-sonner';
 import { ExpedienteHeader } from '../../components/expediente-header/expediente-header';
 import { ExpedienteFilters, ExpedienteFilterState } from '../../components/expediente-filters/expediente-filters';
 import { ExpedienteTable, Expediente } from '../../components/expediente-table/expediente-table';
@@ -55,6 +56,8 @@ export class ExpedienteList implements OnInit {
         next: () => this.cargarExpedientes(),
         error: (err) => {
             console.error('Error al eliminar expediente:', err);
+            // ej. 409 si tiene previsiones sin cerrar: el back explica por qué no se puede
+            toast.error(err?.error?.mensaje ?? 'No se pudo dar de baja el expediente');
         },
     });
   }

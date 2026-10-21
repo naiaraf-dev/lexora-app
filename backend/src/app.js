@@ -19,7 +19,7 @@ const enumsRoutes = require('./routes/enums.routes');
 const tareasAutomaticasRoutes = require('./routes/tareasAutomaticas.routes');
 const tasasRoutes = require('./routes/tasas.routes');
 const asistenteDocumentosRoutes = require('./routes/asistenteDocumentos.routes');
-const asistenteRoutes = require('./routes/asistente.routes');
+const previsionesRoutes = require('./routes/previsiones.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -91,6 +91,11 @@ app.use(
     '/api/tasa',
     tasasRoutes
 );
+
+/*
+    PREVISIONES
+*/
+app.use('/api/previsiones', previsionesRoutes);
 
 /*
     ENUMS

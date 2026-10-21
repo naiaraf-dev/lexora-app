@@ -225,8 +225,14 @@ async function obtenerPendientesPorExpediente(
     return resultado.recordset;
 }
 
-// cuenta tareas automaticas que todavia NO estan cumplidas.
-// tanto Pendiente (1) como Vencido (3) bloquean el cambio de estado.
+// cuenta tareas automaticas que todavia NO estan resueltas.
+// Pendiente (1) y Vencido (3) bloquean el cambio de estado;
+// Cumplido (2) y No procedente (4) lo permiten.
+// Cualquier otro estado de tarea que se agregue bloquea por defecto.
+// TODO: cuenta las tareas de todo el expediente, pero el front (estados.service.ts)
+// muestra solo las del estado actual. Si una tarea de un estado anterior vuelve a
+// Pendiente (por ejemplo desde la Agenda), el front muestra 100% y aca se bloquea.
+// La tabla tarea no guarda el estado del expediente en que se genero cada tarea.
 async function contarNoCumplidasPorExpediente(
     expedienteId,
     transaction = null
@@ -240,7 +246,7 @@ async function contarNoCumplidasPorExpediente(
             FROM tarea
             WHERE expediente = @expedienteId
             AND automatica = 1
-            AND estado_tarea <> 2
+            AND estado_tarea NOT IN (2, 4)
         `);
 
     return Number(resultado.recordset[0]?.cantidad ?? 0);
