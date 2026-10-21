@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const documentosService = require('./documentos.service');
+const { errorLitis } = require('../asistente/errores');
 
 const VALIDEZ_SEGUNDOS = 60;
 const AUDIENCIA = 'litis-descarga';
@@ -17,14 +18,6 @@ const TIPOS_CONTENIDO = {
     doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 };
-
-// error con el formato del contrato de Litis ({ codigo, mensaje })
-function errorLitis(statusCode, codigo, mensaje) {
-    const error = new Error(mensaje);
-    error.statusCode = statusCode;
-    error.codigo = codigo;
-    return error;
-}
 
 // clave propia de los enlaces, derivada de JWT_SECRET:
 // asi un enlace no sirve como token de sesion ni al reves

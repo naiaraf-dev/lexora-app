@@ -73,11 +73,17 @@ function agregarRangoFechas(filtro, columna, desde, hasta) {
     }
 }
 
+// el numero interno (EXP-año-id) usa el año de creacion del expediente
+function agregarAnioExpediente(filtro, anio) {
+    if (anio) filtro.agregar(`YEAR(e.fecha_creacion) = ${filtro.param(sql.Int, anio)}`);
+}
+
 function armarFiltroExpedientes(filtros) {
     const filtro = crearFiltro();
     filtro.agregar('e.activo = 1');
 
     if (filtros.expedienteId) filtro.agregar(`e.id = ${filtro.param(sql.Int, filtros.expedienteId)}`);
+    agregarAnioExpediente(filtro, filtros.anioExpediente);
     if (filtros.texto) agregarTexto(filtro, filtros.texto, ['e.caratula', 'e.descripcion', 'e.contraparte']);
     if (filtros.cliente) agregarCliente(filtro, filtros.cliente);
     if (filtros.numeroCausa) agregarLike(filtro, 'e.numero_expediente_judicial', filtros.numeroCausa);
@@ -94,6 +100,7 @@ function armarFiltroDocumentos(filtros) {
     filtro.agregar('e.activo = 1');
 
     if (filtros.expedienteId) filtro.agregar(`d.expediente = ${filtro.param(sql.Int, filtros.expedienteId)}`);
+    agregarAnioExpediente(filtro, filtros.anioExpediente);
     if (filtros.texto) agregarTexto(filtro, filtros.texto, ['d.nombre_archivo', 'd.descripcion', 'e.caratula', 'td.nombre']);
     if (filtros.cliente) agregarCliente(filtro, filtros.cliente);
     if (filtros.numeroCausa) agregarLike(filtro, 'e.numero_expediente_judicial', filtros.numeroCausa);
