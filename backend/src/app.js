@@ -106,6 +106,7 @@ app.use('/api', enumsRoutes);
     ASISTENTE LITIS
 */
 app.use('/api/asistente/documentos', asistenteDocumentosRoutes);
+app.use('/api/asistente', asistenteRoutes);
 
 
 module.exports = app;

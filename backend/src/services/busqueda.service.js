@@ -4,7 +4,7 @@ const busquedaRepository = require('../repositories/busqueda.repository');
 const LIMITE_POR_DEFECTO = 10;
 const LIMITE_MAXIMO = 25;
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
-const FORMATO_NUMERO_INTERNO = /^EXP-\d{4}-(\d+)$/i;
+const FORMATO_NUMERO_INTERNO = /^EXP-(\d{4})-(\d+)$/i;
 
 // recorta espacios y largo; devuelve undefined si queda vacio
 function limpiarTexto(valor, largoMaximo = 200) {
@@ -34,10 +34,10 @@ function numeroInterno(id, fechaCreacion) {
     return `EXP-${new Date(fechaCreacion).getFullYear()}-${id}`;
 }
 
-// si el valor es un numero interno (EXP-2025-128) devuelve el id del expediente
-function idDesdeNumeroInterno(valor) {
+// si el valor es un numero interno (EXP-2025-128) devuelve el id y el año del expediente
+function desarmarNumeroInterno(valor) {
     const coincidencia = FORMATO_NUMERO_INTERNO.exec(valor ?? '');
-    return coincidencia ? Number(coincidencia[1]) : undefined;
+    return coincidencia ? { anio: Number(coincidencia[1]), id: Number(coincidencia[2]) } : undefined;
 }
 
 function normalizarFiltros(filtros = {}) {
@@ -54,11 +54,13 @@ function normalizarFiltros(filtros = {}) {
         limite: limpiarLimite(filtros.limite),
     };
 
-    // un numero interno en texto o numeroCausa se busca directo por id
+    // un numero interno en texto o numeroCausa se busca directo por id,
+    // y el año tiene que coincidir para no devolver otro expediente
     for (const campo of ['texto', 'numeroCausa']) {
-        const id = idDesdeNumeroInterno(normalizados[campo]);
-        if (id) {
-            normalizados.expedienteId = id;
+        const numero = desarmarNumeroInterno(normalizados[campo]);
+        if (numero) {
+            normalizados.expedienteId = numero.id;
+            normalizados.anioExpediente = numero.anio;
             normalizados[campo] = undefined;
         }
     }

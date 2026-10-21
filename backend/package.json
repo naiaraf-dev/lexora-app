@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "axios": "^1.20.0",
     "axios-cookiejar-support": "^7.0.0",
     "bcrypt": "^6.0.0",
@@ -25,7 +26,8 @@
     "mssql": "^12.5.5",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.11",
-    "tough-cookie": "^6.0.2"
+    "tough-cookie": "^6.0.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
