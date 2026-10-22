@@ -3,6 +3,7 @@ const asistenteRepository = require('../../repositories/asistente.repository');
 const busquedaService = require('../../services/busqueda.service');
 const cloudinaryDocumento = require('../../services/cloudinaryDocumento.service');
 const { errorLitis } = require('../errores');
+const { usuarioIdDe } = require('./comun');
 
 const MB = 1024 * 1024;
 const MAX_MB_POR_DEFECTO = 5;
@@ -32,6 +33,7 @@ async function resolverDocumento(input, ctx) {
 
     const candidatos = await busquedaService.buscarDocumentos({
         expedienteId: ctx.expedienteId,
+        usuarioId: usuarioIdDe(ctx),
         tipoDocumento: input.tipoDocumento,
         texto: input.texto,
         limite: 5,
@@ -96,10 +98,6 @@ module.exports = {
         if (!documento || !documento.activo || documento.expedienteId !== ctx.expedienteId) {
             throw errorLitis(404, 'NO_ENCONTRADO', 'No encontré ese documento en este expediente.');
         }
-        if (documento.estadoResumen === 'omitido') {
-            return { resumen: { aviso: 'Este documento está marcado para no procesarse con IA, así que no lo puedo leer.' }, items: [] };
-        }
-
         const extension = extensionDe(documento.nombreArchivo);
         const formato = FORMATOS[extension];
         if (!formato) {

@@ -18,12 +18,20 @@ export class AsistenteExpediente implements OnInit {
   /** Número interno del expediente (ej: EXP-2026-26), igual al que se ve en la bandeja. */
   numero = signal('');
 
+  /** Se completa si no se pudo cargar el expediente: sin número válido, Litis no puede trabajar sobre él. */
+  error = signal('');
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.parent?.paramMap.get('id'));
+    const noDisponible = 'No se pudo cargar el expediente, así que Litis no puede trabajar sobre él. Probá de nuevo en unos minutos.';
 
     this.expedientesService.obtener(id).subscribe({
-      next: (exp) => this.numero.set(exp.numeroInterno ?? `EXP-${id}`),
-      error: () => this.numero.set(`EXP-${id}`),
+      next: (exp) => {
+        // el backend valida el formato EXP-año-id: un número armado a mano lo rechazaría
+        if (/^EXP-\d{4}-\d+$/.test(exp?.numeroInterno ?? '')) this.numero.set(exp.numeroInterno);
+        else this.error.set(noDisponible);
+      },
+      error: () => this.error.set(noDisponible),
     });
   }
 

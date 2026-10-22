@@ -142,7 +142,8 @@ Todos los errores tienen el mismo formato. El campo `mensaje` se puede mostrar d
 | 400 | `PEDIDO_INVALIDO` | El cuerpo del pedido no cumple el contrato. |
 | 401 | `NO_AUTENTICADO` | Falta el token de sesión o es inválido. |
 | 401 | `ENLACE_INVALIDO` | El enlace de descarga venció, fue adulterado o es de otro documento. |
-| 404 | `NO_ENCONTRADO` | El expediente de `contexto` o el documento no existe o está dado de baja. |
+| 403 | `SIN_ACCESO` | El expediente de `contexto` no está asignado al usuario (no es abogado responsable ni secundario). |
+| 404 | `NO_ENCONTRADO` | El expediente de `contexto` o el documento no existe o está dado de baja. Para un documento de un expediente ajeno también se responde 404, para no revelar que existe. |
 | 429 | `LIMITE_CONSULTAS` | El usuario superó el límite de consultas por minuto. |
 | 503 | `ASISTENTE_NO_DISPONIBLE` | No hay clave del proveedor de IA configurada o el proveedor no responde. |
 | 500 | `ERROR_INTERNO` | Error inesperado. No incluye detalles técnicos ni URLs internas. |
@@ -204,3 +205,4 @@ Las herramientas se registran en `backend/src/asistente/herramientas/index.js`. 
 - El historial no incluye el mensaje actual, que viaja en `mensaje`.
 - El enlace de descarga se pide al hacer clic y no viene en `resultados`, porque vence en 60 segundos.
 - Los nombres de campos del historial (`autor`, `texto`) coinciden con los mensajes del chat del front.
+- Litis solo trabaja con los expedientes del usuario: aquellos en los que es abogado responsable (`usuario_principal`) o secundario (`usuario_secundario`), y lo que cuelga de ellos (documentos, tareas, novedades y los clientes que tengan alguno). La regla está definida una sola vez, en `acceso.repository.js`, y la usan las herramientas, el modo expediente y los enlaces de descarga.

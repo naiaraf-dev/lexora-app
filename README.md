@@ -114,6 +114,31 @@ npm install
 node src/server.js
 ```
 
+Configurar las variables de entorno en `.env` (conexión a SQL Server, credenciales de Cloudinary y secret de JWT). Las variables del asistente Litis y de los resúmenes con IA están explicadas en `backend/.env.example`.
+
+### Resúmenes de documentos con IA
+
+Los documentos que se suben se resumen solos en segundo plano cuando `RESUMEN_IA_HABILITADO=true` y hay una `ANTHROPIC_API_KEY` en el `.env`. La tabla se crea con `backend/db/scripts/001_documento_resumen.sql`.
+
+Para resumir los documentos que ya estaban cargados (se corre una vez, o cuando haga falta):
+
+```bash
+cd lexora-app/backend
+npm run backfill:resumenes -- --simular
+```
+
+`--simular` muestra cuántos documentos hay y el costo estimado sin tocar nada. Sin esa opción, los encola y los procesa (pide confirmación). Otras opciones:
+
+| Opción | Qué hace |
+|---|---|
+| `--limite N` | Procesa como máximo N documentos (útil para probar con pocos). |
+| `--lote N` | Documentos por tanda (por defecto 5). |
+| `--pausa S` | Segundos de pausa entre tandas (por defecto 5). |
+| `--solo-encolar` | Solo los encola; los procesa el servidor con el proceso en segundo plano. |
+| `--reintentar-errores` | Vuelve a intentar los documentos que quedaron con error. |
+| `--si` | No pide confirmación. |
+
+Se puede cortar con Ctrl+C y volver a correr: los documentos ya encolados o resumidos no se repiten. Al final muestra cuántos se resumieron y el motivo de los que fallaron.
 Configurar las variables de entorno en `.env`:
 
 | Grupo | Variables |

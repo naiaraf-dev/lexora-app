@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test",
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "backfill:resumenes": "node scripts/backfill-resumenes.js"
   },
   "keywords": [],
   "author": "",
@@ -22,11 +23,15 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.13.0",
     "mssql": "^12.5.5",
     "multer": "^2.1.1",
+    "node-cron": "^4.6.0",
     "nodemailer": "^8.0.11",
     "tough-cookie": "^6.0.2",
+    "word-extractor": "^1.0.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {

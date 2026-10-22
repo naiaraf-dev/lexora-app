@@ -1,6 +1,7 @@
 const asistenteService = require('../services/asistente.service');
 const { pedidoLitisSchema } = require('../asistente/asistente.schemas');
 const { responderError } = require('../asistente/errores');
+const auditoria = require('../asistente/auditoria');
 
 // recibe un mensaje del chat y devuelve la respuesta de Litis con sus resultados
 async function enviarMensaje(req, res) {
@@ -10,9 +11,12 @@ async function enviarMensaje(req, res) {
     }
 
     try {
-        const respuesta = await asistenteService.conversar(pedido.data, req.usuario);
-        res.json(respuesta);
+        const { respuesta, resultados, herramientasUsadas } = await asistenteService.conversar(pedido.data, req.usuario);
+        await auditoria.registrarConsulta(req, pedido.data, { resultados, herramientasUsadas });
+        // herramientasUsadas es solo para el log: el contrato con el front es { respuesta, resultados }
+        res.json({ respuesta, resultados });
     } catch (error) {
+        await auditoria.registrarConsulta(req, pedido.data, undefined, error);
         responderError(res, error);
     }
 }

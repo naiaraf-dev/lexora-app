@@ -5,6 +5,7 @@ const {
     eliminarDocumentoDeCloudinary,
     obtenerUrlDocumentoCloudinary
 } = require('./cloudinaryDocumento.service');
+const resumenesService = require('./resumenes.service');
 
 // trae documentos aplicando los filtros que llegan desde el controller
 async function obtenerDocumentos(filtros) {
@@ -212,6 +213,9 @@ async function subirEInsertarDocumento(datos, file) {
 
     const documentoInsertado = await documentosRepository.insertarDocumento(documento);
 
+    // el resumen con IA se genera despues, en segundo plano (HU42): la subida no espera
+    await resumenesService.encolar(documentoInsertado.id);
+
     // devuelve datos del documento y tambien info basica de cloudinary
     return {
         ...documentoInsertado,
@@ -405,6 +409,11 @@ async function modificarDocumento(idDocumento, datos, file) {
     // si se subio un archivo nuevo, borra el anterior de cloudinary
     if (file && documentoActual.storage_key) {
         resultadoCloudinaryAnterior = await eliminarDocumentoDeCloudinary(documentoActual.storage_key);
+    }
+
+    // el resumen anterior describe el archivo viejo: se vuelve a generar (HU42)
+    if (file) {
+        await resumenesService.encolar(Number(idDocumento));
     }
 
     return {

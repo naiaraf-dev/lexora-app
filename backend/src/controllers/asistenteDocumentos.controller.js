@@ -1,5 +1,6 @@
 const enlacesDescargaService = require('../services/enlacesDescarga.service');
 const { responderError } = require('../asistente/errores');
+const auditoria = require('../asistente/auditoria');
 
 // genera un enlace temporal para ver o descargar un documento
 async function pedirEnlace(req, res) {
@@ -23,6 +24,9 @@ async function descargar(req, res) {
         );
         res.setHeader('Cache-Control', 'no-store');
         res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        // queda en el log de seguridad quien descargo que documento desde Litis (HU40)
+        await auditoria.registrarDescarga(req, archivo);
 
         res.send(archivo.contenido);
     } catch (error) {
