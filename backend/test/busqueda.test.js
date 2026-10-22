@@ -1,3 +1,5 @@
+// los tests nunca llaman a la IA real: la clave del .env no se carga (dotenv no pisa variables existentes)
+process.env.ANTHROPIC_API_KEY = '';
 const { describe, test, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -131,16 +133,11 @@ describe('armarFiltroExpedientes', () => {
         assert.deepEqual(valores(filtro), ['%12345/2025%']);
     });
 
-    test('un numero interno filtra por id y por el año de creacion', () => {
+    test('un numero interno filtra por id en SQL; el año se valida en el servicio', () => {
         const filtro = armarFiltroExpedientes(normalizarFiltros({ texto: 'EXP-2025-128' }));
         assert.ok(filtro.condiciones.includes('e.id = @p0'));
-        assert.ok(filtro.condiciones.includes('YEAR(e.fecha_creacion) = @p1'));
-        assert.deepEqual(valores(filtro), [128, 2025]);
-    });
-
-    test('un expedienteId suelto no filtra por año', () => {
-        const filtro = armarFiltroExpedientes(normalizarFiltros({ expedienteId: 128 }));
         assert.ok(!filtro.condiciones.some((c) => c.includes('YEAR(')));
+        assert.deepEqual(valores(filtro), [128]);
     });
 
     test('filtra por estado y area', () => {
@@ -331,5 +328,111 @@ describe('busquedaService (repositorio simulado)', () => {
 
         assert.equal(cliente.nombreCompleto, 'Juan Pérez');
         assert.equal(cliente.cantidadExpedientes, 2);
+    });
+});
+
+describe('numero interno: el año coincide con el que ve el usuario', () => {
+    // fecha de creacion cerca del cambio de año: segun la zona horaria, el año visible puede no ser el de UTC
+    const FECHA_CREACION = new Date('2026-01-01T01:00:00Z');
+    const ANIO_VISIBLE = FECHA_CREACION.getFullYear();
+    const OTRO_ANIO = ANIO_VISIBLE - 1;
+
+    test('el numero que se muestra encuentra el expediente', async () => {
+        mock.method(busquedaRepository, 'buscarExpedientes', async () => [{ id: 128, fechaCreacion: FECHA_CREACION }]);
+
+        const resultados = await busquedaService.buscarExpedientes({ texto: `EXP-${ANIO_VISIBLE}-128` });
+
+        assert.equal(resultados.length, 1);
+        assert.equal(resultados[0].numeroInterno, `EXP-${ANIO_VISIBLE}-128`);
+    });
+
+    test('el mismo id con otro año no devuelve el expediente', async () => {
+        mock.method(busquedaRepository, 'buscarExpedientes', async () => [{ id: 128, fechaCreacion: FECHA_CREACION }]);
+
+        const resultados = await busquedaService.buscarExpedientes({ texto: `EXP-${OTRO_ANIO}-128` });
+
+        assert.deepEqual(resultados, []);
+    });
+
+    test('en documentos se valida contra el año del expediente', async () => {
+        mock.method(busquedaRepository, 'buscarDocumentos', async () => [{
+            id: 911, nombreArchivo: 'demanda.pdf', expedienteId: 128, expedienteFechaCreacion: FECHA_CREACION,
+        }]);
+
+        assert.equal((await busquedaService.buscarDocumentos({ numeroCausa: `EXP-${ANIO_VISIBLE}-128` })).length, 1);
+        assert.equal((await busquedaService.buscarDocumentos({ numeroCausa: `EXP-${OTRO_ANIO}-128` })).length, 0);
+    });
+
+    test('un expedienteId suelto no filtra por año', async () => {
+        mock.method(busquedaRepository, 'buscarExpedientes', async () => [{ id: 128, fechaCreacion: FECHA_CREACION }]);
+
+        assert.equal((await busquedaService.buscarExpedientes({ expedienteId: 128 })).length, 1);
+    });
+});
+
+describe('HU44 - búsqueda de documentos en los resúmenes', () => {
+    test('el texto libre también busca en resumen, palabras clave, tipo detectado y partes', () => {
+        const filtro = armarFiltroDocumentos(normalizarFiltros({ texto: 'horas' }));
+        const condicion = filtro.condiciones.at(-1);
+
+        assert.match(condicion, /d\.nombre_archivo/);
+        assert.match(condicion, /dr\.resumen/);
+        assert.match(condicion, /dr\.palabras_clave/);
+        assert.match(condicion, /dr\.tipo_detectado/);
+        assert.match(condicion, /JSON_VALUE\(dr\.datos_json, '\$\.partes\.actor'\)/);
+        assert.match(condicion, /JSON_VALUE\(dr\.datos_json, '\$\.partes\.demandado'\)/);
+    });
+
+    test('las columnas del resumen también ignoran acentos', () => {
+        const filtro = armarFiltroDocumentos(normalizarFiltros({ texto: 'desvinculacion' }));
+        assert.match(filtro.condiciones.at(-1), /dr\.resumen COLLATE Latin1_General_CI_AI LIKE/);
+    });
+
+    test('el tipo de documento busca en el tipo cargado y en el detectado por la IA', () => {
+        const filtro = armarFiltroDocumentos(normalizarFiltros({ tipoDocumento: 'demanda' }));
+        const condicion = filtro.condiciones.at(-1);
+
+        assert.match(condicion, /td\.nombre/);
+        assert.match(condicion, /dr\.tipo_detectado/);
+    });
+
+    test('el servicio devuelve el resumen, o null si el documento todavía no tiene', async () => {
+        mock.method(busquedaRepository, 'buscarDocumentos', async () => [
+            { id: 1, nombreArchivo: 'a.pdf', expedienteId: 1, expedienteFechaCreacion: new Date(), resumen: 'Demanda por despido.' },
+            { id: 2, nombreArchivo: 'b.pdf', expedienteId: 1, expedienteFechaCreacion: new Date(), resumen: null },
+        ]);
+
+        const [conResumen, sinResumen] = await busquedaService.buscarDocumentos({ texto: 'demanda' });
+
+        assert.equal(conResumen.resumen, 'Demanda por despido.');
+        assert.equal(sinResumen.resumen, null);
+    });
+});
+
+describe('restricción a los expedientes del usuario', () => {
+    const ACCESO = /\(e\.usuario_principal = @p0 OR e\.usuario_secundario = @p0\)/;
+    const { armarFiltroTareas, armarFiltroNovedades } = busquedaRepository;
+
+    test('expedientes, documentos, tareas y novedades filtran por abogado responsable o secundario', () => {
+        for (const armar of [armarFiltroExpedientes, armarFiltroDocumentos, armarFiltroTareas, armarFiltroNovedades]) {
+            const filtro = armar(normalizarFiltros({ usuarioId: 7, texto: 'x' }));
+            assert.match(filtro.condiciones.join(' AND '), ACCESO, armar.name);
+            assert.equal(filtro.parametros[0].valor, 7);
+        }
+    });
+
+    test('clientes: solo los que tienen algún expediente activo del usuario', () => {
+        const filtro = armarFiltroClientes(normalizarFiltros({ usuarioId: 7, cliente: 'perez' }));
+        assert.match(filtro.condiciones.join(' AND '), /EXISTS \(SELECT 1 FROM expediente e WHERE e\.cliente = c\.id AND e\.activo = 1 AND \(e\.usuario_principal = @p0/);
+    });
+
+    test('sin usuario no se agrega la restricción (el servicio sigue sirviendo para otros usos)', () => {
+        const filtro = armarFiltroExpedientes(normalizarFiltros({ texto: 'x' }));
+        assert.doesNotMatch(filtro.condiciones.join(' AND '), /usuario_principal/);
+    });
+
+    test('el usuario no cuenta como criterio: sin criterios no se busca nada', () => {
+        assert.equal(tieneCriterios(normalizarFiltros({ usuarioId: 7 })), false);
+        assert.equal(normalizarFiltros({ usuarioId: 'abc' }).usuarioId, undefined);
     });
 });

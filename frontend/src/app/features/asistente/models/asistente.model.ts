@@ -56,6 +56,7 @@ export type CodigoErrorLitis =
   | 'PEDIDO_INVALIDO'             // 400
   | 'NO_AUTENTICADO'              // 401
   | 'ENLACE_INVALIDO'             // 401: token del enlace vencido o adulterado
+  | 'SIN_ACCESO'                  // 403: el expediente de contexto no está asignado al usuario
   | 'NO_ENCONTRADO'               // 404: expediente de contexto o documento inexistente
   | 'LIMITE_CONSULTAS'            // 429
   | 'ASISTENTE_NO_DISPONIBLE'     // 503: sin API key o proveedor caído
