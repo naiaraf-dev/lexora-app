@@ -37,7 +37,7 @@ async function getAll({ area, numero } = {}) {
             ee.id                           AS estadoId,
             ee.nombre                       AS estadoNombre,
             cl.id                           AS clienteId,
-            cl.nombre + ' ' + cl.apellido   AS clienteNombre,
+            LTRIM(RTRIM(CONCAT(cl.nombre, ' ', cl.apellido))) AS clienteNombre,
             up.id                           AS usuarioPrincipalId,
             up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre
         FROM causa c
@@ -79,7 +79,7 @@ async function getById(id) {
                 ee.id                           AS estadoId,
                 ee.nombre                       AS estadoNombre,
                 cl.id                           AS clienteId,
-                cl.nombre + ' ' + cl.apellido   AS clienteNombre,
+                LTRIM(RTRIM(CONCAT(cl.nombre, ' ', cl.apellido))) AS clienteNombre,
                 up.id                           AS usuarioPrincipalId,
                 up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre
             FROM causa c

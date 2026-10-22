@@ -4,21 +4,27 @@ Sistema de gestión jurídica orientado a estudios pequeños y medianos.
 
 ## 🚀 Descripción
 
-Lexora es una aplicación web diseñada para gestionar expedientes judiciales, clientes, tareas y documentación de forma centralizada, permitiendo mejorar la organización y seguimiento de casos.
+Lexora es una aplicación web diseñada para gestionar expedientes judiciales, clientes, tareas, documentación y la previsión y pago de sentencias de forma centralizada, con un asistente de inteligencia artificial (Litis) integrado, permitiendo mejorar la organización y seguimiento de casos.
 
-Este proyecto fue desarrollado como MVP para las materias de Frontend y Backend de la carrera Desarrollo de Software (IFTS N° 11), con frontend y backend conectados a una base de datos real, y continuará desarrollándose como Proyecto Final de la carrera.
+El proyecto nació como MVP para las materias de Frontend y Backend de la carrera Desarrollo de Software (IFTS N° 11), con frontend y backend conectados a una base de datos real. Actualmente continúa su desarrollo en el marco de la materia **Práctica Profesionalizante IV: Proyecto Integrador**, donde se amplían sus funcionalidades y se consolida como producto.
 
 ---
 
 ## 🧩 Funcionalidades principales
 
 - **Gestión de expedientes**: alta, edición, búsqueda y filtrado, con datos generales (carátula, fuero, juzgado, jurisdicción, instancia, prioridad, etc.)
+- **Causas**: agrupación de expedientes que comparten número de expediente judicial y área, con un expediente principal según su tipo (Demanda Civil / Demanda Laboral) y filas expandibles en el listado
+- **Estados y tareas**: flujo de estados por tipo de expediente con barra de progreso, checklist de tareas por estado generadas automáticamente, adjuntos por tarea, envío a la agenda e historial de cambios de estado
+- **Previsión y pago de sentencia**: previsiones por expediente con liquidaciones, impulsos de pago, pagos, acreditaciones, intimaciones, prorrateo, factura y cierre, habilitadas según el estado del expediente
+- **Tasas CPACF**: consulta automática de la tasa vigente desde el sitio del Colegio Público de la Abogacía de la Capital Federal, con caché de una hora
+- **Asistente Litis (IA)**: chat en lenguaje natural para buscar expedientes y documentos, con modo general y modo expediente, lectura de documentos PDF e imágenes, y enlaces de descarga temporales
 - **Gestión de clientes**: personas físicas y jurídicas, con baja lógica (activo/inactivo) y vista de expedientes asociados
 - **Novedades**: timeline de actuaciones procesales por expediente, con adjuntos vinculados
-- **Documentos**: carga, edición y descarga de archivos por expediente, almacenados en Cloudinary, con relación opcional a una novedad
-- **Tareas y agenda**: plazos y tareas asociadas a novedades, con vista de calendario y de lista, prioridad, estado y responsable
+- **Documentos**: carga, edición y descarga de archivos por expediente, almacenados en Cloudinary, con relación opcional a una novedad o tarea
+- **Agenda**: plazos y tareas con vista de calendario y de lista, prioridad, estado y responsable
 - **Log de seguridad**: registro de actividad del sistema con exportación a Excel
-- **Sistema de autenticación**: login con JWT y perfil de usuario
+- **Autenticación**: registro, login con JWT, recuperación y restablecimiento de contraseña por email, y rutas protegidas con guards
+- **Configuración de cuenta**: edición de perfil (nombre, apellido, matrícula, email y foto), cambio de contraseña y eliminación de cuenta
 - **Catálogos dinámicos**: todos los enums (tipos, estados, prioridades, roles) se cargan desde la base de datos, sin valores hardcodeados
 
 ---
@@ -32,34 +38,48 @@ Organizado siguiendo una arquitectura basada en features, con componentes standa
 ```text
 src/
 ├── app/
+│   ├── core/
+│   │   ├── guards/        # authGuard, noAuthGuard
+│   │   ├── interceptors/  # auth-interceptor (JWT)
+│   │   └── services/      # auth, storage, notification
 │   ├── shared/
-│   │   ├── components/   # UiModal, UiInput, UiSelect, UiTable, UiBadge,
-│   │   │                 # UiPagination, UiConfirmModal, PrimaryBtn, etc.
-│   │   └── layout/       # MainLayout, Sidebar, Topbar
+│   │   ├── components/   # UiModal, UiInput, UiSelect, UiDateInput, UiTable,
+│   │   │                 # UiBadge, UiPagination, UiConfirmModal, UiStatsCard,
+│   │   │                 # InfoCard, Loader, PrimaryBtn
+│   │   └── layout/       # MainLayout, PageLayout, Sidebar, Topbar
 │   └── features/
 │       ├── gestion-expedientes/
 │       │   ├── pages/         # expediente-list, expediente-view, expediente-edit
-│       │   ├── components/    # datos-generales, novedades, documentos
+│       │   ├── components/    # datos-generales, documentos, novedades, estados,
+│       │   │                  # prevision, asistente-expediente, modal-agrupar, etc.
+│       │   ├── models/
 │       │   └── services/
+│       ├── prevision/         # prevision-list, prevision-detail y modales
+│       ├── asistente/         # chat de Litis
 │       ├── clientes/
 │       ├── agenda/
+│       ├── configuracion/     # perfil y seguridad
 │       ├── log/
-│       └── auth/
+│       └── auth/              # login, registro, recuperar y restablecer contraseña
 ```
 
 ### Backend
 
 ```text
 src/
-├── config/        # conexión a SQL Server, Cloudinary
+├── asistente/     # Litis: instrucciones, herramientas, schemas y errores
+├── config/        # SQL Server, Cloudinary, proveedor de IA, mailer
+├── constants/
 ├── controllers/
 ├── services/
 ├── repositories/
 ├── routes/
 └── middlewares/   # auth, upload de archivos
+test/              # tests unitarios (node:test)
+docs/              # contrato de la API de Litis
 ```
 
-Patrón en capas: **routes → controller → service → repository**, separando la lógica de negocio del acceso a datos en todos los módulos (expedientes, clientes, documentos, novedades, tareas, usuarios, logs).
+Patrón en capas: **routes → controller → service → repository**, separando la lógica de negocio del acceso a datos en todos los módulos (expedientes, causas, estados, tareas, tareas automáticas, previsiones, tasas, clientes, documentos, novedades, usuarios, logs y asistente).
 
 ---
 
@@ -69,6 +89,7 @@ Patrón en capas: **routes → controller → service → repository**, separand
 - Angular (Standalone Components)
 - TypeScript
 - Tailwind CSS
+- ngx-sonner (notificaciones toast)
 
 **Backend**
 - Node.js + Express
@@ -76,6 +97,10 @@ Patrón en capas: **routes → controller → service → repository**, separand
 - Cloudinary (almacenamiento de documentos)
 - JWT (autenticación)
 - Multer (carga de archivos)
+- Nodemailer (envío de emails de recuperación de contraseña)
+- Claude API de Anthropic (asistente Litis)
+- Axios + Cheerio (consulta de tasas del CPACF)
+- node:test (tests unitarios)
 
 ---
 
@@ -114,6 +139,24 @@ npm run backfill:resumenes -- --simular
 | `--si` | No pide confirmación. |
 
 Se puede cortar con Ctrl+C y volver a correr: los documentos ya encolados o resumidos no se repiten. Al final muestra cuántos se resumieron y el motivo de los que fallaron.
+Configurar las variables de entorno en `.env`:
+
+| Grupo | Variables |
+|---|---|
+| SQL Server | conexión a la base de datos |
+| Cloudinary | credenciales de la cuenta |
+| JWT | secret de firma |
+| Email | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS` |
+| Asistente Litis | `ANTHROPIC_API_KEY` (obligatoria para usar Litis), `LITIS_MODELO` y `LITIS_MAX_TOKENS` (opcionales) |
+| Tasas CPACF | `CPACF_DNI`, `CPACF_TOMO`, `CPACF_FOLIO` |
+
+Sin `ANTHROPIC_API_KEY` el backend arranca igual y Litis responde que no está disponible.
+
+Para correr los tests:
+
+```bash
+node --test test/
+```
 
 ### Frontend
 

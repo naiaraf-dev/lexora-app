@@ -140,8 +140,8 @@ export class ExpedienteList implements OnInit {
       causa.expedientes.push(exp);
 
       const esPrincipal =
-        exp.tipo?.nombre === 'Demanda Civil' ||
-        exp.tipo?.nombre === 'Demanda Laboral';
+        !!exp.tipo?.nombre?.startsWith('Demanda Civil') ||
+        !!exp.tipo?.nombre?.startsWith('Demanda Laboral');
 
       if (esPrincipal || causa.expedientePrincipalId === null) {
         causa.expedientePrincipalId = exp.id;

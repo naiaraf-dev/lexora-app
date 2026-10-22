@@ -34,8 +34,8 @@ export class ExpedienteHeader {
         this.expedienteCreado.emit();
         toast.success('Expediente creado correctamente');
       },
-      error: () => {
-        toast.error('Error al crear el expediente');
+      error: (err) => {
+        toast.error(err?.error?.mensaje ?? 'Error al crear el expediente');
       }
     });
   }

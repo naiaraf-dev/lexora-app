@@ -67,7 +67,7 @@ export class ExpedienteFilters implements OnInit {
     this.http.get<any[]>(`${environment.apiUrl}/clientes`).subscribe({
       next: (res) => this.clienteOptions = res.map(c => ({
         value: String(c.id),
-        label: `${c.nombre} ${c.apellido}`,
+        label: [c.nombre, c.apellido].filter(Boolean).join(' '),
       }))
     });
 

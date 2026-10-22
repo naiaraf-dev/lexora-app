@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
@@ -26,6 +26,7 @@ export class ModalPago implements OnChanges {
   @Output() guardado = new EventEmitter<PrevisionDetalle>();
 
   private previsionService = inject(PrevisionService);
+  private cdr = inject(ChangeDetectorRef);
 
   guardando = false;
 
@@ -61,7 +62,10 @@ export class ModalPago implements OnChanges {
     this.form = this.formVacio();
     this.comprobante = null;
     if (!this.medioOptions.length) {
-      this.previsionService.obtenerCatalogo('mediopago').subscribe(o => (this.medioOptions = o));
+      this.previsionService.obtenerCatalogo('mediopago').subscribe(o => {
+        this.medioOptions = o;
+        this.cdr.detectChanges();
+      });
     }
     const p = this.prevision;
     if (!p) return;
@@ -123,6 +127,7 @@ export class ModalPago implements OnChanges {
       },
       error: (err) => {
         this.guardando = false;
+        this.cdr.detectChanges();
         toast.error(err?.error?.mensaje ?? 'No se pudo registrar el pago');
       },
     });

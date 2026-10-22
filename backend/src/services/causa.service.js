@@ -81,7 +81,8 @@ async function buscarPorNumero(numero_causa, area) {
 function esTipoPrincipal(area, tipoNombre) {
     const tipoPrincipal = TIPOS_PRINCIPALES[area?.toUpperCase()];
     if (!tipoPrincipal) return false;
-    return tipoNombre === tipoPrincipal;
+    // cubre las dos variantes de cada demanda (Parte Actora / Parte Demandada)
+    return !!tipoNombre?.startsWith(tipoPrincipal);
 }
 
 // crea una causa nueva y devuelve su id
