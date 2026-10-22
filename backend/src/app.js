@@ -21,7 +21,6 @@ const tasasRoutes = require('./routes/tasas.routes');
 const asistenteDocumentosRoutes = require('./routes/asistenteDocumentos.routes');
 const asistenteRoutes = require('./routes/asistente.routes');
 const previsionesRoutes = require('./routes/previsiones.routes');
-const asistenteRoutes = require('./routes/asistente.routes');
 
 app.use(cors());
 app.use(express.json());

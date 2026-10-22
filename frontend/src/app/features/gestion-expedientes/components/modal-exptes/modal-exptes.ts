@@ -25,8 +25,8 @@ interface OpcionEnum {
 interface Cliente {
   id: number;
   nombre: string;
-  apellido: string;
-  cuit: string;
+  apellido: string | null;
+  cuit: string | null;
 }
 
 /**
@@ -119,9 +119,14 @@ export class ModalExptes implements OnInit {
     if (!q) return this.clientes;
 
     return this.clientes.filter(c =>
-      `${c.nombre} ${c.apellido}`.toLowerCase().includes(q) ||
-      c.cuit.includes(q)
+      this.nombreCliente(c).toLowerCase().includes(q) ||
+      (c.cuit ?? '').includes(q)
     );
+  }
+
+  /** Nombre completo, o razón social en persona jurídica (no tiene apellido). */
+  nombreCliente(c: Cliente): string {
+    return [c.nombre, c.apellido].filter(Boolean).join(' ');
   }
 
   /** Retorna true si el cliente con el ID dado es el actualmente seleccionado en el formulario. */
@@ -137,7 +142,7 @@ export class ModalExptes implements OnInit {
   /** Retorna el nombre completo del cliente seleccionado para mostrarlo como chip en el formulario. */
   nombreClienteSeleccionado(): string {
     const c = this.clientes.find(c => String(c.id) === this.form.clienteId);
-    return c ? `${c.nombre} ${c.apellido}` : '';
+    return c ? this.nombreCliente(c) : '';
   }
 
   /** Valida que los campos obligatorios del alta estén completos antes de habilitar el guardado. */

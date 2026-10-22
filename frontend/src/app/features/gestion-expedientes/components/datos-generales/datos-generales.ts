@@ -209,7 +209,7 @@ export class DatosGenerales implements OnInit {
           label:
             c.tipo_cliente === 2
               ? (c.nombre ?? '')
-              : `${c.apellido ?? ''}, ${c.nombre ?? ''}`.trim(),
+              : [c.apellido, c.nombre].filter(Boolean).join(', '),
         }));
 
         this.form.patchValue({
