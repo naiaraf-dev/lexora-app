@@ -85,16 +85,14 @@ async function armarContenido(buffer, extension) {
     }
 
     if (extraccionTexto.esWord(extension)) {
-        // un .docx se revisa antes de descomprimirlo; un .doc no esta comprimido y ya paso el tope de descarga
-        if (extension === 'docx') {
-            const descomprimido = extraccionTexto.tamanioDescomprimidoZip(buffer);
-            if (descomprimido === null) throw new DocumentoNoResumible('El archivo Word está dañado');
-            if (descomprimido > MAX_BYTES_DESCOMPRIMIDO) {
-                throw new DocumentoNoResumible('El archivo Word es demasiado grande al descomprimirlo');
-            }
+        let texto;
+        try {
+            // el control de tamaño va por el contenido del archivo, no por su extension
+            texto = await extraccionTexto.textoDeWord(buffer, MAX_BYTES_DESCOMPRIMIDO);
+        } catch (error) {
+            if (error instanceof extraccionTexto.ArchivoWordInvalido) throw new DocumentoNoResumible(error.message);
+            throw error;
         }
-
-        const texto = await extraccionTexto.textoDeWord(buffer, extension);
         if (!texto) throw new DocumentoNoResumible('El documento Word no tiene texto');
 
         const recortado = texto.length > MAX_CARACTERES_TEXTO;

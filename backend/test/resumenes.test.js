@@ -6,6 +6,8 @@ const { describe, test, beforeEach, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+const mammoth = require('mammoth');
 
 const llm = require('../src/config/llm');
 const resumenesRepository = require('../src/repositories/resumenes.repository');
@@ -31,18 +33,38 @@ const DOCUMENTO = { id: 911, nombreArchivo: 'demanda_perez.pdf', storageKey: 'le
 // un .docx real (es un ZIP) para las pruebas de Word
 const ESCRITO_DOCX = fs.readFileSync(path.join(__dirname, 'fixtures', 'escrito.docx'));
 
-// ZIP minimo que declara una entrada de 2 GB descomprimida: lo que haria una "zip bomb"
-function zipQueSeInfla(bytesDescomprimidos) {
-    const entrada = Buffer.alloc(46);
-    entrada.writeUInt32LE(0x02014b50, 0);
-    entrada.writeUInt32LE(bytesDescomprimidos, 24);
+const MB = 1024 * 1024;
+
+// "zip bomb" real: un ZIP chico con un archivo que se infla a "bytesReales",
+// pero que declara ocupar solo "bytesDeclarados" (miente sobre su tamaño)
+function zipQueSeInfla(bytesReales, bytesDeclarados = 100) {
+    const nombre = Buffer.from('word/document.xml');
+    const datos = zlib.deflateRawSync(Buffer.alloc(bytesReales));
+
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(8, 8); // deflate
+    local.writeUInt32LE(datos.length, 18);
+    local.writeUInt32LE(bytesDeclarados, 22);
+    local.writeUInt16LE(nombre.length, 26);
+
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(8, 10);
+    central.writeUInt32LE(datos.length, 20);
+    central.writeUInt32LE(bytesDeclarados, 24);
+    central.writeUInt16LE(nombre.length, 28);
+    central.writeUInt32LE(0, 42); // el encabezado local esta al principio
+
+    const inicioCentral = local.length + nombre.length + datos.length;
     const fin = Buffer.alloc(22);
     fin.writeUInt32LE(0x06054b50, 0);
     fin.writeUInt16LE(1, 8);
     fin.writeUInt16LE(1, 10);
-    fin.writeUInt32LE(entrada.length, 12);
-    fin.writeUInt32LE(0, 16);
-    return Buffer.concat([entrada, fin]);
+    fin.writeUInt32LE(central.length + nombre.length, 12);
+    fin.writeUInt32LE(inicioCentral, 16);
+
+    return Buffer.concat([local, nombre, datos, central, nombre, fin]);
 }
 
 function respuestaIA(datos = RESUMEN_IA, extra = {}) {
@@ -102,7 +124,7 @@ describe('HU42 - extracción de texto de Word', () => {
     test('extrae y normaliza el texto de un .docx real', async () => {
         const buffer = fs.readFileSync(path.join(__dirname, 'fixtures', 'escrito.docx'));
 
-        const texto = await extraccionTexto.textoDeWord(buffer, 'docx');
+        const texto = await extraccionTexto.textoDeWord(buffer, 50 * MB);
 
         assert.match(texto, /PROMUEVE DEMANDA LABORAL/);
         assert.match(texto, /Juan Pérez contra ACME S\.A\./);
@@ -163,26 +185,44 @@ describe('HU42 - contenido que se envía a la IA', () => {
 describe('HU42 - topes de memoria', () => {
     afterEach(() => { delete process.env.RESUMEN_IA_MAX_MB; });
 
-    test('un .docx que se infla de más al descomprimirlo no se descomprime', async () => {
-        const extraer = mock.method(extraccionTexto, 'textoDeWord', async () => 'no debería llegar');
+    test('un .docx que se infla de más se descarta aunque declare un tamaño chico', async () => {
+        const bomba = zipQueSeInfla(60 * MB, 100);
+        const abrir = mock.method(mammoth, 'extractRawText', async () => ({ value: 'no debería llegar' }));
 
         await assert.rejects(
-            resumenesService.armarContenido(zipQueSeInfla(0x7fffffff), 'docx'),
+            resumenesService.armarContenido(bomba, 'docx'),
             (error) => error instanceof resumenesService.DocumentoNoResumible && /demasiado grande/.test(error.message),
         );
-        assert.equal(extraer.mock.callCount(), 0);
+        assert.equal(abrir.mock.callCount(), 0);
+        assert.ok(bomba.length < MB, 'la bomba pesa poco comprimida');
     });
 
-    test('un .docx dañado se omite sin intentar leerlo', async () => {
-        const extraer = mock.method(extraccionTexto, 'textoDeWord', async () => 'x');
-        await assert.rejects(resumenesService.armarContenido(Buffer.from('no es un zip'), 'docx'), /dañado/);
-        assert.equal(extraer.mock.callCount(), 0);
+    test('renombrar la bomba a .doc no saltea el control (se decide por el contenido)', async () => {
+        const abrir = mock.method(mammoth, 'extractRawText', async () => ({ value: 'no debería llegar' }));
+        await assert.rejects(resumenesService.armarContenido(zipQueSeInfla(60 * MB), 'doc'), /demasiado grande/);
+        assert.equal(abrir.mock.callCount(), 0);
     });
 
-    test('mide el tamaño descomprimido de un .docx real sin descomprimirlo', () => {
-        const tamanio = extraccionTexto.tamanioDescomprimidoZip(ESCRITO_DOCX);
-        assert.ok(tamanio > ESCRITO_DOCX.length && tamanio < 1024 * 1024, String(tamanio));
-        assert.equal(extraccionTexto.tamanioDescomprimidoZip(zipQueSeInfla(0xffffffff)), Infinity);
+    test('un .docx real pasa el control y se lee normalmente', async () => {
+        const contenido = await resumenesService.armarContenido(ESCRITO_DOCX, 'docx');
+        assert.match(contenido[0].text, /PROMUEVE DEMANDA LABORAL/);
+    });
+
+    test('mide los bytes que salen de verdad al descomprimir, cortando en el tope', () => {
+        const real = extraccionTexto.bytesDescomprimidosZip(ESCRITO_DOCX, 50 * MB);
+        assert.ok(real > ESCRITO_DOCX.length && real < MB, String(real));
+        assert.equal(extraccionTexto.bytesDescomprimidosZip(zipQueSeInfla(2 * MB), MB), Infinity);
+        assert.equal(extraccionTexto.bytesDescomprimidosZip(zipQueSeInfla(1000), MB), 1000);
+    });
+
+    test('un ZIP dañado o un archivo que no es Word se omiten sin intentar leerlos', async () => {
+        const abrir = mock.method(mammoth, 'extractRawText', async () => ({ value: 'x' }));
+        const recortado = ESCRITO_DOCX.subarray(0, ESCRITO_DOCX.length - 30);
+
+        await assert.rejects(resumenesService.armarContenido(recortado, 'docx'), /dañado/);
+        await assert.rejects(resumenesService.armarContenido(Buffer.from('no es un Word'), 'docx'), /no es un documento Word/);
+        await assert.rejects(resumenesService.armarContenido(Buffer.from('no es un Word'), 'doc'), resumenesService.DocumentoNoResumible);
+        assert.equal(abrir.mock.callCount(), 0);
     });
 
     test('un archivo más grande que el tope se omite aunque el servidor no diga su tamaño', async () => {
