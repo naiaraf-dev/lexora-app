@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const path = require('path');
 const jwt = require('jsonwebtoken');
 const documentosService = require('./documentos.service');
+const accesoRepository = require('../repositories/acceso.repository');
 const { errorLitis } = require('../asistente/errores');
 
 const VALIDEZ_SEGUNDOS = 60;
@@ -57,8 +58,9 @@ function verificarToken(token) {
     }
 }
 
-// devuelve el documento y su url de cloudinary, o NO_ENCONTRADO si no existe o esta dado de baja
-async function buscarDocumentoDescargable(documentoId) {
+// devuelve el documento y su url de cloudinary, o NO_ENCONTRADO si no existe, esta dado de baja
+// o no es de un expediente del usuario (no se revela si existe)
+async function buscarDocumentoDescargable(documentoId, usuarioId) {
     let resultado;
 
     try {
@@ -73,6 +75,9 @@ async function buscarDocumentoDescargable(documentoId) {
     if (!resultado.documento.activo) {
         throw errorLitis(404, 'NO_ENCONTRADO', 'No encontré el documento.');
     }
+    if (!(await accesoRepository.puedeVerExpediente(usuarioId, resultado.documento.expediente))) {
+        throw errorLitis(404, 'NO_ENCONTRADO', 'No encontré el documento.');
+    }
 
     return resultado;
 }
@@ -81,7 +86,7 @@ async function crearEnlace(idDocumento, usuario, modo) {
     const documentoId = validarIdDocumento(idDocumento);
     const modoValido = validarModo(modo);
 
-    await buscarDocumentoDescargable(documentoId);
+    await buscarDocumentoDescargable(documentoId, usuario.id);
 
     const token = generarToken(documentoId, usuario.id);
 
@@ -94,7 +99,8 @@ async function crearEnlace(idDocumento, usuario, modo) {
 async function obtenerArchivo(token, modo) {
     const modoValido = validarModo(modo);
     const { documentoId, usuarioId } = verificarToken(token);
-    const { documento, url } = await buscarDocumentoDescargable(documentoId);
+    // se vuelve a controlar al descargar: el expediente pudo cambiar de abogado despues de pedir el enlace
+    const { documento, url } = await buscarDocumentoDescargable(documentoId, usuarioId);
 
     const respuesta = await fetch(url);
     if (!respuesta.ok) {

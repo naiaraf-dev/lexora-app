@@ -1,7 +1,6 @@
 const { sql, conectarBD } = require('../config/db');
 
-// documento con lo necesario para que Litis lo lea bajo demanda (HU45),
-// incluido el estado de su resumen: 'omitido' marca "no procesar con IA"
+// documento con lo necesario para que Litis lo lea bajo demanda (HU45)
 async function obtenerDocumentoParaLectura(idDocumento) {
     const pool = await conectarBD();
 
@@ -14,11 +13,9 @@ async function obtenerDocumentoParaLectura(idDocumento) {
                 d.storage_key AS storageKey,
                 d.activo,
                 d.expediente AS expedienteId,
-                td.nombre AS tipoDocumento,
-                r.estado AS estadoResumen
+                td.nombre AS tipoDocumento
             FROM documento d
             LEFT JOIN tipodocumento td ON td.id = d.tipo_documento
-            LEFT JOIN documento_resumen r ON r.documento_id = d.id
             WHERE d.id = @id
         `);
 

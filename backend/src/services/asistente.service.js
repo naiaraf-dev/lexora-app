@@ -1,12 +1,12 @@
 const llm = require('../config/llm');
 const expedientesRepository = require('../repositories/expedientes.repository');
+const accesoRepository = require('../repositories/acceso.repository');
 const herramientas = require('../asistente/herramientas');
 const { armarInstrucciones } = require('../asistente/instrucciones');
-const { resultadoLitisSchema } = require('../asistente/asistente.schemas');
+const { resultadoLitisSchema, MAX_MENSAJES_HISTORIAL } = require('../asistente/asistente.schemas');
 const { errorLitis } = require('../asistente/errores');
 
 const MAX_ITERACIONES_POR_DEFECTO = 5;
-const MAX_MENSAJES_HISTORIAL = 10;
 const FORMATO_CONTEXTO = /^EXP-(\d{4})-(\d+)$/;
 
 const MENSAJE_LIMITE_ITERACIONES =
@@ -20,7 +20,8 @@ function maxIteraciones() {
 }
 
 // convierte el numero interno (EXP-año-id) en el expediente real (HU37)
-async function resolverContexto(contexto) {
+// y verifica que sea un expediente del usuario
+async function resolverContexto(contexto, usuario) {
     if (!contexto) return null;
 
     const [, anio, id] = FORMATO_CONTEXTO.exec(contexto) ?? [];
@@ -29,6 +30,9 @@ async function resolverContexto(contexto) {
     // getById ya descarta los dados de baja; el año tiene que coincidir con el numero interno
     if (!expediente || new Date(expediente.fecha_creacion).getFullYear() !== Number(anio)) {
         throw errorLitis(404, 'NO_ENCONTRADO', `No encontré el expediente ${contexto}.`);
+    }
+    if (!(await accesoRepository.puedeVerExpediente(usuario?.id, expediente.id))) {
+        throw errorLitis(403, 'SIN_ACCESO', `Litis solo trabaja con tus expedientes, y ${contexto} no está asignado a vos.`);
     }
 
     return {
@@ -101,20 +105,22 @@ async function ejecutarHerramienta(bloque, registro, ctx, resultados) {
  * Ciclo de conversacion con herramientas (HU33).
  * @param {Object} pedido - { mensaje, contexto, historial } validado con pedidoLitisSchema
  * @param {Object} usuario - req.usuario
- * @returns {Promise<{ respuesta: string, resultados: Object[] }>}
+ * @returns {Promise<{ respuesta: string, resultados: Object[], herramientasUsadas: string[] }>}
+ *   herramientasUsadas es solo para la auditoria (HU40): el controller no la envia al front
  */
 async function conversar({ mensaje, contexto, historial }, usuario) {
     // sin clave configurada no tiene sentido resolver nada mas
     if (!llm.estaDisponible()) throw llm.errorNoDisponible();
 
-    const expediente = await resolverContexto(contexto);
+    const expediente = await resolverContexto(contexto, usuario);
     const ctx = { usuario, expedienteId: expediente?.id, numeroExpediente: expediente?.numero };
 
     const registro = herramientas.disponibles(ctx);
     const system = armarInstrucciones({ usuario, expediente });
     const messages = [...convertirHistorial(historial), { role: 'user', content: mensaje }];
     const resultados = new Map();
-    const conResultados = (respuesta) => ({ respuesta, resultados: [...resultados.values()] });
+    const herramientasUsadas = [];
+    const conResultados = (respuesta) => ({ respuesta, resultados: [...resultados.values()], herramientasUsadas });
 
     for (let vuelta = 0; vuelta < maxIteraciones(); vuelta++) {
         const respuesta = await llm.enviar({ system, messages, tools: registro.definiciones });
@@ -129,6 +135,7 @@ async function conversar({ mensaje, contexto, historial }, usuario) {
         }
 
         messages.push({ role: 'assistant', content: respuesta.content });
+        herramientasUsadas.push(...usos.map((bloque) => bloque.name));
 
         // todas las herramientas de la vuelta se ejecutan juntas y vuelven en un solo mensaje
         const toolResults = await Promise.all(

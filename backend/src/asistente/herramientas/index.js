@@ -4,9 +4,12 @@
 // Cada herramienta exporta { name, description, input_schema, ejecutar(input, ctx) }
 // y opcionalmente soloModoExpediente: true si solo tiene sentido dentro de un expediente.
 const herramientas = [
-    require('./pruebaBuscarExpedientes'),
+    require('./buscarExpedientes'),
+    require('./buscarDocumentos'),
+    require('./buscarClientes'),
+    require('./listarTareas'),
+    require('./listarNovedades'),
     require('./leerDocumento'),
-    // require('./buscarDocumentos'), require('./listarTareas'), ...
 ];
 
 function armarRegistro(lista) {

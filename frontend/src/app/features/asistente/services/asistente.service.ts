@@ -1,9 +1,22 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import {
+  EnlaceDescarga,
+  ErrorLitis,
+  MensajeHistorial,
+  ModoDescarga,
+  PedidoLitis,
+  RespuestaLitis,
+  ResultadoLitis,
+} from '../models/asistente.model';
 
 export interface MensajeChat {
   autor: 'usuario' | 'litis';
   texto: string;
   hora: string;
+  resultados?: ResultadoLitis[]; // tarjetas devueltas por Litis
+  error?: boolean;               // mensaje de error: se muestra pero no se envía en el historial
 }
 
 export interface Conversacion {
@@ -14,8 +27,17 @@ export interface Conversacion {
   actualizada: Date;
 }
 
+// mensajes anteriores que se envían como contexto (el backend acepta hasta 10)
+const MAX_MENSAJES_HISTORIAL = 10;
+
+const SIN_CONEXION = 'No me pude conectar con el servidor. Revisá tu conexión y probá de nuevo.';
+
+/** Chat con Litis: conversa con POST /api/asistente/mensajes (HU30). */
 @Injectable({ providedIn: 'root' })
 export class AsistenteService {
+  private http = inject(HttpClient);
+  private base = `${environment.apiUrl}/asistente`;
+
   conversaciones = signal<Conversacion[]>([]);
   conversacionActualId = signal<string | null>(null);
   cargando = signal(false);
@@ -26,42 +48,15 @@ export class AsistenteService {
 
   mensajes = computed(() => this.conversacionActual()?.mensajes ?? []);
 
-  // 🔴 MOCK
-  private respuestasMock: Record<string, string> = {
-    '¿cómo genero una liquidación de intereses?':
-      'Entrá al expediente correspondiente, andá a la pestaña "Previsión" y hacé clic en "Nueva liquidación". Vas a poder elegir el tipo de tasa y el período a calcular.',
-    '¿qué expedientes tienen tareas vencidas?':
-      'Podés verlo desde el módulo "Agenda", filtrando por estado "Vencida". Ahí aparecen todas las tareas automáticas y manuales que pasaron su fecha de vencimiento.',
-    '¿cómo cambio el estado de un expediente?':
-      'El cambio de estado se hace exclusivamente desde la pestaña "Estados" del expediente. Ahí vas a ver el pipeline completo y solo vas a poder avanzar si no quedan tareas pendientes en el estado actual.',
-    '¿dónde subo un documento a un expediente?':
-      'En la ficha del expediente, pestaña "Documentos", con el botón "Subir Documento". Podés asociarlo opcionalmente a una novedad puntual.',
-    '¿cómo agrupo expedientes bajo la misma causa?':
-      'Desde la grilla de "Gestión de expedientes", en las acciones de la fila vas a encontrar el ícono de agrupar. Ahí podés buscar la causa existente o crear una nueva.',
-    '¿cómo marco una tarea como cumplida?':
-      'Podés hacerlo desde la Agenda (botón de check en la tarea) o desde la pestaña "Estados" del expediente, dentro del checklist de tareas de cada estado.',
-  };
-
-  // 🔴 MOCK
-  private respuestasContextoMock: Record<string, string> = {
-    '¿qué tareas están pendientes en este expediente?':
-      'Fijate en la pestaña "Estados" de este expediente — ahí vas a ver el checklist de tareas del estado actual, con las que faltan completar marcadas como pendientes.',
-    '¿cuál es el último movimiento procesal?':
-      'Lo vas a encontrar en la pestaña "Novedades" de este expediente, ordenado por fecha en el timeline.',
-    '¿quién es el cliente de este expediente?':
-      'Podés verlo en "Datos generales", en el campo Cliente. Desde ahí también podés ver su rol en este expediente en particular.',
-    '¿hay documentos sin cargar?':
-      'Revisá la pestaña "Documentos" de este expediente para ver todo lo cargado hasta el momento y detectar si falta algo.',
-  };
-
+  // solo cosas que Litis puede resolver con sus herramientas o con la guía de uso
   get sugerencias(): string[] {
     const contexto = this.conversacionActual()?.contexto;
     return contexto
       ? [
           '¿Qué tareas están pendientes en este expediente?',
           '¿Cuál es el último movimiento procesal?',
-          '¿Quién es el cliente de este expediente?',
-          '¿Hay documentos sin cargar?',
+          '¿Qué documentos tiene este expediente?',
+          'Resumime la última sentencia',
         ]
       : [
           '¿Cómo genero una liquidación de intereses?',
@@ -71,14 +66,23 @@ export class AsistenteService {
         ];
   }
 
-  /** Crea una conversación nueva (global o contextualizada a un expediente) y la selecciona. */
+  /**
+   * Crea una conversación nueva (global o contextualizada a un expediente) y la selecciona.
+   * Si ya hay una sin mensajes del usuario para ese contexto, la reutiliza en vez de apilar vacías.
+   */
   nuevaConversacion(contexto?: string): void {
+    const vacia = this.conversaciones().find(c => c.contexto === contexto && !this.tieneMensajesDelUsuario(c));
+    if (vacia) {
+      this.conversacionActualId.set(vacia.id);
+      return;
+    }
+
     const id = crypto.randomUUID();
     const saludo: MensajeChat = {
       autor: 'litis',
       texto: contexto
-        ? `¡Hola! Soy Litis. Puedo ayudarte con el expediente ${contexto}: buscar novedades, tareas pendientes o documentos asociados. ¿Qué necesitás?`
-        : '¡Hola! Soy Litis, tu asistente en Lexora. Puedo ayudarte a moverte por el sistema, encontrar expedientes o responder dudas generales. ¿En qué te puedo ayudar?',
+        ? `¡Hola! Soy Litis. Puedo ayudarte con el expediente ${contexto}: ver sus tareas y novedades, buscar documentos, leerlos o responder dudas sobre él. ¿Qué necesitás?`
+        : '¡Hola! Soy Litis, tu asistente en Lexora. Puedo ayudarte a moverte por el sistema, encontrar expedientes, documentos, clientes, tareas y novedades, o responder dudas generales. ¿En qué te puedo ayudar?',
       hora: this.horaActual(),
     };
 
@@ -108,46 +112,101 @@ export class AsistenteService {
     this.conversacionActualId.set(id);
   }
 
-  /** Conversaciones a listar en el sidebar, filtradas por contexto (undefined = todas las globales). */
+  /**
+   * Conversaciones a listar en el sidebar, filtradas por contexto (undefined = todas las globales).
+   * Las que todavía no tienen mensajes del usuario no se listan: se verían como un segundo botón "Nueva conversación".
+   */
   conversacionesPorContexto(contexto?: string): Conversacion[] {
     return this.conversaciones()
-      .filter(c => c.contexto === contexto)
+      .filter(c => c.contexto === contexto && this.tieneMensajesDelUsuario(c))
       .sort((a, b) => b.actualizada.getTime() - a.actualizada.getTime());
   }
 
-  enviar(texto: string): void {
+  /** Devuelve false si no se pudo enviar (texto vacío o Litis todavía está respondiendo). */
+  enviar(texto: string): boolean {
     const conv = this.conversacionActual();
-    if (!texto.trim() || !conv) return;
+    const mensaje = texto.trim();
+    if (!mensaje || !conv || this.cargando()) return false;
 
-    const esPrimerMensajeUsuario = !conv.mensajes.some(m => m.autor === 'usuario');
+    const esPrimerMensajeUsuario = !this.tieneMensajesDelUsuario(conv);
+    const pedido: PedidoLitis = {
+      mensaje,
+      historial: this.historialPara(conv),
+      ...(conv.contexto ? { contexto: conv.contexto } : {}),
+    };
 
-    this.actualizarConversacion(conv.id, c => ({
-      ...c,
-      titulo: esPrimerMensajeUsuario ? texto.slice(0, 40) : c.titulo,
-      mensajes: [...c.mensajes, { autor: 'usuario', texto, hora: this.horaActual() }],
-      actualizada: new Date(),
-    }));
-
+    this.agregarMensaje(conv.id, { autor: 'usuario', texto: mensaje, hora: this.horaActual() }, {
+      titulo: esPrimerMensajeUsuario ? mensaje.slice(0, 40) : undefined,
+    });
     this.cargando.set(true);
 
-    // TODO: Simulación de respuesta — reemplazar por integración real
-    setTimeout(() => {
-      const clave = texto.trim().toLowerCase();
-      const mapa = conv.contexto ? this.respuestasContextoMock : this.respuestasMock;
-      const respuesta = mapa[clave]
-        ?? 'Esta función todavía está en desarrollo. Por ahora puedo responder algunas preguntas frecuentes sobre el uso del sistema — probá con una de las sugerencias.';
-
-      this.actualizarConversacion(conv.id, c => ({
-        ...c,
-        mensajes: [...c.mensajes, { autor: 'litis', texto: respuesta, hora: this.horaActual() }],
-        actualizada: new Date(),
-      }));
-      this.cargando.set(false);
-    }, 700);
+    this.http.post<RespuestaLitis>(`${this.base}/mensajes`, pedido).subscribe({
+      next: (respuesta) => {
+        this.agregarMensaje(conv.id, {
+          autor: 'litis',
+          texto: respuesta.respuesta,
+          resultados: respuesta.resultados,
+          hora: this.horaActual(),
+        });
+        this.cargando.set(false);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.agregarMensaje(conv.id, { autor: 'litis', texto: this.mensajeDeError(error), error: true, hora: this.horaActual() });
+        this.cargando.set(false);
+      },
+    });
+    return true;
   }
 
-  private actualizarConversacion(id: string, cambio: (c: Conversacion) => Conversacion): void {
-    this.conversaciones.update(list => list.map(c => c.id === id ? cambio(c) : c));
+  /**
+   * Abre un documento encontrado por Litis. La pestaña se abre en el momento del clic
+   * (si se abriera despues de la respuesta, el navegador la bloquearia) y se completa
+   * con el enlace temporal que devuelve el backend (HU39).
+   */
+  abrirDocumento(documentoId: number, modo: ModoDescarga, alFallar: (mensaje: string) => void): void {
+    const pestania = window.open('', '_blank');
+
+    this.http.post<EnlaceDescarga>(`${this.base}/documentos/${documentoId}/enlace`, { modo }).subscribe({
+      next: ({ url }) => {
+        const destino = `${environment.apiUrl.replace(/\/api\/?$/, '')}${url}`;
+        if (pestania) pestania.location.href = destino;
+        else window.location.href = destino;
+      },
+      error: (error: HttpErrorResponse) => {
+        pestania?.close();
+        alFallar(this.mensajeDeError(error));
+      },
+    });
+  }
+
+  private tieneMensajesDelUsuario(conv: Conversacion): boolean {
+    return conv.mensajes.some(m => m.autor === 'usuario');
+  }
+
+  // mensajes anteriores en el formato del contrato, sin los de error
+  private historialPara(conv: Conversacion): MensajeHistorial[] {
+    return conv.mensajes
+      .filter(m => !m.error)
+      .slice(-MAX_MENSAJES_HISTORIAL)
+      .map(({ autor, texto }) => ({ autor, texto }));
+  }
+
+  // los errores del backend vienen con { codigo, mensaje } listo para mostrar al usuario
+  private mensajeDeError(error: HttpErrorResponse): string {
+    const cuerpo = error.error as Partial<ErrorLitis> | null;
+    if (cuerpo?.mensaje) return cuerpo.mensaje;
+    return error.status === 0 ? SIN_CONEXION : 'Ocurrió un error. Probá de nuevo en unos minutos.';
+  }
+
+  private agregarMensaje(id: string, mensaje: MensajeChat, cambios: { titulo?: string } = {}): void {
+    this.conversaciones.update(list => list.map(c => c.id === id
+      ? {
+          ...c,
+          titulo: cambios.titulo ?? c.titulo,
+          mensajes: [...c.mensajes, mensaje],
+          actualizada: new Date(),
+        }
+      : c));
   }
 
   private horaActual(): string {

@@ -5,6 +5,8 @@ const LIMITE_POR_DEFECTO = 10;
 const LIMITE_MAXIMO = 25;
 const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const FORMATO_NUMERO_INTERNO = /^EXP-(\d{4})-(\d+)$/i;
+// "todas" no filtra: queda como sin estado
+const ESTADOS_TAREA = ['pendientes', 'vencidas', 'cumplidas'];
 
 // recorta espacios y largo; devuelve undefined si queda vacio
 function limpiarTexto(valor, largoMaximo = 200) {
@@ -51,6 +53,11 @@ function normalizarFiltros(filtros = {}) {
         expedienteId: limpiarId(filtros.expedienteId),
         fechaDesde: limpiarFecha(filtros.fechaDesde),
         fechaHasta: limpiarFecha(filtros.fechaHasta),
+        // solo para tareas y novedades (HU36)
+        estadoTarea: ESTADOS_TAREA.includes(filtros.estadoTarea) ? filtros.estadoTarea : undefined,
+        soloProcesales: filtros.soloProcesales === true ? true : undefined,
+        // restringe a los expedientes del usuario (Litis); no es un criterio de busqueda
+        usuarioId: limpiarId(filtros.usuarioId),
         limite: limpiarLimite(filtros.limite),
     };
 
@@ -68,9 +75,15 @@ function normalizarFiltros(filtros = {}) {
     return normalizados;
 }
 
+// con un numero interno (EXP-año-id) el año tiene que coincidir con el del numero que ve el usuario.
+// se compara aca y no en SQL para usar el mismo calculo que numeroInterno (fecha leida por mssql + hora local)
+function coincideConNumeroInterno(anio, fechaCreacion) {
+    return !anio || new Date(fechaCreacion).getFullYear() === anio;
+}
+
 // evita devolver todos los registros cuando no llega ningun criterio
 function tieneCriterios(filtros) {
-    const { limite, ...criterios } = filtros;
+    const { limite, usuarioId, ...criterios } = filtros;
     return Object.values(criterios).some((valor) => valor !== undefined);
 }
 
@@ -80,18 +93,20 @@ async function buscarExpedientes(filtros) {
 
     const filas = await busquedaRepository.buscarExpedientes(normalizados);
 
-    return filas.map((r) => ({
-        id: r.id,
-        numeroInterno: numeroInterno(r.id, r.fechaCreacion),
-        caratula: r.caratula,
-        numeroExpedienteJudicial: r.numeroExpedienteJudicial,
-        area: r.area,
-        tipo: r.tipoNombre,
-        estado: r.estadoNombre,
-        clienteId: r.clienteId,
-        cliente: r.clienteNombre?.trim() || null,
-        fechaInicio: r.fechaInicio,
-    }));
+    return filas
+        .filter((r) => coincideConNumeroInterno(normalizados.anioExpediente, r.fechaCreacion))
+        .map((r) => ({
+            id: r.id,
+            numeroInterno: numeroInterno(r.id, r.fechaCreacion),
+            caratula: r.caratula,
+            numeroExpedienteJudicial: r.numeroExpedienteJudicial,
+            area: r.area,
+            tipo: r.tipoNombre,
+            estado: r.estadoNombre,
+            clienteId: r.clienteId,
+            cliente: r.clienteNombre?.trim() || null,
+            fechaInicio: r.fechaInicio,
+        }));
 }
 
 async function buscarDocumentos(filtros) {
@@ -100,17 +115,21 @@ async function buscarDocumentos(filtros) {
 
     const filas = await busquedaRepository.buscarDocumentos(normalizados);
 
-    return filas.map((r) => ({
-        id: r.id,
-        nombreArchivo: r.nombreArchivo,
-        extension: path.extname(r.nombreArchivo ?? '').slice(1).toLowerCase() || null,
-        descripcion: r.descripcion,
-        tipoDocumento: r.tipoDocumento,
-        fecha: r.fechaDocumento ?? r.fechaCreacion,
-        expedienteId: r.expedienteId,
-        numeroExpediente: numeroInterno(r.expedienteId, r.expedienteFechaCreacion),
-        caratula: r.caratula,
-    }));
+    return filas
+        .filter((r) => coincideConNumeroInterno(normalizados.anioExpediente, r.expedienteFechaCreacion))
+        .map((r) => ({
+            id: r.id,
+            nombreArchivo: r.nombreArchivo,
+            extension: path.extname(r.nombreArchivo ?? '').slice(1).toLowerCase() || null,
+            descripcion: r.descripcion,
+            tipoDocumento: r.tipoDocumento,
+            fecha: r.fechaDocumento ?? r.fechaCreacion,
+            expedienteId: r.expedienteId,
+            numeroExpediente: numeroInterno(r.expedienteId, r.expedienteFechaCreacion),
+            caratula: r.caratula,
+            // resumen generado por IA (HU42); null si todavia no se proceso
+            resumen: r.resumen ?? null,
+        }));
 }
 
 async function buscarClientes(filtros) {
@@ -128,10 +147,56 @@ async function buscarClientes(filtros) {
     }));
 }
 
+async function buscarTareas(filtros) {
+    const normalizados = normalizarFiltros(filtros);
+    if (!tieneCriterios(normalizados)) return [];
+
+    const filas = await busquedaRepository.buscarTareas(normalizados);
+
+    return filas
+        .filter((r) => coincideConNumeroInterno(normalizados.anioExpediente, r.expedienteFechaCreacion))
+        .map((r) => ({
+            id: r.id,
+            titulo: r.titulo,
+            descripcion: r.descripcion,
+            fechaVencimiento: r.fechaVencimiento,
+            hora: r.hora,
+            // una pendiente con la fecha pasada se informa como vencida
+            estado: r.vencida ? 'Vencido' : r.estadoNombre,
+            prioridad: r.prioridadNombre,
+            expedienteId: r.expedienteId,
+            numeroExpediente: numeroInterno(r.expedienteId, r.expedienteFechaCreacion),
+            caratula: r.caratula,
+        }));
+}
+
+async function buscarNovedades(filtros) {
+    const normalizados = normalizarFiltros(filtros);
+    if (!tieneCriterios(normalizados)) return [];
+
+    const filas = await busquedaRepository.buscarNovedades(normalizados);
+
+    return filas
+        .filter((r) => coincideConNumeroInterno(normalizados.anioExpediente, r.expedienteFechaCreacion))
+        .map((r) => ({
+            id: r.id,
+            titulo: r.titulo,
+            descripcion: r.descripcion,
+            fecha: r.fechaNovedad,
+            tipo: r.tipoNovedad,
+            esProcesal: Boolean(r.esProcesal),
+            expedienteId: r.expedienteId,
+            numeroExpediente: numeroInterno(r.expedienteId, r.expedienteFechaCreacion),
+            caratula: r.caratula,
+        }));
+}
+
 module.exports = {
     buscarExpedientes,
     buscarDocumentos,
     buscarClientes,
+    buscarTareas,
+    buscarNovedades,
     // se exportan para tests
     normalizarFiltros,
     tieneCriterios,

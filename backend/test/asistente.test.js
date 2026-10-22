@@ -1,3 +1,5 @@
+// los tests nunca llaman a la IA real: la clave del .env no se carga (dotenv no pisa variables existentes)
+process.env.ANTHROPIC_API_KEY = '';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'secreto-de-prueba';
 
 const { describe, test, beforeEach, afterEach, mock } = require('node:test');
@@ -8,11 +10,13 @@ const llm = require('../src/config/llm');
 const asistenteService = require('../src/services/asistente.service');
 const busquedaService = require('../src/services/busqueda.service');
 const expedientesRepository = require('../src/repositories/expedientes.repository');
+const accesoRepository = require('../src/repositories/acceso.repository');
 const asistenteRepository = require('../src/repositories/asistente.repository');
 const cloudinaryDocumento = require('../src/services/cloudinaryDocumento.service');
 const herramientas = require('../src/asistente/herramientas');
 const leerDocumento = require('../src/asistente/herramientas/leerDocumento');
 const { pedidoLitisSchema } = require('../src/asistente/asistente.schemas');
+const logsService = require('../src/services/logs.service');
 
 const USUARIO = { id: 7, nombre: 'Ana', apellido: 'Gómez' };
 
@@ -45,6 +49,8 @@ function simularIA(...respuestas) {
 }
 
 beforeEach(() => {
+    // por defecto el expediente es del usuario; los casos sin acceso lo cambian
+    mock.method(accesoRepository, 'puedeVerExpediente', async () => true);
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.LITIS_MAX_ITERACIONES;
     delete process.env.LITIS_LECTURA_MAX_MB;
@@ -75,6 +81,28 @@ describe('HU32 - cliente de IA configurable', () => {
         }
     });
 
+    test('el timeout sale de LITIS_TIMEOUT_SEGUNDOS y por defecto es 120', () => {
+        assert.equal(llm.configuracion().timeoutSegundos, 120);
+        process.env.LITIS_TIMEOUT_SEGUNDOS = '45';
+        try {
+            assert.equal(llm.configuracion().timeoutSegundos, 45);
+        } finally {
+            delete process.env.LITIS_TIMEOUT_SEGUNDOS;
+        }
+    });
+
+    test('caída, timeout, clave inválida o límite del proveedor se informan como no disponible', () => {
+        for (const status of [undefined, 401, 403, 429, 500, 529]) {
+            assert.equal(llm.esFallaDelProveedor(status), true, `status ${status}`);
+        }
+    });
+
+    test('un pedido rechazado por configuración o código (400, 404) no se disfraza de caída', () => {
+        for (const status of [400, 404, 413, 422]) {
+            assert.equal(llm.esFallaDelProveedor(status), false, `status ${status}`);
+        }
+    });
+
     test('sin clave, conversar corta antes de llamar a la IA', async () => {
         const enviar = mock.method(llm, 'enviar');
         await assert.rejects(asistenteService.conversar({ mensaje: 'hola', historial: [] }, USUARIO), { statusCode: 503 });
@@ -83,12 +111,12 @@ describe('HU32 - cliente de IA configurable', () => {
 });
 
 describe('HU33 - ciclo con herramientas', () => {
-    test('recorre el ciclo completo con la herramienta de prueba y devuelve texto y resultados', async () => {
+    test('recorre el ciclo completo con una herramienta y devuelve texto y resultados', async () => {
         const buscar = mock.method(busquedaService, 'buscarExpedientes', async () => [{
             id: 26, numeroInterno: 'EXP-2026-26', caratula: 'Pérez c/ ACME s/ daños', estado: 'En trámite', tipo: 'Civil', cliente: 'Juan Pérez',
         }]);
         const pedidos = simularIA(
-            respuestaHerramienta('prueba_buscar_expedientes', { cliente: 'Pérez' }),
+            respuestaHerramienta('buscar_expedientes', { cliente: 'Pérez' }),
             respuestaTexto('Encontré el expediente de Juan Pérez contra ACME.'),
         );
 
@@ -110,13 +138,13 @@ describe('HU33 - ciclo con herramientas', () => {
         assert.equal(toolResult.type, 'tool_result');
         assert.equal(toolResult.tool_use_id, 'toolu_1');
         assert.match(toolResult.content[0].text, /EXP-2026-26/);
-        assert.ok(pedidos[0].tools.some((t) => t.name === 'prueba_buscar_expedientes'));
+        assert.ok(pedidos[0].tools.some((t) => t.name === 'buscar_expedientes'));
     });
 
     test('se corta al llegar al máximo de iteraciones (configurable)', async () => {
         process.env.LITIS_MAX_ITERACIONES = '3';
         mock.method(busquedaService, 'buscarExpedientes', async () => []);
-        const pedidos = simularIA(respuestaHerramienta('prueba_buscar_expedientes', { texto: 'x' }));
+        const pedidos = simularIA(respuestaHerramienta('buscar_expedientes', { texto: 'x' }));
 
         const resultado = await asistenteService.conversar({ mensaje: 'buscá', historial: [] }, USUARIO);
 
@@ -132,7 +160,7 @@ describe('HU33 - ciclo con herramientas', () => {
                 stop_reason: 'tool_use',
                 content: [
                     { type: 'tool_use', id: 'a', name: 'no_existe', input: {} },
-                    { type: 'tool_use', id: 'b', name: 'prueba_buscar_expedientes', input: { texto: 'x' } },
+                    { type: 'tool_use', id: 'b', name: 'buscar_expedientes', input: { texto: 'x' } },
                 ],
             },
             respuestaTexto('No pude buscar.'),
@@ -212,7 +240,7 @@ describe('HU37 - modo expediente', () => {
     test('las herramientas usan el expediente abierto por defecto', async () => {
         mock.method(expedientesRepository, 'getById', async () => EXPEDIENTE);
         const buscar = mock.method(busquedaService, 'buscarExpedientes', async () => []);
-        simularIA(respuestaHerramienta('prueba_buscar_expedientes', {}), respuestaTexto('ok'));
+        simularIA(respuestaHerramienta('buscar_expedientes', {}), respuestaTexto('ok'));
 
         await asistenteService.conversar({ mensaje: 'datos de este expediente', contexto: 'EXP-2026-26', historial: [] }, USUARIO);
 
@@ -231,7 +259,20 @@ describe('HU37 - modo expediente', () => {
 
     test('un número con el año equivocado no resuelve otro expediente', async () => {
         mock.method(expedientesRepository, 'getById', async () => EXPEDIENTE);
-        await assert.rejects(asistenteService.resolverContexto('EXP-2019-26'), { codigo: 'NO_ENCONTRADO' });
+        await assert.rejects(asistenteService.resolverContexto('EXP-2019-26', USUARIO), { codigo: 'NO_ENCONTRADO' });
+    });
+
+    test('un expediente que no es del usuario responde SIN_ACCESO sin llamar a la IA', async () => {
+        mock.method(expedientesRepository, 'getById', async () => EXPEDIENTE);
+        const acceso = mock.method(accesoRepository, 'puedeVerExpediente', async () => false);
+        const pedidos = simularIA(respuestaTexto('no debería llegar'));
+
+        await assert.rejects(
+            asistenteService.conversar({ mensaje: 'x', contexto: 'EXP-2026-26', historial: [] }, USUARIO),
+            { statusCode: 403, codigo: 'SIN_ACCESO', message: 'Litis solo trabaja con tus expedientes, y EXP-2026-26 no está asignado a vos.' }
+        );
+        assert.deepEqual(acceso.mock.calls[0].arguments, [7, 26]);
+        assert.equal(pedidos.length, 0);
     });
 
     test('sin contexto funciona normalmente y no ofrece herramientas de expediente', async () => {
@@ -251,7 +292,7 @@ describe('HU45 - lectura de documento bajo demanda', () => {
     const CTX = { usuario: USUARIO, expedienteId: 26, numeroExpediente: 'EXP-2026-26' };
     const DOCUMENTO = {
         id: 911, nombreArchivo: 'demanda.pdf', storageKey: 'lexora/documentos/demanda', activo: true,
-        expedienteId: 26, tipoDocumento: 'Demanda', estadoResumen: null,
+        expedienteId: 26, tipoDocumento: 'Demanda',
     };
 
     function simularArchivo(bytes, headers = {}) {
@@ -302,17 +343,6 @@ describe('HU45 - lectura de documento bajo demanda', () => {
         assert.equal(fetch.mock.callCount(), 0);
     });
 
-    test('respeta la marca "no procesar con IA"', async () => {
-        mock.method(asistenteRepository, 'obtenerDocumentoParaLectura', async () => ({ ...DOCUMENTO, estadoResumen: 'omitido' }));
-        const fetch = simularArchivo(Buffer.from('%PDF'));
-
-        const resultado = await leerDocumento.ejecutar({ documentoId: 911 }, CTX);
-
-        assert.match(resultado.resumen.aviso, /no procesarse con IA/);
-        assert.equal(resultado.contenido, undefined);
-        assert.equal(fetch.mock.callCount(), 0);
-    });
-
     test('avisa cuando el documento supera el límite de tamaño', async () => {
         process.env.LITIS_LECTURA_MAX_MB = '1';
         mock.method(asistenteRepository, 'obtenerDocumentoParaLectura', async () => DOCUMENTO);
@@ -354,6 +384,8 @@ describe('POST /api/asistente/mensajes', () => {
     let base;
 
     beforeEach(async () => {
+        // el log de seguridad (HU40) no se escribe en la base durante los tests
+        mock.method(logsService, 'registrarEvento', async () => {});
         const app = require('../src/app');
         servidor = app.listen(0);
         await new Promise((resolve) => servidor.once('listening', resolve));
