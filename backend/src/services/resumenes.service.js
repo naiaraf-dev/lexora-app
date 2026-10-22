@@ -37,10 +37,39 @@ function extensionDe(nombreArchivo) {
     return path.extname(nombreArchivo ?? '').slice(1).toLowerCase();
 }
 
+// topes de memoria del job: el archivo descargado (igual que el limite de subida) y lo que se
+// descomprime de un .docx, que es un ZIP y podria inflarse a varios GB al extraer el texto
+const MB = 1024 * 1024;
+const MAX_BYTES_DESCOMPRIMIDO = 50 * MB;
+
+function maximoBytesArchivo() {
+    const mb = Number(process.env.RESUMEN_IA_MAX_MB);
+    return (Number.isFinite(mb) && mb > 0 ? mb : 10) * MB;
+}
+
+function archivoDemasiadoGrande() {
+    return new DocumentoNoResumible(`El archivo supera el límite de ${maximoBytesArchivo() / MB} MB para resumirlo`);
+}
+
+// descarga cortando apenas se pasa del tope, sin confiar en el tamaño que declara el servidor
 async function descargar(storageKey) {
     const respuesta = await fetch(cloudinaryDocumento.obtenerUrlDocumentoCloudinary(storageKey));
     if (!respuesta.ok) throw new Error(`No se pudo descargar el archivo (HTTP ${respuesta.status})`);
-    return Buffer.from(await respuesta.arrayBuffer());
+
+    const maximo = maximoBytesArchivo();
+    if (Number(respuesta.headers.get('content-length')) > maximo) {
+        await respuesta.body?.cancel();
+        throw archivoDemasiadoGrande();
+    }
+
+    const partes = [];
+    let total = 0;
+    for await (const parte of respuesta.body) {
+        total += parte.length;
+        if (total > maximo) throw archivoDemasiadoGrande();
+        partes.push(parte);
+    }
+    return Buffer.concat(partes);
 }
 
 // arma el contenido que se le manda a la IA segun el tipo de archivo
@@ -56,6 +85,15 @@ async function armarContenido(buffer, extension) {
     }
 
     if (extraccionTexto.esWord(extension)) {
+        // un .docx se revisa antes de descomprimirlo; un .doc no esta comprimido y ya paso el tope de descarga
+        if (extension === 'docx') {
+            const descomprimido = extraccionTexto.tamanioDescomprimidoZip(buffer);
+            if (descomprimido === null) throw new DocumentoNoResumible('El archivo Word está dañado');
+            if (descomprimido > MAX_BYTES_DESCOMPRIMIDO) {
+                throw new DocumentoNoResumible('El archivo Word es demasiado grande al descomprimirlo');
+            }
+        }
+
         const texto = await extraccionTexto.textoDeWord(buffer, extension);
         if (!texto) throw new DocumentoNoResumible('El documento Word no tiene texto');
 

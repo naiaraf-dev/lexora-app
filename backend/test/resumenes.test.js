@@ -28,6 +28,23 @@ const RESUMEN_IA = {
 
 const DOCUMENTO = { id: 911, nombreArchivo: 'demanda_perez.pdf', storageKey: 'lexora/documentos/demanda', activo: true };
 
+// un .docx real (es un ZIP) para las pruebas de Word
+const ESCRITO_DOCX = fs.readFileSync(path.join(__dirname, 'fixtures', 'escrito.docx'));
+
+// ZIP minimo que declara una entrada de 2 GB descomprimida: lo que haria una "zip bomb"
+function zipQueSeInfla(bytesDescomprimidos) {
+    const entrada = Buffer.alloc(46);
+    entrada.writeUInt32LE(0x02014b50, 0);
+    entrada.writeUInt32LE(bytesDescomprimidos, 24);
+    const fin = Buffer.alloc(22);
+    fin.writeUInt32LE(0x06054b50, 0);
+    fin.writeUInt16LE(1, 8);
+    fin.writeUInt16LE(1, 10);
+    fin.writeUInt32LE(entrada.length, 12);
+    fin.writeUInt32LE(0, 16);
+    return Buffer.concat([entrada, fin]);
+}
+
 function respuestaIA(datos = RESUMEN_IA, extra = {}) {
     return { stop_reason: 'end_turn', model: 'claude-sonnet-5-5', content: [{ type: 'text', text: JSON.stringify(datos) }], ...extra };
 }
@@ -118,7 +135,7 @@ describe('HU42 - contenido que se envía a la IA', () => {
     test('un Word se convierte a texto antes de enviarlo', async () => {
         mock.method(extraccionTexto, 'textoDeWord', async () => 'Texto del escrito');
 
-        const contenido = await resumenesService.armarContenido(Buffer.from('docx'), 'docx');
+        const contenido = await resumenesService.armarContenido(ESCRITO_DOCX, 'docx');
 
         assert.equal(contenido[0].type, 'text');
         assert.match(contenido[0].text, /Texto del escrito/);
@@ -127,7 +144,7 @@ describe('HU42 - contenido que se envía a la IA', () => {
     test('un Word muy largo se recorta y se le avisa a la IA', async () => {
         mock.method(extraccionTexto, 'textoDeWord', async () => 'x'.repeat(500_000));
 
-        const [bloque] = await resumenesService.armarContenido(Buffer.from('docx'), 'docx');
+        const [bloque] = await resumenesService.armarContenido(ESCRITO_DOCX, 'docx');
 
         assert.match(bloque.text, /se muestra solo el comienzo/);
         assert.ok(bloque.text.length < 401_000);
@@ -140,6 +157,52 @@ describe('HU42 - contenido que se envía a la IA', () => {
 
     test('un tipo no soportado no se puede resumir', async () => {
         await assert.rejects(resumenesService.armarContenido(Buffer.from('x'), 'xlsx'), /no soportado: \.xlsx/);
+    });
+});
+
+describe('HU42 - topes de memoria', () => {
+    afterEach(() => { delete process.env.RESUMEN_IA_MAX_MB; });
+
+    test('un .docx que se infla de más al descomprimirlo no se descomprime', async () => {
+        const extraer = mock.method(extraccionTexto, 'textoDeWord', async () => 'no debería llegar');
+
+        await assert.rejects(
+            resumenesService.armarContenido(zipQueSeInfla(0x7fffffff), 'docx'),
+            (error) => error instanceof resumenesService.DocumentoNoResumible && /demasiado grande/.test(error.message),
+        );
+        assert.equal(extraer.mock.callCount(), 0);
+    });
+
+    test('un .docx dañado se omite sin intentar leerlo', async () => {
+        const extraer = mock.method(extraccionTexto, 'textoDeWord', async () => 'x');
+        await assert.rejects(resumenesService.armarContenido(Buffer.from('no es un zip'), 'docx'), /dañado/);
+        assert.equal(extraer.mock.callCount(), 0);
+    });
+
+    test('mide el tamaño descomprimido de un .docx real sin descomprimirlo', () => {
+        const tamanio = extraccionTexto.tamanioDescomprimidoZip(ESCRITO_DOCX);
+        assert.ok(tamanio > ESCRITO_DOCX.length && tamanio < 1024 * 1024, String(tamanio));
+        assert.equal(extraccionTexto.tamanioDescomprimidoZip(zipQueSeInfla(0xffffffff)), Infinity);
+    });
+
+    test('un archivo más grande que el tope se omite aunque el servidor no diga su tamaño', async () => {
+        process.env.RESUMEN_IA_MAX_MB = '0.001'; // unos 1000 bytes
+        const repo = simularRepositorio();
+        simularArchivo(Buffer.alloc(5000));
+        const ia = mock.method(llm, 'enviar', async () => respuestaIA());
+
+        assert.equal(await resumenesService.procesarDocumento(911), 'omitido');
+        assert.match(repo.omitir.mock.calls[0].arguments[1], /supera el límite/);
+        assert.equal(ia.mock.callCount(), 0);
+    });
+
+    test('si el servidor declara un tamaño mayor al tope, ni siquiera lo descarga', async () => {
+        process.env.RESUMEN_IA_MAX_MB = '1';
+        simularRepositorio();
+        mock.method(cloudinaryDocumento, 'obtenerUrlDocumentoCloudinary', () => 'https://cloudinary.test/archivo');
+        mock.method(globalThis, 'fetch', async () => new Response('x', { headers: { 'content-length': String(50 * 1024 * 1024) } }));
+
+        assert.equal(await resumenesService.procesarDocumento(911), 'omitido');
     });
 });
 
