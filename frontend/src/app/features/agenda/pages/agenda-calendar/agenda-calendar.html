@@ -1,10 +1,10 @@
-<div class="min-h-full bg-gray-50">
+<div class="min-h-full bg-gray-50 dark:bg-slate-900">
   <!-- Header -->
   <!-- muestra el titulo y el resumen de pendientes/vencidas -->
   <div class="mb-6 flex items-start justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Agenda</h1>
-      <p class="mt-1 text-sm text-gray-500">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-slate-100">Agenda</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">
         {{ obtenerPendientes() }} pendientes /
         <span class="text-red-500">{{ obtenerVencidas() }} vencidas</span>
       </p>
@@ -13,8 +13,8 @@
 
   <!-- Card de controles -->
   <!-- aca estan los controles del mes, la vista y los filtros -->
-  <section class="bg-white border border-gray-200 rounded-lg p-4 mb-5">
-    <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-4">
+  <section class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg p-4 mb-5">
+    <div class="flex items-center justify-between border-b border-gray-200 dark:border-slate-700 pb-4 mb-4">
       <div class="flex items-center gap-4">
         <!-- cambia al mes anterior -->
         <button type="button"
@@ -42,15 +42,15 @@
       </div>
 
       <!-- botones para alternar entre calendario y lista -->
-      <div class="flex border border-gray-200 rounded-md overflow-hidden">
+      <div class="flex border border-gray-200 dark:border-slate-700 rounded-md overflow-hidden">
         <button type="button" class="px-3 py-2 text-sm"
-          [ngClass]="vista === 'calendario' ? 'bg-primary text-white' : 'bg-white text-primary'"
+          [ngClass]="vista === 'calendario' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-primary'"
           (click)="vista = 'calendario'">
           Calendario
         </button>
 
         <button type="button" class="px-3 py-2 text-sm"
-          [ngClass]="vista === 'lista' ? 'bg-primary text-white' : 'bg-white text-primary'" (click)="vista = 'lista'">
+          [ngClass]="vista === 'lista' ? 'bg-primary text-white' : 'bg-white dark:bg-slate-800 text-primary'" (click)="vista = 'lista'">
           Lista
         </button>
       </div>
@@ -58,7 +58,7 @@
 
     <!-- filtros que actualizan la agenda cada vez que cambia alguno -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 items-center">
-      <div class="flex gap-3 items-center text-sm">
+      <div class="flex gap-3 items-center text-sm text-text-primary dark:text-slate-300">
         <label class="flex items-center gap-1">
           <input type="checkbox" [(ngModel)]="mostrarPendientes" (change)="aplicarFiltros()" />
           <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
@@ -91,7 +91,7 @@
     <div class="flex justify-end gap-3 mt-2">
       <!-- deja los filtros en su estado inicial -->
       <button (click)="limpiarFiltros()"
-        class="px-8 py-2 border border-gray-200 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+        class="px-8 py-2 border border-gray-200 dark:border-slate-700 text-sm font-medium text-text-primary dark:text-slate-100 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition">
         Limpiar filtros
       </button>
     </div>
@@ -100,7 +100,7 @@
   <!-- Vista calendario -->
   <!-- muestra los dias del mes y las tareas dentro de cada dia -->
   @if (vista === 'calendario') {
-  <section class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <section class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
     <div class="grid grid-cols-7 bg-primary text-white">
       @for (dia of diasSemana; track dia) {
       <div class="h-11 flex items-center justify-center text-xs font-semibold">
@@ -111,15 +111,15 @@
 
     <div class="grid grid-cols-7">
       @for (dia of diasCalendario; track dia.numero) {
-      <div class="min-h-[110px] border-r border-b border-gray-200 p-3 hover:bg-gray-50" [ngClass]="{
-              'bg-slate-200 border-slate-400 shadow-inner': esDiaActual(dia.fecha),
-              'bg-red-50': !esDiaActual(dia.fecha) && dia.tareas.length && dia.tareas[0].estado === 'Vencida',
-              'bg-white': !esDiaActual(dia.fecha) && !(dia.tareas.length && dia.tareas[0].estado === 'Vencida')
+      <div class="min-h-[110px] border-r border-b border-gray-200 dark:border-slate-700 p-3 hover:bg-gray-50 dark:hover:bg-slate-700/50" [ngClass]="{
+              'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-600 shadow-inner': esDiaActual(dia.fecha),
+              'bg-red-50 dark:bg-red-900/10': !esDiaActual(dia.fecha) && dia.tareas.length && dia.tareas[0].estado === 'Vencida',
+              'bg-white dark:bg-slate-800': !esDiaActual(dia.fecha) && !(dia.tareas.length && dia.tareas[0].estado === 'Vencida')
             }">
         <div class="flex justify-between mb-3">
           <span class="text-xs font-medium" [ngClass]="esDiaActual(dia.fecha)
                   ? 'bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center'
-                  : 'text-gray-800'">
+                  : 'text-gray-800 dark:text-slate-300'">
             {{ dia.numero }}
           </span>
 
@@ -148,7 +148,7 @@
     <app-ui-table [columns]="columnaslista" [data]="tareasListaPaginadas"
       (action)="onTablaAccion($event)"></app-ui-table>
 
-    <div class="flex items-center justify-between px-4 py-2 text-xs text-text-primary/40">
+    <div class="flex items-center justify-between px-4 py-2 text-xs text-text-primary/40 dark:text-slate-500">
       <span>Mostrando {{ tareasListaPaginadas.length }} de {{ tareasFiltradas.length }} tareas</span>
       <app-ui-pagination [paginaActual]="paginaActual" [totalPaginas]="totalPaginas"
         (cambio)="onPageChange($event)"></app-ui-pagination>
@@ -168,87 +168,87 @@
     </div>
 
     <div slot="cuerpo" class="flex flex-col gap-4">
-      <p class="text-sm text-text-primary/70">{{ tareaSeleccionada?.descripcion }}</p>
+      <p class="text-sm text-text-primary/70 dark:text-slate-300">{{ tareaSeleccionada?.descripcion }}</p>
 
       <!-- datos principales de la tarea seleccionada -->
       <div class="grid grid-cols-2 gap-3">
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Vencimiento</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Vencimiento</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.fecha ? obtenerFechaArgentina(tareaSeleccionada!.fecha) : 'Sin vencimiento' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Hora</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Hora</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.hora || 'Sin hora' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Expediente</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Expediente</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.expediente }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Novedad</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Novedad</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.novedad }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Cliente</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Cliente</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.cliente || 'Sin cliente' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Responsable</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Responsable</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.responsable || 'Sin responsable' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Fecha creación</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Fecha creación</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.fechaCreacion ? obtenerFechaArgentina(tareaSeleccionada!.fechaCreacion) : '' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Última modificación</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Última modificación</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.fechaUltimaModificacion ?
               obtenerFechaArgentina(tareaSeleccionada!.fechaUltimaModificacion) : 'Sin modificar' }}
             </p>
           </div>
         </div>
 
-        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-4 py-3">
+        <div class="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30 px-4 py-3">
           <div>
-            <p class="text-[11px] text-text-primary/45 font-medium leading-none mb-1">Estado</p>
-            <p class="text-sm text-text-primary font-semibold">
+            <p class="text-[11px] text-text-primary/45 dark:text-slate-500 font-medium leading-none mb-1">Estado</p>
+            <p class="text-sm text-text-primary dark:text-slate-100 font-semibold">
               {{ tareaSeleccionada?.estado }}
             </p>
           </div>
@@ -259,7 +259,7 @@
     <!-- acciones del modal segun el estado de la tarea -->
     <div slot="footer" class="flex justify-end gap-3">
       <button type="button" (click)="cerrarDetalle()"
-        class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        class="px-4 py-2 text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
         Cerrar
       </button>
 

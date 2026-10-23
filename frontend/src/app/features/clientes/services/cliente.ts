@@ -30,7 +30,7 @@ export interface Cliente {
   telefono: string;
   direccion: string;
 
-  fechaNacimiento?: string;
+  fechaNacimiento: string;
   contactoAlternativo?: string;
   observaciones?: string;
 
@@ -103,6 +103,12 @@ export class ClienteService {
     return this.http.put<any>(`${environment.apiUrl}/clientes/${cliente.id}`, this.mapToBackend(cliente));
   }
 
+  /** DELETE /api/clientes/:id */
+  // da de baja logica al cliente (queda como Inactivo, no se borra)
+  eliminarCliente(id: number): Observable<any> {
+    return this.http.delete<any>(`${environment.apiUrl}/clientes/${id}`);
+  }
+
   // Mapeo BD → modelo frontend
   // convierte los nombres y formatos de la base al modelo que usa Angular
   private mapFromBackend(c: any): Cliente {
@@ -131,16 +137,16 @@ export class ClienteService {
   private mapToBackend(c: Partial<Cliente>): object {
     const esJuridica = c.tipo === 'Persona Jurídica';
     return {
-      nombre: esJuridica ? (c.razonSocial ?? '') : (c.nombre ?? ''),
-      apellido: esJuridica ? '' : (c.apellido ?? ''),
-      email: c.email ?? null,
-      telefono: c.telefono ?? null,
-      dni: c.dni ?? null,
-      cuit: c.cuit ?? null,
+      nombre: esJuridica ? (c.razonSocial || '') : (c.nombre || ''),
+      apellido: esJuridica ? null : (c.apellido || null),
+      email: c.email || null,
+      telefono: c.telefono || null,
+      dni: esJuridica ? null : (c.dni || null),
+      cuit: c.cuit || null,
       activo: c.estado === 'Activo',
-      direccion: c.direccion ?? null,
-      observaciones: c.observaciones ?? null,
-      fecha_nacimiento: c.fechaNacimiento ?? null,
+      direccion: c.direccion || null,
+      observaciones: c.observaciones || null,
+      fecha_nacimiento: esJuridica ? null : (c.fechaNacimiento || null),
       tipo_cliente: esJuridica ? TIPO_JURIDICA : TIPO_FISICA,
       rol_cliente: null,
     };

@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-4">
 
   <!-- Filtros + botón subir -->
-  <div class="bg-white rounded-xl border border-black/8 px-4 py-4 flex flex-wrap items-end justify-between gap-3">
+  <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700 px-4 py-4 flex flex-wrap items-end justify-between gap-3">
     <app-documentos-filters [tipoOptions]="tipoDocumentoOptions" (filtersChange)="onFiltersChange($event)"></app-documentos-filters>
     <app-primary-btn (click)="modalAltaRef.abrir()">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

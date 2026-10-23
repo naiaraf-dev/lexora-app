@@ -8,13 +8,14 @@ import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 import { toast } from 'ngx-sonner';
 import * as XLSXStyle from 'xlsx-js-style';
 
 @Component({
   selector: 'app-clientes-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ClienteTable, ClienteModal, UiInput, UiSelect, UiPagination, PrimaryBtn],
+  imports: [CommonModule, FormsModule, ClienteTable, ClienteModal, UiInput, UiSelect, UiPagination, PrimaryBtn, UiConfirmModal],
   templateUrl: './clientes-list.html',
 })
 export class ClientesList implements OnInit {
@@ -29,6 +30,9 @@ export class ClientesList implements OnInit {
   modalVisible = false;
   modoModal: 'crear' | 'editar' | 'ver' = 'crear';
   clienteSeleccionado: Cliente | null = null;
+
+  // cliente que se va a dar de baja; mientras no sea null se muestra el modal de confirmacion
+  clienteAEliminar: Cliente | null = null;
 
   filtrosAbiertos = signal(true);
 
@@ -118,6 +122,36 @@ export class ClientesList implements OnInit {
         error: (err) => toast.error(err?.error?.mensaje ?? 'Error al actualizar cliente'),
       });
     }
+  }
+
+  // abre la confirmacion para dar de baja al cliente
+  pedirBaja(cliente: Cliente): void {
+    this.clienteAEliminar = cliente;
+  }
+
+  // mensaje del modal de confirmacion de baja
+  get mensajeConfirmarBaja(): string {
+    const c = this.clienteAEliminar;
+    const nombre = c?.tipo === 'Persona Jurídica' ? c.razonSocial : `${c?.nombre ?? ''} ${c?.apellido ?? ''}`.trim();
+    return `¿Estás seguro que querés dar de baja a "${nombre}"? El cliente quedará como Inactivo.`;
+  }
+
+  // da de baja logica al cliente y recarga el listado
+  confirmarBaja(): void {
+    if (!this.clienteAEliminar) return;
+
+    this.clienteService.eliminarCliente(this.clienteAEliminar.id).subscribe({
+      next: () => {
+        this.clienteAEliminar = null;
+        this.clienteService.cargarClientes();
+        toast.success('Cliente dado de baja correctamente');
+      },
+      error: (err) => {
+        this.clienteAEliminar = null;
+        toast.error(err?.error?.mensaje ?? 'Error al dar de baja el cliente');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // aplica los filtros de nombre, documento, tipo y estado

@@ -3,14 +3,18 @@ const router = express.Router();
 
 const tareasController = require('../controllers/tareas.controller');
 
-router.get('/tarea', tareasController.obtenerTareas);
+// guard de autenticación: va POR RUTA porque este router se monta en el prefijo
+// ancho '/api', compartido con rutas públicas como /api/auth.
+const authMiddleware = require('../middlewares/auth.middleware');
 
-router.get('/tareas', tareasController.obtenerTodasLasTareas);
+router.get('/tarea', authMiddleware, tareasController.obtenerTareas);
 
-router.post('/insertarTarea', tareasController.insertarTarea);
+router.get('/tareas', authMiddleware, tareasController.obtenerTodasLasTareas);
 
-router.put('/tarea/:idtarea', tareasController.modificarTarea);
+router.post('/insertarTarea', authMiddleware, tareasController.insertarTarea);
 
-router.delete('/tarea/:idtarea', tareasController.eliminarTarea);
+router.put('/tarea/:idtarea', authMiddleware, tareasController.modificarTarea);
+
+router.delete('/tarea/:idtarea', authMiddleware, tareasController.eliminarTarea);
 
 module.exports = router;

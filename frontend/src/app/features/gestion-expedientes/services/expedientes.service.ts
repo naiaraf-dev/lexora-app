@@ -40,4 +40,14 @@ export class ExpedientesService {
   eliminar(id: number): Observable<any> {
     return this.http.delete<any>(`${this.base}/${id}`);
   }
+
+  /** Lista todas las causas con sus expedientes anidados. */
+  listarCausas(filtros: any = {}): Observable<any> {
+    let params = new HttpParams();
+    Object.entries(filtros).forEach(([clave, valor]) => {
+        if (valor !== '' && valor !== null && valor !== undefined)
+            params = params.set(clave, String(valor));
+    });
+    return this.http.get<any>(`${environment.apiUrl}/causas`, { params });
+  }
 }

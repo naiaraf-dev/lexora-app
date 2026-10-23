@@ -1,9 +1,13 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { toast } from 'ngx-sonner';
 import { ExpedienteHeader } from '../../components/expediente-header/expediente-header';
 import { ExpedienteFilters, ExpedienteFilterState } from '../../components/expediente-filters/expediente-filters';
 import { ExpedienteTable, Expediente } from '../../components/expediente-table/expediente-table';
 import { ExpedientesService } from '../../services/expedientes.service';
+import { Causa } from '../../components/expediente-table/expediente-table';
+import { ModalAgrupar } from '../../components/modal-agrupar/modal-agrupar';
+import { UiConfirmModal } from '../../../../shared/components/ui-confirm-modal/ui-confirm-modal';
 
 const PAGE_SIZE = 10;
 
@@ -15,7 +19,7 @@ const PAGE_SIZE = 10;
 @Component({
   selector: 'app-expediente-list',
   standalone: true,
-  imports: [CommonModule, ExpedienteHeader, ExpedienteFilters, ExpedienteTable],
+  imports: [CommonModule, ExpedienteHeader, ExpedienteFilters, ExpedienteTable, ModalAgrupar, UiConfirmModal],
   templateUrl: './expediente-list.html',
 })
 export class ExpedienteList implements OnInit {
@@ -50,6 +54,11 @@ export class ExpedienteList implements OnInit {
   onEliminar(expediente: Expediente): void {
     this.expedientesService.eliminar(Number(expediente.id)).subscribe({
         next: () => this.cargarExpedientes(),
+        error: (err) => {
+            console.error('Error al eliminar expediente:', err);
+            // ej. 409 si tiene previsiones sin cerrar: el back explica por qué no se puede
+            toast.error(err?.error?.mensaje ?? 'No se pudo dar de baja el expediente');
+        },
     });
   }
 
@@ -94,5 +103,91 @@ export class ExpedienteList implements OnInit {
     if (page < 1 || page > this.totalPages) return;
     this.currentPage = page;
     this.cargarExpedientes();
+  }
+
+  get causas(): Causa[] {
+    const agrupadas: Causa[] = [];
+    const sinCausa: Causa[] = [];
+    const mapa = new Map<string, Causa>();
+
+    for (const exp of this.expedientesPagina) {
+      if (!exp.numeroExpedienteJudicial) {
+        sinCausa.push({
+          id: exp.id,
+          numeroCausa: '—',
+          area: exp.area,
+          expedientePrincipalId: null,
+          expedientes: [exp],
+        });
+        continue;
+      }
+
+      const clave = exp.numeroExpedienteJudicial;
+
+      if (!mapa.has(clave)) {
+        const causa: Causa = {
+          id: exp.id,
+          numeroCausa: clave,
+          area: exp.area,
+          expedientePrincipalId: null,
+          expedientes: [],
+        };
+        mapa.set(clave, causa);
+        agrupadas.push(causa);
+      }
+
+      const causa = mapa.get(clave)!;
+      causa.expedientes.push(exp);
+
+      const esPrincipal =
+        !!exp.tipo?.nombre?.startsWith('Demanda Civil') ||
+        !!exp.tipo?.nombre?.startsWith('Demanda Laboral');
+
+      if (esPrincipal || causa.expedientePrincipalId === null) {
+        causa.expedientePrincipalId = exp.id;
+      }
+    }
+
+    // Ordenar expedientes de cada causa: el principal primero
+    for (const causa of agrupadas) {
+      causa.expedientes.sort((a, b) => {
+        if (a.id === causa.expedientePrincipalId) return -1;
+        if (b.id === causa.expedientePrincipalId) return 1;
+        return 0;
+      });
+    }
+
+    return [...agrupadas, ...sinCausa];
+  }
+
+  expedienteAAgrupar: Expediente | null = null;
+
+  onAgrupar(exp: Expediente) { this.expedienteAAgrupar = exp; }
+
+  onAgrupado(event: { expediente: Expediente; causaId: number; numeroCausa: string }) {
+    this.expedientesService.actualizar(Number(event.expediente.id), {
+      causa_id: event.causaId
+    }).subscribe({
+      next: () => {
+        this.expedienteAAgrupar = null;
+        this.cargarExpedientes();
+      }
+    });
+  }
+
+  expedienteADesagrupar: Expediente | null = null;
+
+  onDesagrupar(exp: Expediente) { this.expedienteADesagrupar = exp; }
+
+  confirmarDesagrupar() {
+    if (!this.expedienteADesagrupar) return;
+    this.expedientesService.actualizar(Number(this.expedienteADesagrupar.id), {
+      numero_expediente_judicial: null
+    }).subscribe({
+      next: () => {
+        this.expedienteADesagrupar = null;
+        this.cargarExpedientes();
+      }
+    });
   }
 }

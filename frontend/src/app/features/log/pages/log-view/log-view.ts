@@ -6,17 +6,18 @@ import { LogStats, LogEntry, LogFiltros } from '../../models/log.model';
 import { TableColumn, UiTable } from '../../../../shared/components/ui-table/ui-table';
 import { UiModal } from '../../../../shared/components/ui-modal/ui-modal';
 import { Log } from '../../services/log';
-import { UiInput } from '../../../../shared/components/ui-input/ui-input';
 import { UiSelect } from '../../../../shared/components/ui-select/ui-select';
 import { UiPagination } from '../../../../shared/components/ui-pagination/ui-pagination';
 import { UiStatCard } from '../../../../shared/components/ui-stats-card/ui-stats-card';
 import { PrimaryBtn } from '../../../../shared/components/primary-btn/primary-btn';
+import { UiDateInput } from '../../../../shared/components/ui-date-input/ui-date-input';
 import * as XLSXStyle from 'xlsx-js-style';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-log-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, UiTable, UiSelect, UiInput, UiPagination, UiStatCard, UiModal, PrimaryBtn],
+  imports: [CommonModule, FormsModule, UiTable, UiSelect, UiDateInput, UiPagination, UiStatCard, UiModal, PrimaryBtn],
   templateUrl: './log-view.html',
 })
 export class LogView implements OnInit {
@@ -29,7 +30,7 @@ export class LogView implements OnInit {
   totalPaginas  = computed(() => Math.max(1, Math.ceil(this.totalLogs() / this.porPagina)));
   filtrosAbiertos = signal(true);
 
-  filtros: LogFiltros = {};
+  filtros: LogFiltros = { fechaDesde: '', fechaHasta: '' };
 
   // Modal detalle
   modalAbierto   = signal(false);
@@ -40,6 +41,7 @@ export class LogView implements OnInit {
   moduloOpts    = [
     { label: 'Expedientes', value: 'Expedientes' },
     { label: 'Clientes',    value: 'Clientes'    },
+    { label: 'Previsiones', value: 'Previsiones' },
     { label: 'Documentos',  value: 'Documentos'  },
     { label: 'Agenda',      value: 'Agenda'      },
     { label: 'Reportes',    value: 'Reportes'    },
@@ -69,19 +71,19 @@ export class LogView implements OnInit {
         'Edición':     { label: 'Edición',     classes: 'bg-primary/10 text-primary',  dot: 'bg-primary'  },
         'Eliminación': { label: 'Eliminación', classes: 'bg-danger/10 text-danger',    dot: 'bg-danger'   },
         'Descarga':    { label: 'Descarga',    classes: 'bg-warning/10 text-warning',  dot: 'bg-warning'  },
-        'Login':       { label: 'Login',       classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
-        'Logout':      { label: 'Logout',      classes: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
+        'Login':       { label: 'Login',       classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
+        'Logout':      { label: 'Logout',      classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',   dot: 'bg-gray-400' },
       },
     },
     {
       key: 'modulo', label: 'Módulo', type: 'badge',
       badgeConfig: {
         'Expedientes': { label: 'Expedientes', classes: 'bg-primary/10 text-primary',   dot: 'bg-primary'   },
-        'Clientes':    { label: 'Clientes',    classes: 'bg-pink-100 text-pink-500',     dot: 'bg-pink-400'  },
-        'Documentos':  { label: 'Documentos',  classes: 'bg-warning/10 text-warning',   dot: 'bg-warning'   },
-        'Agenda':      { label: 'Agenda',      classes: 'bg-purple-100 text-purple-500', dot: 'bg-purple-400'},
-        'Reportes':    { label: 'Reportes',    classes: 'bg-teal-100 text-teal-600',     dot: 'bg-teal-500'  },
-        'Sistema':     { label: 'Sistema',     classes: 'bg-gray-100 text-gray-500',     dot: 'bg-gray-400'  },
+        'Clientes':    { label: 'Clientes',    classes: 'bg-pink-100 dark:bg-pink-900/30 text-pink-500 dark:text-pink-400',     dot: 'bg-pink-400'  },
+        'Previsiones': { label: 'Previsiones', classes: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', dot: 'bg-indigo-500' },
+        'Agenda':      { label: 'Agenda',      classes: 'bg-purple-100 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400', dot: 'bg-purple-400'},
+        'Reportes':    { label: 'Reportes',    classes: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',     dot: 'bg-teal-500'  },
+        'Sistema':     { label: 'Sistema',     classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',     dot: 'bg-gray-400'  },
       },
     },
     { key: 'descripcion', label: 'Descripción', type: 'text' },
@@ -98,25 +100,44 @@ export class LogView implements OnInit {
   constructor(private logService: Log) {}
 
   ngOnInit() {
-    this.stats.set(this.logService.getStats());
-    this.usuarioOpts.set(this.logService.getUsuarios().map(u => ({ label: u, value: u })));
+    // el filtro de usuario manda el id, que es lo que espera el backend
+    this.logService.getUsuarios().subscribe({
+      next: usuarios => this.usuarioOpts.set(usuarios.map(u => ({ label: u.nombre, value: String(u.id) }))),
+      error: () => toast.error('Error al obtener los usuarios del log'),
+    });
+    this.cargarStats();
     this.cargarLogs();
   }
 
+  // trae los totales de las cards segun el rango de fechas
+  cargarStats() {
+    this.logService.getStats(this.filtros).subscribe({
+      next: stats => this.stats.set(stats),
+      error: () => toast.error('Error al obtener las estadísticas del log'),
+    });
+  }
+
+  // trae la pagina actual de logs desde el backend
   cargarLogs() {
-    const { data, total } = this.logService.getLogs(this.filtros, this.paginaActual(), this.porPagina);
-    this.logs.set(data);
-    this.totalLogs.set(total);
+    this.logService.getLogs(this.filtros, this.paginaActual(), this.porPagina).subscribe({
+      next: ({ data, total }) => {
+        this.logs.set(data);
+        this.totalLogs.set(total);
+      },
+      error: () => toast.error('Error al obtener el log de seguridad'),
+    });
   }
 
   buscar() {
     this.paginaActual.set(1);
+    this.cargarStats();
     this.cargarLogs();
   }
 
   limpiar() {
-    this.filtros = {};
+    this.filtros = { fechaDesde: '', fechaHasta: '' };
     this.paginaActual.set(1);
+    this.cargarStats();
     this.cargarLogs();
   }
 
@@ -126,10 +147,16 @@ export class LogView implements OnInit {
     this.cargarLogs();
   }
 
+  // trae todos los logs filtrados y los exporta a excel
   exportar(): void {
-    const logs = this.logService.getAllLogs(this.filtros);
+    this.logService.getAllLogs(this.filtros, this.totalLogs()).subscribe({
+      next: logs => this.generarExcel(logs),
+      error: () => toast.error('Error al exportar el log de seguridad'),
+    });
+  }
 
-    const headers = ['ID', 'Fecha y Hora', 'Usuario', 'Acción', 'Módulo', 'Descripción', 'Resultado'];
+  private generarExcel(logs: LogEntry[]): void {
+    const headers = ['ID', 'Fecha y Hora', 'Usuario', 'Acción', 'Módulo', 'Descripción', 'Resultado', 'IP'];
 
     const filaHeaders = headers.map(h => ({
       v: h,
@@ -155,6 +182,7 @@ export class LogView implements OnInit {
       l.modulo,
       l.descripcion,
       l.resultado,
+      l.ip ?? '',
     ].map(v => ({
       v: v ?? '',
       t: 's',
@@ -179,6 +207,7 @@ export class LogView implements OnInit {
       { wch: 14 }, // Módulo
       { wch: 50 }, // Descripción
       { wch: 10 }, // Resultado
+      { wch: 18 }, // IP
     ];
 
     ws['!rows'] = [{ hpt: 22 }];

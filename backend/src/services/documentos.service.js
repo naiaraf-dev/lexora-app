@@ -5,6 +5,7 @@ const {
     eliminarDocumentoDeCloudinary,
     obtenerUrlDocumentoCloudinary
 } = require('./cloudinaryDocumento.service');
+const resumenesService = require('./resumenes.service');
 
 // trae documentos aplicando los filtros que llegan desde el controller
 async function obtenerDocumentos(filtros) {
@@ -121,6 +122,8 @@ async function subirEInsertarDocumento(datos, file) {
         activo,
         expediente,
         novedad,
+        tarea,
+        prevision,
         usuario_creacion,
         tipo_documento
     } = datos;
@@ -162,6 +165,16 @@ async function subirEInsertarDocumento(datos, file) {
         }
     }
 
+    if (tarea) {
+        const tareaExiste = await documentosRepository.existeTarea(Number(tarea));
+
+        if (!tareaExiste) {
+            const error = new Error(`No existe una tarea con id ${tarea}`);
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+
     const usuarioExiste = await documentosRepository.existeUsuario(Number(usuario_creacion));
 
     if (!usuarioExiste) {
@@ -192,11 +205,16 @@ async function subirEInsertarDocumento(datos, file) {
         activo: activo === undefined ? true : activo === 'true' || activo === true || activo === '1',
         expediente: Number(expediente),
         novedad: novedad ? Number(novedad) : null,
+        tarea: tarea ? Number(tarea) : null,
+        prevision: prevision ? Number(prevision) : null,
         usuario_creacion: Number(usuario_creacion),
         tipo_documento: Number(tipo_documento)
     };
 
     const documentoInsertado = await documentosRepository.insertarDocumento(documento);
+
+    // el resumen con IA se genera despues, en segundo plano (HU42): la subida no espera
+    await resumenesService.encolar(documentoInsertado.id);
 
     // devuelve datos del documento y tambien info basica de cloudinary
     return {
@@ -240,6 +258,16 @@ async function obtenerUrlDescargaDocumento(idDocumento) {
     };
 }
 
+// mensajes para cuando se intenta borrar un archivo que usa una prevision
+const MENSAJES_USO_PREVISION = {
+    pago: 'Este archivo es el comprobante de un pago de la previsión: anulá el pago antes de borrarlo.',
+    impulso: 'Este archivo es la nota de una solicitud de pago de la previsión y no se puede borrar desde Documentos.',
+    acreditacion: 'Este archivo es el proveído de una acreditación de la previsión y no se puede borrar desde Documentos.',
+    intimacion: 'Este archivo es la cédula o el proveído de una intimación de la previsión y no se puede borrar desde Documentos.',
+    factura: 'Este archivo es la factura de honorarios de la previsión: reemplazala desde la previsión.',
+    anulado: 'Este archivo respalda un movimiento anulado de la previsión y se conserva como registro.'
+};
+
 // elimina el archivo de cloudinary y despues borra el registro de la base
 async function eliminarDocumento(idDocumento) {
     if (!idDocumento || isNaN(Number(idDocumento))) {
@@ -253,6 +281,16 @@ async function eliminarDocumento(idDocumento) {
     if (!documento) {
         const error = new Error(`No existe un documento con id ${idDocumento}`);
         error.statusCode = 404;
+        throw error;
+    }
+
+    // si el archivo respalda un movimiento de una prevision, no se borra desde aca:
+    // se corrige desde la prevision (por ejemplo, anulando el pago)
+    const uso = await documentosRepository.obtenerUsoEnPrevision(Number(idDocumento));
+
+    if (uso) {
+        const error = new Error(MENSAJES_USO_PREVISION[uso]);
+        error.statusCode = 409;
         throw error;
     }
 
@@ -371,6 +409,11 @@ async function modificarDocumento(idDocumento, datos, file) {
     // si se subio un archivo nuevo, borra el anterior de cloudinary
     if (file && documentoActual.storage_key) {
         resultadoCloudinaryAnterior = await eliminarDocumentoDeCloudinary(documentoActual.storage_key);
+    }
+
+    // el resumen anterior describe el archivo viejo: se vuelve a generar (HU42)
+    if (file) {
+        await resumenesService.encolar(Number(idDocumento));
     }
 
     return {

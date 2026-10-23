@@ -10,7 +10,7 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
 
     if (numero) {
         req.input('numero', sql.NVarChar, `%${numero}%`);
-        where += ` AND (CAST(e.id AS NVARCHAR) + '/' + CAST(YEAR(e.fecha_inicio) AS NVARCHAR)) LIKE @numero`;
+        where += ` AND ('EXP-' + CAST(YEAR(e.fecha_creacion) AS NVARCHAR) + '-' + CAST(e.id AS NVARCHAR)) LIKE @numero`;
     }
     if (causa) {
         req.input('causa', sql.NVarChar, `%${causa}%`);
@@ -50,6 +50,7 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
             e.area,
             e.fecha_inicio,
             e.fecha_creacion,
+            e.causa_id,
             e.fecha_ultima_modificacion    AS ultimaActualizacion,
             e.activo,
             te.id                          AS tipoId,
@@ -57,7 +58,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
             ee.id                          AS estadoId,
             ee.nombre                      AS estadoNombre,
             c.id                           AS clienteId,
-            c.nombre + ' ' + c.apellido    AS clienteNombre,
+            LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+            CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
             u.id                           AS usuarioPrincipalId,
             u.nombre + ' ' + u.apellido    AS usuarioPrincipalNombre,
             COUNT(*) OVER()                AS totalRegistros
@@ -66,6 +68,8 @@ async function getAll({ numero, causa, caratula, area, tipo, estado, clienteId, 
         LEFT JOIN estadoexpediente ee ON ee.id = e.estado_expediente
         LEFT JOIN cliente          c  ON c.id  = e.cliente
         LEFT JOIN usuario          u  ON u.id  = e.usuario_principal
+        LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                          AND tee.estadoexpediente = e.estado_expediente
         ${where}
         ORDER BY e.fecha_ultima_modificacion DESC
         OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
@@ -86,14 +90,18 @@ async function getById(id) {
                 te.nombre                       AS tipoNombre,
                 ee.nombre                       AS estadoNombre,
                 c.id                            AS clienteId,
-                c.nombre + ' ' + c.apellido     AS clienteNombre,
+                LTRIM(RTRIM(CONCAT(c.nombre, ' ', c.apellido))) AS clienteNombre,
+                CAST(COALESCE(tee.habilita_prevision, 0) AS BIT) AS habilitaPrevision,
                 up.id                           AS usuarioPrincipalId,
                 up.nombre + ' ' + up.apellido   AS usuarioPrincipalNombre,
                 us.id                           AS usuarioSecundarioId,
                 us.nombre + ' ' + us.apellido   AS usuarioSecundarioNombre,
                 p.nombre                        AS prioridadNombre,
                 rc.id                           AS rolClienteId,
-                rc.nombre                       AS rolClienteNombre
+                rc.nombre                       AS rolClienteNombre,
+                ca.numero_causa                 AS numeroCausa,
+                ca.expediente_principal_id      AS expedientePrincipalId,
+                ep.fecha_creacion               AS principalFechaCreacion
             FROM expediente e
             LEFT JOIN tipoexpediente   te  ON te.id  = e.tipo_expediente
             LEFT JOIN estadoexpediente ee  ON ee.id  = e.estado_expediente
@@ -102,6 +110,10 @@ async function getById(id) {
             LEFT JOIN usuario          us  ON us.id  = e.usuario_secundario
             LEFT JOIN prioridad        p   ON p.id   = e.prioridad
             LEFT JOIN rolcliente       rc  ON rc.id  = e.rol_cliente
+            LEFT JOIN causa            ca  ON ca.id  = e.causa_id AND ca.activo = 1
+            LEFT JOIN expediente       ep  ON ep.id  = ca.expediente_principal_id
+            LEFT JOIN tipoestadoexpediente tee ON tee.tipoexpediente = e.tipo_expediente
+                                              AND tee.estadoexpediente = e.estado_expediente
             WHERE e.id = @id AND e.activo = 1
         `);
 
@@ -109,10 +121,17 @@ async function getById(id) {
 }
 
 // crea un expediente nuevo y despues lo devuelve completo
-async function crear(data) {
-    const pool = await conectarBD();
+async function crear(data, transaction = null) {
+    let request;
 
-    const resultado = await pool.request()
+    if (transaction) {
+        request = new sql.Request(transaction);
+    } else {
+        const pool = await conectarBD();
+        request = pool.request();
+    }
+
+    const resultado = await request
         .input('tipo_expediente', sql.Int, data.tipo_expediente)
         .input('estado_expediente', sql.Int, data.estado_expediente)
         .input('usuario_principal', sql.Int, data.usuario_principal)
@@ -130,93 +149,297 @@ async function crear(data) {
         .input('juzgado', sql.NVarChar(200), data.juzgado ?? null)
         .input('secretaria', sql.NVarChar(200), data.secretaria ?? null)
         .input('jurisdiccion', sql.NVarChar(200), data.jurisdiccion ?? null)
-        .input('numero_expediente_judicial', sql.NVarChar(100), data.numero_expediente_judicial ?? null)
+        .input(
+            'numero_expediente_judicial',
+            sql.NVarChar(100),
+            data.numero_expediente_judicial ?? null
+        )
         .input('instancia', sql.NVarChar(100), data.instancia ?? null)
         .input('contraparte', sql.NVarChar(500), data.contraparte ?? null)
-        .input('abogado_contraparte', sql.NVarChar(500), data.abogado_contraparte ?? null)
-        .input('fecha_estimada_cierre', sql.DateTime, data.fecha_estimada_cierre ?? null)
-        .input('fecha_procesal_proximo', sql.DateTime, data.fecha_procesal_proximo ?? null)
-        .input('fecha_vencimiento', sql.DateTime, data.fecha_vencimiento ?? null)
+        .input(
+            'abogado_contraparte',
+            sql.NVarChar(500),
+            data.abogado_contraparte ?? null
+        )
+        .input(
+            'fecha_estimada_cierre',
+            sql.DateTime,
+            data.fecha_estimada_cierre ?? null
+        )
+        .input(
+            'fecha_procesal_proximo',
+            sql.DateTime,
+            data.fecha_procesal_proximo ?? null
+        )
+        .input(
+            'fecha_vencimiento',
+            sql.DateTime,
+            data.fecha_vencimiento ?? null
+        )
         .input('prioridad', sql.Int, data.prioridad ?? null)
         .input('origen_caso', sql.NVarChar(200), data.origen_caso ?? null)
+        .input('causa_id', sql.Int, data.causa_id ?? null)
         .query(`
             INSERT INTO expediente (
-                tipo_expediente, estado_expediente, usuario_principal, usuario_secundario,
-                usuario_creacion, usuario_ultima_modificacion,
-                cliente, rol_cliente, area, caratula, fecha_inicio, fecha_ult_actuacion,
-                descripcion, fuero, juzgado, secretaria, jurisdiccion,
-                numero_expediente_judicial, instancia, contraparte,
-                abogado_contraparte, fecha_estimada_cierre, fecha_procesal_proximo,
-                fecha_vencimiento, prioridad, origen_caso,
-                fecha_creacion, fecha_ultima_modificacion, activo
+                tipo_expediente,
+                estado_expediente,
+                usuario_principal,
+                usuario_secundario,
+                usuario_creacion,
+                usuario_ultima_modificacion,
+                cliente,
+                rol_cliente,
+                area,
+                caratula,
+                fecha_inicio,
+                fecha_ult_actuacion,
+                descripcion,
+                fuero,
+                juzgado,
+                secretaria,
+                jurisdiccion,
+                numero_expediente_judicial,
+                instancia,
+                contraparte,
+                abogado_contraparte,
+                fecha_estimada_cierre,
+                fecha_procesal_proximo,
+                fecha_vencimiento,
+                prioridad,
+                origen_caso,
+                causa_id,
+                fecha_creacion,
+                fecha_ultima_modificacion,
+                activo
             )
             OUTPUT INSERTED.id
             VALUES (
-                @tipo_expediente, @estado_expediente, @usuario_principal, @usuario_secundario,
-                @usuario_creacion, @usuario_ultima_modificacion,
-                @cliente, @rol_cliente, @area, @caratula, @fecha_inicio, @fecha_ult_actuacion,
-                @descripcion, @fuero, @juzgado, @secretaria, @jurisdiccion,
-                @numero_expediente_judicial, @instancia, @contraparte,
-                @abogado_contraparte, @fecha_estimada_cierre, @fecha_procesal_proximo,
-                @fecha_vencimiento, @prioridad, @origen_caso,
-                GETDATE(), GETDATE(), 1
+                @tipo_expediente,
+                @estado_expediente,
+                @usuario_principal,
+                @usuario_secundario,
+                @usuario_creacion,
+                @usuario_ultima_modificacion,
+                @cliente,
+                @rol_cliente,
+                @area,
+                @caratula,
+                @fecha_inicio,
+                @fecha_ult_actuacion,
+                @descripcion,
+                @fuero,
+                @juzgado,
+                @secretaria,
+                @jurisdiccion,
+                @numero_expediente_judicial,
+                @instancia,
+                @contraparte,
+                @abogado_contraparte,
+                @fecha_estimada_cierre,
+                @fecha_procesal_proximo,
+                @fecha_vencimiento,
+                @prioridad,
+                @origen_caso,
+                @causa_id,
+                GETDATE(),
+                GETDATE(),
+                1
             )
         `);
 
     const id = resultado.recordset[0].id;
+
+    // si hay transaccion, todavia no hacemos una consulta desde otro pool
+    if (transaction) {
+        return { id };
+    }
+
     return getById(id);
 }
 
 // actualiza solo los campos que vienen en el body
-async function actualizar(id, data) {
-    const pool = await conectarBD();
-    const req = pool.request().input('id', sql.Int, id);
+async function actualizar(id, data, transaction = null) {
+    let request;
+
+    if (transaction) {
+        request = new sql.Request(transaction);
+    } else {
+        const pool = await conectarBD();
+        request = pool.request();
+    }
+
+    request.input('id', sql.Int, id);
 
     const campos = [];
 
-    // agrega el campo al update solo si vino con algun valor
     const agregarCampo = (campo, tipo, valor) => {
         if (valor !== undefined) {
-            req.input(campo, tipo, valor);
+            request.input(campo, tipo, valor);
             campos.push(`${campo} = @${campo}`);
         }
     };
 
-    agregarCampo('tipo_expediente', sql.Int, data.tipo_expediente);
-    agregarCampo('estado_expediente', sql.Int, data.estado_expediente);
-    agregarCampo('usuario_principal', sql.Int, data.usuario_principal);
-    agregarCampo('usuario_secundario', sql.Int, data.usuario_secundario);
-    agregarCampo('cliente', sql.Int, data.cliente);
-    agregarCampo('rol_cliente', sql.Int, data.rol_cliente ?? null);
-    agregarCampo('area', sql.NVarChar(100), data.area);
-    agregarCampo('caratula', sql.NVarChar(500), data.caratula);
-    agregarCampo('fecha_inicio', sql.DateTime, data.fecha_inicio);
-    agregarCampo('descripcion', sql.NVarChar(sql.MAX), data.descripcion);
-    agregarCampo('fuero', sql.NVarChar(100), data.fuero);
-    agregarCampo('juzgado', sql.NVarChar(200), data.juzgado);
-    agregarCampo('secretaria', sql.NVarChar(200), data.secretaria);
-    agregarCampo('jurisdiccion', sql.NVarChar(200), data.jurisdiccion);
-    agregarCampo('numero_expediente_judicial', sql.NVarChar(100), data.numero_expediente_judicial);
-    agregarCampo('instancia', sql.NVarChar(100), data.instancia);
-    agregarCampo('contraparte', sql.NVarChar(500), data.contraparte);
-    agregarCampo('abogado_contraparte', sql.NVarChar(500), data.abogado_contraparte);
-    agregarCampo('fecha_estimada_cierre', sql.DateTime, data.fecha_estimada_cierre);
-    agregarCampo('fecha_procesal_proximo', sql.DateTime, data.fecha_procesal_proximo);
-    agregarCampo('fecha_vencimiento', sql.DateTime, data.fecha_vencimiento);
-    agregarCampo('prioridad', sql.Int, data.prioridad);
-    agregarCampo('origen_caso', sql.NVarChar(200), data.origen_caso);
+    agregarCampo(
+        'tipo_expediente',
+        sql.Int,
+        data.tipo_expediente
+    );
 
-    if (campos.length === 0) throw new Error('No hay campos para actualizar');
+    agregarCampo(
+        'estado_expediente',
+        sql.Int,
+        data.estado_expediente
+    );
 
-    // siempre actualiza las fechas de modificacion/actuacion
+    agregarCampo(
+        'usuario_principal',
+        sql.Int,
+        data.usuario_principal
+    );
+
+    agregarCampo(
+        'usuario_secundario',
+        sql.Int,
+        data.usuario_secundario
+    );
+
+    agregarCampo(
+        'cliente',
+        sql.Int,
+        data.cliente
+    );
+
+    agregarCampo(
+        'rol_cliente',
+        sql.Int,
+        data.rol_cliente
+    );
+
+    agregarCampo(
+        'area',
+        sql.NVarChar(100),
+        data.area
+    );
+
+    agregarCampo(
+        'caratula',
+        sql.NVarChar(500),
+        data.caratula
+    );
+
+    agregarCampo(
+        'fecha_inicio',
+        sql.DateTime,
+        data.fecha_inicio
+    );
+
+    agregarCampo(
+        'descripcion',
+        sql.NVarChar(sql.MAX),
+        data.descripcion
+    );
+
+    agregarCampo(
+        'fuero',
+        sql.NVarChar(100),
+        data.fuero
+    );
+
+    agregarCampo(
+        'juzgado',
+        sql.NVarChar(200),
+        data.juzgado
+    );
+
+    agregarCampo(
+        'secretaria',
+        sql.NVarChar(200),
+        data.secretaria
+    );
+
+    agregarCampo(
+        'jurisdiccion',
+        sql.NVarChar(200),
+        data.jurisdiccion
+    );
+
+    agregarCampo(
+        'numero_expediente_judicial',
+        sql.NVarChar(100),
+        data.numero_expediente_judicial
+    );
+
+    agregarCampo(
+        'instancia',
+        sql.NVarChar(100),
+        data.instancia
+    );
+
+    agregarCampo(
+        'contraparte',
+        sql.NVarChar(500),
+        data.contraparte
+    );
+
+    agregarCampo(
+        'abogado_contraparte',
+        sql.NVarChar(500),
+        data.abogado_contraparte
+    );
+
+    agregarCampo(
+        'fecha_estimada_cierre',
+        sql.DateTime,
+        data.fecha_estimada_cierre
+    );
+
+    agregarCampo(
+        'fecha_procesal_proximo',
+        sql.DateTime,
+        data.fecha_procesal_proximo
+    );
+
+    agregarCampo(
+        'fecha_vencimiento',
+        sql.DateTime,
+        data.fecha_vencimiento
+    );
+
+    agregarCampo(
+        'prioridad',
+        sql.Int,
+        data.prioridad
+    );
+
+    agregarCampo(
+        'origen_caso',
+        sql.NVarChar(200),
+        data.origen_caso
+    );
+
+    agregarCampo(
+        'causa_id',
+        sql.Int,
+        data.causa_id
+    );
+
+    if (campos.length === 0) {
+        throw new Error('No hay campos para actualizar');
+    }
+
     campos.push('fecha_ultima_modificacion = GETDATE()');
     campos.push('fecha_ult_actuacion = GETDATE()');
 
-    await req.query(`
+    await request.query(`
         UPDATE expediente
         SET ${campos.join(', ')}
-        WHERE id = @id AND activo = 1
+        WHERE id = @id
+          AND activo = 1
     `);
+
+    if (transaction) {
+        return { id };
+    }
 
     return getById(id);
 }

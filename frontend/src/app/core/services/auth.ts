@@ -10,6 +10,7 @@ export interface CurrentUser {
   nombre: string;
   apellido: string;
   email: string;
+  avatarUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -80,6 +81,15 @@ export class Auth {
     this.storage.clear();
     this._currentUser.set(null);
     this.router.navigate(['/login']);
+  }
+
+  /** Actualiza el avatarUrl del usuario en memoria y en storage, sin pegarle al backend. */
+  actualizarAvatar(avatarUrl: string): void {
+    const actual = this._currentUser();
+    if (!actual) return;
+    const actualizado = { ...actual, avatarUrl };
+    this._currentUser.set(actualizado);
+    this.storage.setUser(actualizado);
   }
 
   private decodeToken(token: string): CurrentUser | null {

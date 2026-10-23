@@ -1,17 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 
-import { Configuracion } from './configuracion';
+import { ConfiguracionView } from './configuracion';
 
-describe('Configuracion', () => {
-  let component: Configuracion;
-  let fixture: ComponentFixture<Configuracion>;
+describe('ConfiguracionView', () => {
+  let component: ConfiguracionView;
+  let fixture: ComponentFixture<ConfiguracionView>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Configuracion],
+      imports: [ConfiguracionView],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(Configuracion);
+    fixture = TestBed.createComponent(ConfiguracionView);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

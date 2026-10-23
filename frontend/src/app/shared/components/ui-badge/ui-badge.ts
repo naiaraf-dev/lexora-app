@@ -20,7 +20,7 @@ export class UiBadge {
   get resolved(): BadgeConfig {
     return this.config?.[this.estado] ?? {
       label: this.estado,
-      classes: 'bg-gray-100 text-gray-500',
+      classes: 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300',
       dot: 'bg-gray-400',
     };
   }

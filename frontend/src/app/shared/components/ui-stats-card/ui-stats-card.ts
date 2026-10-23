@@ -16,7 +16,7 @@ export class UiStatCard {
 
   colorClass(): string {
     const map: Record<StatColor, string> = {
-      default: 'text-text-primary',
+      default: 'text-text-primary dark:text-slate-100',
       success: 'text-success',
       danger:  'text-danger',
       warning: 'text-warning',
@@ -27,11 +27,11 @@ export class UiStatCard {
 
   bgClass(): string {
     const map: Record<StatColor, string> = {
-      default: 'bg-white',
-      success: 'bg-success/5',
-      danger:  'bg-danger/5',
-      warning: 'bg-warning/5',
-      primary: 'bg-primary/5',
+      default: 'bg-white dark:bg-slate-800',
+      success: 'bg-success/5 dark:bg-success/10',
+      danger:  'bg-danger/5 dark:bg-danger/10',
+      warning: 'bg-warning/5 dark:bg-warning/10',
+      primary: 'bg-primary/5 dark:bg-primary/10',
     };
     return map[this.color()];
   }

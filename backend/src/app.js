@@ -13,8 +13,14 @@ const clientesRoutes = require('./routes/clientes.routes');
 const authMiddleware = require('./middlewares/auth.middleware');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const expedientesRouter = require('./routes/expedientes.routes');
+const causasRouter = require('./routes/causa.routes');
 const novedadesRouter = require('./routes/novedades.routes');
 const enumsRoutes = require('./routes/enums.routes');
+const tareasAutomaticasRoutes = require('./routes/tareasAutomaticas.routes');
+const tasasRoutes = require('./routes/tasas.routes');
+const asistenteDocumentosRoutes = require('./routes/asistenteDocumentos.routes');
+const asistenteRoutes = require('./routes/asistente.routes');
+const previsionesRoutes = require('./routes/previsiones.routes');
 
 app.use(cors());
 app.use(express.json());
@@ -53,10 +59,11 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/usuarios', authMiddleware, usuariosRoutes);
 
 /*
-    EXPEDIENTES Y NOVEDADES
+    EXPEDIENTES, CAUSAS Y NOVEDADES
 */
 
 app.use('/api/expedientes', expedientesRouter);
+app.use('/api/causas', causasRouter);
 app.use('/api/novedades', novedadesRouter);
 
 /*
@@ -64,6 +71,7 @@ app.use('/api/novedades', novedadesRouter);
 */
 app.use('/api', documentosRoutes);
 app.use('/api', tareasRoutes);
+app.use('/api', tareasAutomaticasRoutes);
 
 /*
     AUTH Y CLIENTES
@@ -78,9 +86,28 @@ app.use(clientesRoutes);
 app.use('/api/logs', logsRoutes);
 
 /*
+  TASAS
+  */
+app.use(
+    '/api/tasa',
+    tasasRoutes
+);
+
+/*
+    PREVISIONES
+*/
+app.use('/api/previsiones', previsionesRoutes);
+
+/*
     ENUMS
 */
 app.use('/api', enumsRoutes);
+
+/*
+    ASISTENTE LITIS
+*/
+app.use('/api/asistente/documentos', asistenteDocumentosRoutes);
+app.use('/api/asistente', asistenteRoutes);
 
 
 module.exports = app;

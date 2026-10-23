@@ -101,4 +101,19 @@ async function update(id, datos) {
     return result.recordset[0];
 }
 
-module.exports = { getAll, getById, create, update };
+// da de baja un cliente de forma logica (activo = 0), sin borrar el registro
+async function darDeBaja(id) {
+    const pool = await conectarBD();
+    const result = await pool.request()
+        .input('id', sql.Int, id)
+        .query(`
+            UPDATE cliente
+            SET activo = 0,
+                fecha_ultima_modificacion = SYSDATETIME()
+            OUTPUT INSERTED.*
+            WHERE id = @id
+        `);
+    return result.recordset[0];
+}
+
+module.exports = { getAll, getById, create, update, darDeBaja };

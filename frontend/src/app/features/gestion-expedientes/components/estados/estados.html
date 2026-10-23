@@ -1,0 +1,179 @@
+<div class="flex flex-col gap-6">
+
+    @if (cargando) {
+        <div class="text-center py-16 text-text-primary/40 dark:text-slate-500">Cargando estados...</div>
+    } @else {
+
+        <!-- Pipeline: TODOS los estados posibles del flujo -->
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700 px-5 py-4 flex items-start gap-1 overflow-x-auto">
+            @for (estado of flujo; track estado.nombre; let i = $index) {
+                <div class="flex flex-col items-center gap-1 shrink-0 w-[88px]">
+                    <button
+                        type="button"
+                        (click)="verEstado(estado.nombre)"
+                        [disabled]="!estaVisitado(estado.nombre)"
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors"
+                        [class]="estado.nombre === runtime!.estadoActual
+                            ? 'bg-primary text-white'
+                            : (estaVisitado(estado.nombre) ? 'bg-gray-200 dark:bg-slate-700 text-text-primary/60 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600 cursor-pointer' : 'bg-gray-100 dark:bg-slate-700/50 text-text-primary/30 dark:text-slate-500 cursor-default')"
+                    >
+                        {{ i + 1 }}
+                    </button>
+                    <span
+                        class="text-[10px] text-center leading-tight"
+                        [class]="estado.nombre === runtime!.estadoActual ? 'text-primary font-semibold' : 'text-text-primary/40 dark:text-slate-500'"
+                    >
+                        {{ estado.nombre }}
+                    </span>
+                </div>
+
+                @if (i < flujo.length - 1) {
+                    <div class="h-px bg-gray-200 dark:bg-slate-700 mt-4 flex-1 min-w-[16px]"></div>
+                }
+            }
+        </div>
+
+        @if (!esVistaActual) {
+            <div class="px-4 py-2 bg-gray-50 dark:bg-slate-700/50 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-text-primary/50 dark:text-slate-400">
+                Estás viendo un estado anterior en modo lectura.
+                <button type="button" class="text-primary font-medium ml-1" (click)="verEstado(runtime!.estadoActual)">
+                    Volver al estado actual
+                </button>
+            </div>
+        }
+
+        <!-- Header estado actual + progreso -->
+        <div class="w-full 2xl:max-w-7xl 2xl:mx-auto bg-white dark:bg-slate-800 rounded-xl border border-black/8 dark:border-slate-700 px-5 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <span class="text-xs text-text-primary/40 dark:text-slate-500 uppercase tracking-widest font-semibold">Estado actual:</span>
+            <span class="text-sm font-bold text-primary">{{ runtime!.estadoActual }}</span>
+
+            <div class="flex items-center gap-3 w-80">
+                <div class="flex-1 h-2 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+                    <div
+                    class="h-2 rounded-full bg-primary transition-all duration-500"
+                    [style.width.%]="(estadoVista?.tareas?.length
+                        ? (estadoVista!.tareas.filter(t => t.estado !== 'EN_CURSO').length / estadoVista!.tareas.length) * 100
+                        : 0)"
+                    ></div>
+                </div>
+                <span class="text-xs text-text-primary/50 dark:text-slate-400 whitespace-nowrap">
+                    {{ (estadoVista?.tareas ?? []).filter(t => t.estado !== 'EN_CURSO').length }}
+                    /
+                    {{ (estadoVista?.tareas ?? []).length }} tareas
+                    ({{ ((estadoVista?.tareas ?? []).filter(t => t.estado !== 'EN_CURSO').length / ((estadoVista?.tareas ?? []).length || 1) * 100) | number:'1.0-0' }}%)
+                </span>
+            </div>
+        </div>
+
+        @if (esEditable && checklistCompleto && opcionesAvance.length > 0) {
+            <button
+            type="button"
+            (click)="modalAvanceOpen = true"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 dark:bg-success/20 text-success text-sm font-semibold hover:bg-success/20 dark:hover:bg-success/30 transition-colors whitespace-nowrap"
+            >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Listo para avanzar
+            </button>
+        } @else if (esVistaActual && opcionesAvance.length === 0) {
+            <span class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-text-primary/50 dark:text-slate-400 text-sm font-semibold whitespace-nowrap">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Estado final del flujo
+            </span>
+        }
+        </div>
+
+        <!-- Checklist del estado en vista -->
+        <div class="w-full 2xl:flex 2xl:items-start 2xl:gap-4 2xl:max-w-7xl 2xl:mx-auto">
+
+            <!-- Lista de tareas -->
+            <div class="flex-1 min-w-0 flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <h3 class="font-semibold text-text-primary dark:text-slate-100">{{ estadoSeleccionadoVista }}</h3>
+                    <span class="text-xs text-text-primary/40 dark:text-slate-500">{{ (estadoVista?.tareas ?? []).length }} tareas</span>
+                </div>
+
+                @for (tarea of estadoVista?.tareas ?? []; track tarea.id; let i = $index) {
+                    <app-tarea-checklist-item
+                        [numero]="i + 1"
+                        [tarea]="tarea"
+                        [seleccionada]="tarea.id === tareaSeleccionadaId"
+                        (seleccionar)="seleccionarTarea(tarea)"
+                    ></app-tarea-checklist-item>
+
+                    <!-- Detalle desplegado: solo pantallas chicas -->
+                    @if (tarea.id === tareaSeleccionadaId) {
+                        <div class="2xl:hidden">
+                            <app-tarea-checklist-detalle
+                                [tarea]="tarea"
+                                [soloLectura]="!esEditable"
+                                [estadoNombre]="estadoSeleccionadoVista"
+                                (guardar)="onGuardarTarea(tarea.id, $event)"
+                                (cerrar)="tareaSeleccionadaId = null"
+                            ></app-tarea-checklist-detalle>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Detalle en panel lateral: solo pantallas grandes -->
+            @if (tareaSeleccionada) {
+                <div class="hidden 2xl:block 2xl:w-[440px] 2xl:shrink-0 2xl:sticky 2xl:top-4">
+                    <app-tarea-checklist-detalle
+                        [tarea]="tareaSeleccionada"
+                        [soloLectura]="!esEditable"
+                        [estadoNombre]="estadoSeleccionadoVista"
+                        (guardar)="onGuardarTarea(tareaSeleccionada.id, $event)"
+                        (cerrar)="tareaSeleccionadaId = null"
+                    ></app-tarea-checklist-detalle>
+                </div>
+            }
+        </div>
+
+        @if (modalAvanceOpen) {
+            <div class="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
+
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <p class="font-semibold text-text-primary dark:text-slate-100">Avanzar estado</p>
+                    <button type="button" (click)="cerrarModalAvance()" class="text-text-primary/30 dark:text-slate-500 hover:text-text-primary dark:hover:text-slate-200 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    </button>
+                </div>
+
+                <div class="px-5 py-4 flex flex-col gap-3">
+                    <p class="text-sm text-text-primary/60 dark:text-slate-400">¿A qué estado avanza el expediente?</p>
+                    @for (opcion of opcionesAvance; track opcion) {
+                    <button
+                        type="button"
+                        (click)="avanzarYCerrar(opcion)"
+                        class="flex items-center justify-between px-4 py-3 rounded-lg border transition-colors text-sm font-medium"
+                        [class]="esFinalizado(opcion)
+                        ? 'border-gray-200 dark:border-slate-700 text-text-primary/50 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        : 'border-primary/20 dark:border-primary/30 text-primary bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/20'"
+                    >
+                        {{ esFinalizado(opcion) ? 'Finalizar expediente' : opcion }}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    }
+                </div>
+
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="fixed bottom-0 right-0 px-6 py-4 z-10">
+    <app-primary-btn variant="secondary" (click)="volver()">
+        ← Volver a bandeja
+    </app-primary-btn>
+</div>

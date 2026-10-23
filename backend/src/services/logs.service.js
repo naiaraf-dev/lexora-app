@@ -1,4 +1,5 @@
 const repo = require('../repositories/logs.repository');
+const { RESULTADOS } = require('../constants/log.constants');
 
 // lista logs y los formatea para el front
 async function listar(filtros) {
@@ -59,4 +60,21 @@ async function registrar(data) {
     return repo.crear(data);
 }
 
-module.exports = { listar, obtener, getStats, getUsuarios, registrar };
+// registra un evento de seguridad a partir de la request (usuario del token + ip)
+// nunca lanza error: si falla el guardado solo lo informa, asi no corta la operacion principal
+async function registrarEvento(req, { accion, modulo, descripcion, resultado = RESULTADOS.OK }) {
+    try {
+        await repo.crear({
+            usuario: req.usuario?.id,
+            accion,
+            modulo,
+            descripcion,
+            resultado,
+            ip: req.ip,
+        });
+    } catch (error) {
+        console.error(`Error al registrar log de seguridad (${modulo} - ${accion}):`, error.message);
+    }
+}
+
+module.exports = { listar, obtener, getStats, getUsuarios, registrar, registrarEvento };

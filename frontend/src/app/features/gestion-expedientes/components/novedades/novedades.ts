@@ -116,7 +116,8 @@ export class Novedades implements OnInit {
               id:                       String(t.id),
               titulo:                   t.titulo,
               prioridad:                t.prioridad ? String(t.prioridad) : '',
-              fechaVencimiento:         t.fecha_vencimiento ?? '',
+              prioridadNombre:          t.nombre_prioridad ?? '',
+              fechaVencimiento: t.fecha_vencimiento ? String(t.fecha_vencimiento).slice(0, 10) : '',
               hora:                     t.hora ?? '',
               responsableNombre:        t.nombre_usuario_completado
                                           ? `${t.nombre_usuario_completado} ${t.apellido_usuario_completado ?? ''}`.trim()
@@ -170,6 +171,7 @@ export class Novedades implements OnInit {
             value: String(t.id),
             label: t.nombre,
           }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar tipos de novedad'),
     });
@@ -180,6 +182,7 @@ export class Novedades implements OnInit {
           value: String(p.id),
           label: p.nombre,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar prioridades'),
     });
@@ -190,6 +193,7 @@ export class Novedades implements OnInit {
           value: String(e.id),
           label: e.nombre,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar estados de tarea'),
     });
@@ -200,6 +204,7 @@ export class Novedades implements OnInit {
           value: String(u.id),
           label: `${u.nombre} ${u.apellido}`,
         }));
+        this.cdr.detectChanges();
       },
       error: () => toast.error('Error al cargar usuarios'),
     });
@@ -210,7 +215,7 @@ export class Novedades implements OnInit {
           value: this.normalizarTipoDocumento(t.nombre),
           label: t.nombre,
         }));
-
+        this.cdr.detectChanges();
         this.tipoDocumentoIdMap = Object.fromEntries(
           res.map(t => [
             this.normalizarTipoDocumento(t.nombre),
@@ -397,6 +402,7 @@ export class Novedades implements OnInit {
         estado_tarea:       estadoId,
         fecha_vencimiento:  tareaPayload.fechaVencimiento || null,
         hora:               tareaPayload.hora?.trim() || null,
+        enviar_agenda:      true,
       };
 
       if (tareaExistente?.id) {

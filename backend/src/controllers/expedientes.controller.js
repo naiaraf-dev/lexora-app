@@ -65,8 +65,11 @@ async function actualizar(req, res) {
         res.json(expediente);
     } catch (error) {
         res.status(error.status ?? 500).json({
-            mensaje: error.mensaje ?? 'Error al actualizar expediente',
-            error: error.message,
+            mensaje: 'Error al actualizar el expediente',
+            detalle:
+                error.mensaje ??
+                error.message ??
+                'No se pudo actualizar el expediente'
         });
     }
 }
@@ -75,7 +78,7 @@ async function actualizar(req, res) {
 async function eliminar(req, res) {
     try {
         const { id } = req.params;
-        await service.eliminar(Number(id));
+        await service.eliminar(Number(id), req.usuario?.id);
         res.json({ mensaje: 'Expediente eliminado correctamente' });
     } catch (error) {
         res.status(error.status ?? 500).json({
@@ -85,4 +88,48 @@ async function eliminar(req, res) {
     }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+// trae el historial de estados de un expediente
+async function obtenerHistorial(req, res) {
+    try {
+        const { id } = req.params;
+
+        const historial =
+            await service.obtenerHistorial(Number(id));
+
+        res.json(historial);
+
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje:
+                error.mensaje ??
+                'Error al obtener historial del expediente',
+
+            error: error.message
+        });
+    }
+}
+// trae las tareas automaticas pendientes del expediente
+async function obtenerTareasAutomaticasPendientes(req, res) {
+    try {
+        const { id } = req.params;
+
+        const tareas =
+            await service.obtenerTareasAutomaticasPendientes(
+                Number(id)
+            );
+
+        res.json(tareas);
+
+    } catch (error) {
+        res.status(error.status ?? 500).json({
+            mensaje:
+                error.mensaje ??
+                error.message ??
+                'Error al obtener las tareas automáticas pendientes',
+
+            error: error.message
+        });
+    }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar,obtenerHistorial,obtenerTareasAutomaticasPendientes };

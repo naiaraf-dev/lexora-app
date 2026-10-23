@@ -1,13 +1,13 @@
 <div class="flex flex-col gap-6 max-w-6xl mx-auto">
 
   @if (cargando) {
-    <div class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-500">
+    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-5 py-4 text-sm text-gray-500 dark:text-slate-400">
       Cargando expediente...
     </div>
   }
 
   @if (error) {
-    <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">
+    <div class="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 px-5 py-4 text-sm text-red-600 dark:text-red-400">
       {{ error }}
     </div>
   }
@@ -17,9 +17,9 @@
     <!-- Breadcrumb + acciones -->
     <div class="flex items-center justify-between">
       <nav class="text-sm">
-        <a class="text-gray-400 hover:underline cursor-pointer" (click)="volver()">Gestión de expedientes</a>
-        <span class="text-gray-300 mx-1.5">/</span>
-        <span class="text-text-primary font-medium">Expediente {{ expediente.numeroInterno }}</span>
+        <a class="text-gray-400 dark:text-slate-500 hover:underline cursor-pointer" (click)="volver()">Gestión de expedientes</a>
+        <span class="text-gray-300 dark:text-slate-600 mx-1.5">/</span>
+        <span class="text-text-primary dark:text-slate-100 font-medium">Expediente {{ expediente.numeroInterno }}</span>
       </nav>
 
       <div class="flex items-center gap-3">
@@ -37,31 +37,31 @@
     <app-info-card title="Resumen del Expediente">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 
-        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 dark:border-slate-700 py-4 px-3">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
             {{ resumen.estado }}
           </span>
-          <span class="text-xs text-gray-400 mt-0.5">Estado actual</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Estado actual</span>
         </div>
 
-        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
-          <span class="text-sm font-semibold text-text-primary">{{ resumen.proximoVencimiento }}</span>
-          <span class="text-xs text-gray-400">Próximo vencimiento</span>
+        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 dark:border-slate-700 py-4 px-3">
+          <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ resumen.proximoVencimiento }}</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500">Próximo vencimiento</span>
         </div>
 
-        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 dark:border-slate-700 py-4 px-3">
           <span class="text-xl font-bold text-success">{{ resumen.cumplidas }}</span>
-          <span class="text-xs text-gray-400">Tareas cumplidas</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500">Tareas cumplidas</span>
         </div>
 
-        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 dark:border-slate-700 py-4 px-3">
           <span class="text-xl font-bold text-warning">{{ resumen.pendientes }}</span>
-          <span class="text-xs text-gray-400">Tareas pendientes</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500">Tareas pendientes</span>
         </div>
 
-        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 py-4 px-3">
+        <div class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 dark:border-slate-700 py-4 px-3">
           <span class="text-xl font-bold text-danger">{{ resumen.vencidas }}</span>
-          <span class="text-xs text-gray-400">Tareas vencidas</span>
+          <span class="text-xs text-gray-400 dark:text-slate-500">Tareas vencidas</span>
         </div>
 
       </div>
@@ -78,9 +78,9 @@
               <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
               </svg>
-              <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+              <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ campo.label }}</span>
             </div>
-            <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+            <span class="text-sm text-gray-500 dark:text-slate-400 pl-6">{{ campo.value }}</span>
           </div>
         }
       </div>
@@ -95,9 +95,9 @@
               <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
               </svg>
-              <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+              <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ campo.label }}</span>
             </div>
-            <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+            <span class="text-sm text-gray-500 dark:text-slate-400 pl-6">{{ campo.value }}</span>
           </div>
         }
       </div>
@@ -112,9 +112,9 @@
               <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
               </svg>
-              <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+              <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ campo.label }}</span>
             </div>
-            <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+            <span class="text-sm text-gray-500 dark:text-slate-400 pl-6">{{ campo.value }}</span>
           </div>
         }
       </div>
@@ -129,9 +129,9 @@
               <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
               </svg>
-              <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+              <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ campo.label }}</span>
             </div>
-            <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+            <span class="text-sm text-gray-500 dark:text-slate-400 pl-6">{{ campo.value }}</span>
           </div>
         }
       </div>
@@ -146,9 +146,9 @@
               <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" [attr.d]="campo.iconPath" />
               </svg>
-              <span class="text-sm font-semibold text-text-primary">{{ campo.label }}</span>
+              <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ campo.label }}</span>
             </div>
-            <span class="text-sm text-gray-500 pl-6">{{ campo.value }}</span>
+            <span class="text-sm text-gray-500 dark:text-slate-400 pl-6">{{ campo.value }}</span>
           </div>
         }
       </div>
@@ -156,22 +156,22 @@
 
     <!-- Documentos -->
     <app-info-card title="Documentos">
-      <span slot="header-actions" class="text-sm text-gray-400">
+      <span slot="header-actions" class="text-sm text-gray-400 dark:text-slate-500">
         {{ documentos.length }} documentos registrados
       </span>
 
       @if (documentos.length) {
         <div class="flex flex-col gap-3">
           @for (doc of documentos; track doc.id || doc.nombre) {
-            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3">
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3">
               <div class="flex items-center gap-3 min-w-0">
                 <svg class="w-5 h-5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                     d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                 </svg>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-medium text-text-primary truncate">{{ doc.nombre }}</span>
-                  <span class="text-xs text-gray-400 truncate">{{ doc.meta }}</span>
+                  <span class="text-sm font-medium text-text-primary dark:text-slate-100 truncate">{{ doc.nombre }}</span>
+                  <span class="text-xs text-gray-400 dark:text-slate-500 truncate">{{ doc.meta }}</span>
                 </div>
               </div>
 
@@ -186,7 +186,7 @@
           }
         </div>
       } @else {
-        <div class="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-400">
+        <div class="rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-400 dark:text-slate-500">
           No hay documentos registrados para este expediente.
         </div>
       }
@@ -201,9 +201,9 @@
             <li class="relative flex gap-4 pb-6" [class.pb-0]="last">
               <!-- Línea + punto -->
               <div class="flex flex-col items-center">
-                <span class="w-4 h-4 rounded-full border-2 bg-white shrink-0" [ngClass]="nov.dotClasses"></span>
+                <span class="w-4 h-4 rounded-full border-2 bg-white dark:bg-slate-800 shrink-0" [ngClass]="nov.dotClasses"></span>
                 @if (!last) {
-                  <span class="w-px flex-1 bg-gray-200 mt-1"></span>
+                  <span class="w-px flex-1 bg-gray-200 dark:bg-slate-700 mt-1"></span>
                 }
               </div>
 
@@ -213,22 +213,22 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" [ngClass]="nov.badgeClasses">
                     {{ nov.tipo }}
                   </span>
-                  <span class="text-sm font-semibold text-text-primary">{{ nov.fecha }}</span>
-                  <span class="text-xs text-gray-400">{{ nov.autor }}</span>
+                  <span class="text-sm font-semibold text-text-primary dark:text-slate-100">{{ nov.fecha }}</span>
+                  <span class="text-xs text-gray-400 dark:text-slate-500">{{ nov.autor }}</span>
                 </div>
 
-                <p class="text-sm font-medium text-text-primary">{{ nov.titulo }}</p>
-                <p class="text-sm text-gray-500">{{ nov.descripcion }}</p>
+                <p class="text-sm font-medium text-text-primary dark:text-slate-100">{{ nov.titulo }}</p>
+                <p class="text-sm text-gray-500 dark:text-slate-400">{{ nov.descripcion }}</p>
 
                 <!-- Adjuntos -->
                 @if (nov.adjuntos.length) {
                   <div class="flex items-center gap-2 flex-wrap mt-1">
-                    <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
                     </svg>
                     @for (adj of nov.adjuntos; track adj) {
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-500">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400">
                         {{ adj }}
                       </span>
                     }
@@ -237,7 +237,7 @@
 
                 <!-- Tarea asociada -->
                 @if (nov.tarea; as tarea) {
-                  <div class="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 mt-2">
+                  <div class="flex items-start gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-3 py-2 mt-2">
                     @if (tarea.estado === 'Cumplida') {
                       <svg class="w-4 h-4 text-success shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -251,8 +251,8 @@
                     }
 
                     <div class="flex flex-col">
-                      <span class="text-sm font-medium text-text-primary">{{ tarea.titulo }}</span>
-                      <span class="text-xs text-gray-400">
+                      <span class="text-sm font-medium text-text-primary dark:text-slate-100">{{ tarea.titulo }}</span>
+                      <span class="text-xs text-gray-400 dark:text-slate-500">
                         Vencimiento: {{ tarea.vencimiento }} - Estado:
                         <span
                           [class.text-success]="tarea.estado === 'Cumplida'"
@@ -269,7 +269,7 @@
           }
         </ol>
       } @else {
-        <div class="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-400">
+        <div class="rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-400 dark:text-slate-500">
           No hay novedades registradas para este expediente.
         </div>
       }
@@ -277,135 +277,135 @@
     </app-info-card>
 
     <!-- Tareas del expediente -->
-<app-info-card title="Tareas del Expediente">
-  <span slot="header-actions" class="text-sm text-gray-400">
-    {{ tareasOrdenadas.length }} tareas registradas
-  </span>
+    <app-info-card title="Tareas del Expediente">
+      <span slot="header-actions" class="text-sm text-gray-400 dark:text-slate-500">
+        {{ tareasOrdenadas.length }} tareas registradas
+      </span>
 
-  <button
-    type="button"
-    class="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 transition"
-    (click)="toggleHistorialTareas()">
+      <button
+        type="button"
+        class="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition"
+        (click)="toggleHistorialTareas()">
 
-    <div class="flex items-center gap-3 min-w-0">
-      <div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M9 12h6m-6 4h6M9 8h6m2.25-4.5H6.75A2.25 2.25 0 004.5 5.75v12.5A2.25 2.25 0 006.75 20.5h10.5a2.25 2.25 0 002.25-2.25V5.75a2.25 2.25 0 00-2.25-2.25z" />
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M9 12h6m-6 4h6M9 8h6m2.25-4.5H6.75A2.25 2.25 0 004.5 5.75v12.5A2.25 2.25 0 006.75 20.5h10.5a2.25 2.25 0 002.25-2.25V5.75a2.25 2.25 0 00-2.25-2.25z" />
+            </svg>
+          </div>
+
+          <div class="flex flex-col items-start min-w-0">
+            <span class="text-sm font-semibold text-text-primary dark:text-slate-100">
+              Ver historial completo de tareas
+            </span>
+
+            <span class="text-xs text-gray-400 dark:text-slate-500">
+              {{ resumen.cumplidas }} cumplidas · {{ resumen.pendientes }} pendientes · {{ resumen.vencidas }} vencidas
+            </span>
+          </div>
+        </div>
+
+        <svg
+          class="w-5 h-5 text-gray-400 dark:text-slate-500 transition-transform"
+          [class.rotate-180]="mostrarHistorialTareas"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
-      </div>
+      </button>
 
-      <div class="flex flex-col items-start min-w-0">
-        <span class="text-sm font-semibold text-text-primary">
-          Ver historial completo de tareas
-        </span>
+      @if (mostrarHistorialTareas) {
+        <div class="mt-4 flex flex-col gap-3">
 
-        <span class="text-xs text-gray-400">
-          {{ resumen.cumplidas }} cumplidas · {{ resumen.pendientes }} pendientes · {{ resumen.vencidas }} vencidas
-        </span>
-      </div>
-    </div>
-
-    <svg
-      class="w-5 h-5 text-gray-400 transition-transform"
-      [class.rotate-180]="mostrarHistorialTareas"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-    </svg>
-  </button>
-
-  @if (mostrarHistorialTareas) {
-    <div class="mt-4 flex flex-col gap-3">
-
-      @if (tareasOrdenadas.length) {
-        @for (tarea of tareasOrdenadas; track tarea.id || tarea.titulo) {
-          <div class="rounded-xl border border-gray-200 bg-white px-4 py-3">
-            <div class="flex items-start gap-3">
-              <span
-                class="w-4 h-4 rounded-full border-2 bg-white shrink-0 mt-1"
-                [ngClass]="getTareaDotClasses(tarea)">
-              </span>
-
-              <div class="flex flex-col gap-2 flex-1 min-w-0">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="flex flex-col min-w-0">
-                    <span class="text-sm font-semibold text-text-primary truncate">
-                      {{ tarea.titulo }}
-                    </span>
-
-                    @if (tarea.descripcion && tarea.descripcion !== tarea.titulo) {
-                      <span class="text-sm text-gray-500 mt-0.5">
-                        {{ tarea.descripcion }}
-                      </span>
-                    }
-                  </div>
-
+          @if (tareasOrdenadas.length) {
+            @for (tarea of tareasOrdenadas; track tarea.id || tarea.titulo) {
+              <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
+                <div class="flex items-start gap-3">
                   <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
-                    [ngClass]="getTareaEstadoClasses(tarea)">
-                    {{ getTareaEstadoTexto(tarea) }}
+                    class="w-4 h-4 rounded-full border-2 bg-white dark:bg-slate-800 shrink-0 mt-1"
+                    [ngClass]="getTareaDotClasses(tarea)">
                   </span>
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 text-xs">
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Vencimiento</span>
-                    <span class="font-medium text-text-primary">{{ tarea.vencimiento }}</span>
-                  </div>
+                  <div class="flex flex-col gap-2 flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex flex-col min-w-0">
+                        <span class="text-sm font-semibold text-text-primary dark:text-slate-100 truncate">
+                          {{ tarea.titulo }}
+                        </span>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Fecha de creación</span>
-                    <span class="font-medium text-text-primary">{{ tarea.fechaCreacion }}</span>
-                  </div>
+                        @if (tarea.descripcion && tarea.descripcion !== tarea.titulo) {
+                          <span class="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                            {{ tarea.descripcion }}
+                          </span>
+                        }
+                      </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Prioridad</span>
-                    <span class="font-medium text-text-primary">{{ tarea.prioridad }}</span>
-                  </div>
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0"
+                        [ngClass]="getTareaEstadoClasses(tarea)">
+                        {{ getTareaEstadoTexto(tarea) }}
+                      </span>
+                    </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Estado</span>
-                    <span class="font-medium text-text-primary">{{ tarea.estadoNombre }}</span>
-                  </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 text-xs">
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Vencimiento</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.vencimiento }}</span>
+                      </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Usuario creación</span>
-                    <span class="font-medium text-text-primary">{{ tarea.usuarioCreacion }}</span>
-                  </div>
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Fecha de creación</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.fechaCreacion }}</span>
+                      </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Usuario completado</span>
-                    <span class="font-medium text-text-primary">{{ tarea.usuarioCompletado }}</span>
-                  </div>
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Prioridad</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.prioridad }}</span>
+                      </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Fecha completado</span>
-                    <span class="font-medium text-text-primary">{{ tarea.fechaCompletado }}</span>
-                  </div>
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Estado</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.estadoNombre }}</span>
+                      </div>
 
-                  <div class="flex flex-col">
-                    <span class="text-gray-400">Novedad asociada</span>
-                    <span class="font-medium text-text-primary">{{ tarea.novedadId || '-' }}</span>
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Usuario creación</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.usuarioCreacion }}</span>
+                      </div>
+
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Usuario completado</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.usuarioCompletado }}</span>
+                      </div>
+
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Fecha completado</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.fechaCompletado }}</span>
+                      </div>
+
+                      <div class="flex flex-col">
+                        <span class="text-gray-400 dark:text-slate-500">Novedad asociada</span>
+                        <span class="font-medium text-text-primary dark:text-slate-100">{{ tarea.novedadId || '-' }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+            }
+          } @else {
+            <div class="rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-400 dark:text-slate-500">
+              No hay tareas registradas para este expediente.
             </div>
-          </div>
-        }
-      } @else {
-        <div class="rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-400">
-          No hay tareas registradas para este expediente.
+          }
+
         </div>
       }
-
-    </div>
-  }
-</app-info-card>
+    </app-info-card>
 
   }
 

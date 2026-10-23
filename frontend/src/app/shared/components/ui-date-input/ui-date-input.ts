@@ -1,12 +1,233 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
+/** Una celda del grid del calendario (6 semanas x 7 días). */
+interface CeldaCalendario {
+  fecha: Date;
+  dia: number;
+  delMesActual: boolean;
+  esHoy: boolean;
+  seleccionado: boolean;
+  deshabilitada: boolean;
+}
+
+/**
+ * Selector de fecha propio de la app — reemplaza el <input type="date"> nativo, que
+ * se ve distinto según sistema operativo/navegador. Mantiene la misma interfaz pública
+ * (label, model, disabled, modelChange) que la versión anterior, así que no hace falta
+ * tocar ningún lugar donde ya se usa <app-ui-date-input>. El modelo sigue siendo un
+ * string ISO 'YYYY-MM-DD'.
+ */
 @Component({
   selector: 'app-ui-date-input',
   standalone: true,
+  imports: [CommonModule],
   templateUrl: './ui-date-input.html',
 })
 export class UiDateInput {
   @Input() label = '';
   @Input() model: string = '';
+  @Input() disabled = false;
+  @Input() min?: string; // fecha mínima seleccionable (ISO 'YYYY-MM-DD'), opcional
   @Output() modelChange = new EventEmitter<string>();
+
+  abierto = false;
+  abrirHaciaArriba = false;
+
+  /** Posición calculada del panel flotante (position: fixed, para escapar de overflow de ancestros). */
+  panelStyle: { top?: string; bottom?: string; left: string; width: string } = { left: '0px', width: '0px' };
+
+  /** Mes que se está mostrando en el calendario (no necesariamente el de la fecha seleccionada). */
+  mesVisible = new Date();
+
+  private readonly DIAS_SEMANA = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+  private readonly MESES = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  ];
+
+  constructor(private elementRef: ElementRef) {}
+
+  get diasSemana(): string[] {
+    return this.DIAS_SEMANA;
+  }
+
+  get etiquetaMes(): string {
+    const texto = `${this.MESES[this.mesVisible.getMonth()]} de ${this.mesVisible.getFullYear()}`;
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  /** Fecha seleccionada como objeto Date, o null si el modelo está vacío. */
+  private get fechaSeleccionada(): Date | null {
+    if (!this.model) return null;
+    const [anio, mes, dia] = this.model.split('-').map(Number);
+    return new Date(anio, mes - 1, dia);
+  }
+
+  private get fechaMinima(): Date | null {
+    if (!this.min) return null;
+    const [anio, mes, dia] = this.min.split('-').map(Number);
+    return new Date(anio, mes - 1, dia);
+  }
+
+  /** Texto que se muestra en el campo cuando el calendario está cerrado. */
+  get textoMostrado(): string {
+    return this.fechaSeleccionada?.toLocaleDateString('es-AR') ?? '';
+  }
+
+  /** Arma el grid de 6 semanas x 7 días del mes visible (incluye días de meses adyacentes, en gris). */
+  get celdas(): CeldaCalendario[] {
+    const anio = this.mesVisible.getFullYear();
+    const mes = this.mesVisible.getMonth();
+
+    const primerDiaDelMes = new Date(anio, mes, 1);
+    const inicioGrid = new Date(anio, mes, 1 - primerDiaDelMes.getDay());
+
+    const hoy = new Date();
+    const seleccionada = this.fechaSeleccionada;
+    const celdas: CeldaCalendario[] = [];
+
+    for (let i = 0; i < 42; i++) {
+      const fecha = new Date(inicioGrid);
+      fecha.setDate(inicioGrid.getDate() + i);
+
+      const minima = this.fechaMinima;
+
+      celdas.push({
+        fecha,
+        dia: fecha.getDate(),
+        delMesActual: fecha.getMonth() === mes,
+        esHoy: this.esMismoDia(fecha, hoy),
+        seleccionado: !!seleccionada && this.esMismoDia(fecha, seleccionada),
+        deshabilitada: !!minima && fecha < minima && !this.esMismoDia(fecha, minima),
+      });
+    }
+
+    return celdas;
+  }
+
+  private esMismoDia(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  toggleAbierto(): void {
+    if (this.disabled) return;
+
+    if (!this.abierto) {
+      this.mesVisible = this.fechaSeleccionada ?? new Date();
+      this.vista = 'dias';
+      this.calcularPosicion();
+    }
+    this.abierto = !this.abierto;
+  }
+
+  /** Calcula la posición fija del panel según la posición real del botón en la ventana. */
+  private calcularPosicion(): void {
+    const ALTO_ESTIMADO_PANEL = 340;
+    const rect = this.elementRef.nativeElement.querySelector('button').getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - rect.bottom;
+
+    this.abrirHaciaArriba = espacioAbajo < ALTO_ESTIMADO_PANEL;
+
+    this.panelStyle = {
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      ...(this.abrirHaciaArriba
+        ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+        : { top: `${rect.bottom + 4}px` }),
+    };
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  onWindowChange(): void {
+    if (this.abierto) this.calcularPosicion();
+  }
+
+  mesAnterior(): void {
+    this.mesVisible = new Date(this.mesVisible.getFullYear(), this.mesVisible.getMonth() - 1, 1);
+  }
+
+  mesSiguiente(): void {
+    this.mesVisible = new Date(this.mesVisible.getFullYear(), this.mesVisible.getMonth() + 1, 1);
+  }
+
+  elegirDia(celda: CeldaCalendario): void {
+    if (!celda.delMesActual || celda.deshabilitada) return;
+    this.emitirFecha(celda.fecha);
+  }
+
+  irAHoy(): void {
+    this.emitirFecha(new Date());
+  }
+
+  private emitirFecha(fecha: Date): void {
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+
+    this.modelChange.emit(`${yyyy}-${mm}-${dd}`);
+    this.abierto = false;
+  }
+
+  borrar(): void {
+    this.modelChange.emit('');
+    this.abierto = false;
+  }
+
+  /** Cierra el calendario si se hace clic afuera del componente. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.abierto && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.abierto = false;
+    }
+  }
+
+  /** 'dias' = calendario normal, 'meses' = grid de 12 meses, 'anios' = grid de años. */
+  vista: 'dias' | 'meses' | 'anios' = 'dias';
+
+  /** Año base para el grid de años (se navega de a 12 años). */
+  private anioBaseGrid = 0;
+
+  get anioVisible(): number {
+    return this.mesVisible.getFullYear();
+  }
+
+  /** Grid de 12 años a mostrar cuando vista === 'anios'. */
+  get celdasAnios(): number[] {
+    const base = this.anioBaseGrid || Math.floor(this.mesVisible.getFullYear() / 12) * 12;
+    return Array.from({ length: 12 }, (_, i) => base + i);
+  }
+
+  /** Nombres cortos de los 12 meses, para el grid de vista === 'meses'. */
+  get celdasMeses(): { nombre: string; indice: number }[] {
+    return this.MESES.map((nombre, indice) => ({ nombre: nombre.slice(0, 3), indice }));
+  }
+
+  abrirSelectorMes(): void {
+    this.vista = 'meses';
+  }
+
+  abrirSelectorAnio(): void {
+    this.anioBaseGrid = Math.floor(this.mesVisible.getFullYear() / 12) * 12;
+    this.vista = 'anios';
+  }
+
+  elegirMes(indice: number): void {
+    this.mesVisible = new Date(this.mesVisible.getFullYear(), indice, 1);
+    this.vista = 'dias';
+  }
+
+  elegirAnio(anio: number): void {
+    this.mesVisible = new Date(anio, this.mesVisible.getMonth(), 1);
+    this.vista = 'meses';
+  }
+
+  gridAnioAnterior(): void {
+    this.anioBaseGrid -= 12;
+  }
+
+  gridAnioSiguiente(): void {
+    this.anioBaseGrid += 12;
+  }
 }

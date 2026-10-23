@@ -9,7 +9,13 @@ const tablasPermitidas = {
     tiponovedad: 'tiponovedad',
     estadotarea: 'estadotarea',
     estadoexpediente: 'estadoexpediente',
-    prioridad: 'prioridad'
+    prioridad: 'prioridad',
+    estadoprevision: 'estadoprevision',
+    tipoobligacion: 'tipoobligacion',
+    conceptoprevision: 'conceptoprevision',
+    estadoliquidacion: 'estadoliquidacion',
+    mediopago: 'mediopago',
+    tasa: 'tasa'
 };
 
 function obtenerTabla(nombreEnum) {
@@ -50,7 +56,48 @@ async function create(nombreEnum, nombre) {
     return resultado.recordset[0];
 }
 
+async function getEstadosPorTipoExpediente(tipoExpedienteId) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('tipoExpedienteId', sql.Int, tipoExpedienteId)
+        .query(`
+            SELECT
+                ee.id AS estadoId,
+                ee.nombre AS estadoNombre,
+                tet.orden
+            FROM tipoestadoexpediente tet
+            INNER JOIN estadoexpediente ee
+                ON ee.id = tet.estadoexpediente
+            WHERE tet.tipoexpediente = @tipoExpedienteId
+            ORDER BY tet.orden
+        `);
+
+    return resultado.recordset;
+}
+
+async function getTransicionesPorTipo(tipoExpedienteId) {
+    const pool = await conectarBD();
+    const resultado = await pool.request()
+        .input('tipoExpedienteId', sql.Int, tipoExpedienteId)
+        .query(`
+        SELECT
+            t.estado_origen   AS estadoOrigenId,
+            eo.nombre         AS estadoOrigenNombre,
+            t.estado_destino  AS estadoDestinoId,
+            ed.nombre         AS estadoDestinoNombre
+        FROM transicion_estado t
+        INNER JOIN estadoexpediente eo ON eo.id = t.estado_origen
+        INNER JOIN estadoexpediente ed ON ed.id = t.estado_destino
+        WHERE t.tipo_expediente = @tipoExpedienteId
+        ORDER BY t.estado_origen, t.estado_destino
+        `);
+    return resultado.recordset;
+}
+
 module.exports = {
     getAll,
-    create
+    create,
+    getEstadosPorTipoExpediente,
+    getTransicionesPorTipo
 };

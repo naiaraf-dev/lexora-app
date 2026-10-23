@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeConfig, UiBadge } from '../ui-badge/ui-badge';
 
-export type TableAction = 'view' | 'edit' | 'delete' | 'download' | 'complete';
+export type TableAction = 'view' | 'edit' | 'delete' | 'download' | 'complete' | 'agrupar' | 'desagrupar';
 
 export interface TableColumn {
   key: string;

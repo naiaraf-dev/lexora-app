@@ -10,11 +10,17 @@ export interface LogEntry {
   modulo: LogModulo;
   descripcion: string;
   resultado: LogResultado;
+  ip: string | null;
+}
+
+export interface LogUsuario {
+  id: number;
+  nombre: string;
 }
 
 export interface LogFiltros {
-  fechaDesde?: string;
-  fechaHasta?: string;
+  fechaDesde: string;
+  fechaHasta: string;
   usuario?: string;
   modulo?: string;
   tipoAccion?: string;

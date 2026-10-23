@@ -25,18 +25,27 @@ async function obtenerDocumentos(filtros) {
             d.novedad,
             n.titulo AS titulo_novedad,
 
+            d.tarea,
+            t.titulo AS titulo_tarea,
+
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,
             u.apellido AS apellido_usuario_creacion,
 
             d.tipo_documento,
-            td.nombre AS nombre_tipo_documento
+            td.nombre AS nombre_tipo_documento,
+
+            d.prevision,
+            tob.nombre AS tipo_obligacion_prevision
 
         FROM documento d
         INNER JOIN expediente e ON d.expediente = e.id
         LEFT JOIN novedad n ON d.novedad = n.id
+        LEFT JOIN tarea t ON d.tarea = t.id
         INNER JOIN usuario u ON d.usuario_creacion = u.id
         INNER JOIN tipodocumento td ON d.tipo_documento = td.id
+        LEFT JOIN prevision pv ON d.prevision = pv.id
+        LEFT JOIN tipoobligacion tob ON pv.tipo_obligacion = tob.id
         WHERE 1 = 1
     `;
 
@@ -76,6 +85,11 @@ async function obtenerDocumentos(filtros) {
         request.input('expediente', sql.Int, Number(filtros.expediente));
     }
 
+    if (filtros.tarea) {
+        query += ` AND d.tarea = @tarea`;
+        request.input('tarea', sql.Int, Number(filtros.tarea));
+    }
+
     query += ` ORDER BY d.fecha_creacion DESC`;
 
     const resultado = await request.query(query);
@@ -103,6 +117,9 @@ async function obtenerTodosLosDocumentos() {
             d.novedad,
             n.titulo AS titulo_novedad,
 
+            d.tarea,
+            t.titulo AS titulo_tarea,
+
             d.usuario_creacion,
             u.nombre AS nombre_usuario_creacion,
             u.apellido AS apellido_usuario_creacion,
@@ -113,6 +130,7 @@ async function obtenerTodosLosDocumentos() {
         FROM documento d
         INNER JOIN expediente e ON d.expediente = e.id
         LEFT JOIN novedad n ON d.novedad = n.id
+        LEFT JOIN tarea t ON d.tarea = t.id
         INNER JOIN usuario u ON d.usuario_creacion = u.id
         INNER JOIN tipodocumento td ON d.tipo_documento = td.id
         ORDER BY d.fecha_creacion DESC
@@ -181,11 +199,30 @@ async function existeTipoDocumento(idTipoDocumento) {
     return resultado.recordset.length > 0;
 }
 
-// inserta un documento nuevo en la base
-async function insertarDocumento(documento) {
+// valida si existe la tarea
+async function existeTarea(idTarea) {
     const pool = await conectarBD();
 
     const resultado = await pool.request()
+        .input('idTarea', sql.Int, idTarea)
+        .query(`
+            SELECT id 
+            FROM tarea 
+            WHERE id = @idTarea
+        `);
+
+    return resultado.recordset.length > 0;
+}
+
+// inserta un documento nuevo en la base
+// si recibe una transaccion, inserta dentro de ella (lo usa previsiones para que el
+// documento y el pago o impulso se guarden juntos o no se guarde ninguno)
+async function insertarDocumento(documento, transaction = null) {
+    const request = transaction
+        ? new sql.Request(transaction)
+        : (await conectarBD()).request();
+
+    const resultado = await request
         .input('nombre_archivo', sql.NVarChar(200), documento.nombre_archivo)
         .input('descripcion', sql.NVarChar(sql.MAX), documento.descripcion || null)
         .input('fecha_documento', sql.DateTime2, documento.fecha_documento || null)
@@ -193,8 +230,10 @@ async function insertarDocumento(documento) {
         .input('activo', sql.Bit, documento.activo)
         .input('expediente', sql.Int, documento.expediente)
         .input('novedad', sql.Int, documento.novedad || null)
+        .input('tarea', sql.Int, documento.tarea || null)
         .input('usuario_creacion', sql.Int, documento.usuario_creacion)
         .input('tipo_documento', sql.Int, documento.tipo_documento)
+        .input('prevision', sql.Int, documento.prevision || null)
         .query(`
             INSERT INTO documento (
                 nombre_archivo,
@@ -204,8 +243,10 @@ async function insertarDocumento(documento) {
                 activo,
                 expediente,
                 novedad,
+                tarea,
                 usuario_creacion,
-                tipo_documento
+                tipo_documento,
+                prevision
             )
             OUTPUT INSERTED.*
             VALUES (
@@ -216,8 +257,10 @@ async function insertarDocumento(documento) {
                 @activo,
                 @expediente,
                 @novedad,
+                @tarea,
                 @usuario_creacion,
-                @tipo_documento
+                @tipo_documento,
+                @prevision
             )
         `);
 
@@ -252,6 +295,31 @@ async function obtenerDocumentoPorId(idDocumento) {
 }
 
 // elimina un documento y devuelve el registro eliminado
+// devuelve donde se usa el documento dentro de una prevision (pago, impulso, acreditacion,
+// intimacion o factura), o null si no lo usa ninguna. Esas filas guardan el id del documento.
+async function obtenerUsoEnPrevision(idDocumento) {
+    const pool = await conectarBD();
+
+    const resultado = await pool.request()
+        .input('idDocumento', sql.Int, idDocumento)
+        .query(`
+            SELECT TOP 1 uso FROM (
+                SELECT 'pago' AS uso FROM pagoprevision WHERE documento = @idDocumento AND activo = 1
+                UNION ALL SELECT 'impulso' FROM impulsoprevision WHERE documento = @idDocumento AND activo = 1
+                UNION ALL SELECT 'acreditacion' FROM acreditacion WHERE documento = @idDocumento AND activo = 1
+                UNION ALL SELECT 'intimacion' FROM intimacionprevision WHERE documento = @idDocumento AND activo = 1
+                UNION ALL SELECT 'factura' FROM facturahonorarios WHERE documento = @idDocumento
+                -- anulados: el documento sigue referenciado aunque el movimiento no cuente
+                UNION ALL SELECT 'anulado' FROM pagoprevision WHERE documento = @idDocumento AND activo = 0
+                UNION ALL SELECT 'anulado' FROM impulsoprevision WHERE documento = @idDocumento AND activo = 0
+                UNION ALL SELECT 'anulado' FROM acreditacion WHERE documento = @idDocumento AND activo = 0
+                UNION ALL SELECT 'anulado' FROM intimacionprevision WHERE documento = @idDocumento AND activo = 0
+            ) usos
+        `);
+
+    return resultado.recordset[0]?.uso ?? null;
+}
+
 async function eliminarDocumentoPorId(idDocumento) {
     const pool = await conectarBD();
 
@@ -318,8 +386,10 @@ module.exports = {
     existeNovedad,
     existeUsuario,
     existeTipoDocumento,
+    existeTarea,
     insertarDocumento,
     obtenerDocumentoPorId,
+    obtenerUsoEnPrevision,
     eliminarDocumentoPorId,
     modificarDocumento
 };

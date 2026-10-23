@@ -6,6 +6,7 @@ async function obtenerDocumentos(req, res) {
         const filtros = {
             iddocumento: req.query.iddocumento ? Number(req.query.iddocumento) : undefined,
             expediente: req.query.expediente ? Number(req.query.expediente) : undefined,
+            tarea: req.query.tarea ? Number(req.query.tarea) : undefined,
             nombreExpediente: req.query.nombreExpediente,
             tipoDocumento: req.query.tipoDocumento,
             fechaCreacion: req.query.fechaCreacion,

@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 
 // clave que se usa para firmar y validar los tokens
-// si existe en el .env usa esa, y si no usa una por defecto para desarrollo
-const JWT_SECRET = process.env.JWT_SECRET || 'lexora-dev-secret-changeme';
+// saca la del archivo .env
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET no está definido en las variables de entorno');
 
 // middleware que valida que el usuario tenga un token valido antes de entrar a una ruta protegida
 function authMiddleware(req, res, next) {

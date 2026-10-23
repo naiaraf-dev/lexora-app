@@ -1,0 +1,118 @@
+<app-ui-modal [open]="open" (cerrar)="cerrar.emit()">
+
+  <div slot="titulo" class="flex items-center gap-2">
+    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <span class="font-semibold text-text-primary dark:text-slate-100">{{ titulo }}</span>
+  </div>
+
+  <div slot="cuerpo" class="flex flex-col gap-4">
+
+    <div class="rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+      {{ config.ayuda }}
+    </div>
+
+    @if (prevision) {
+      <div class="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-700/30 px-4 py-3 grid grid-cols-3 gap-4 text-sm">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Monto previsto</span>
+          <span class="font-semibold text-text-primary dark:text-slate-100">{{ formatMonto(prevision.montoPrevisto) }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Total pagado</span>
+          <span class="font-semibold text-success">{{ formatMonto(prevision.totalPagado) }}</span>
+        </div>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Saldo</span>
+          <span class="font-semibold text-warning">{{ formatMonto(prevision.saldo) }}</span>
+        </div>
+      </div>
+    }
+
+    <div class="grid grid-cols-2 gap-3">
+      @if (tipo === 'factura') {
+        <div class="col-span-2">
+          <app-ui-input label="Profesional *" placeholder="Ej.: Dr. Carlos Méndez" [(model)]="form.profesional"></app-ui-input>
+        </div>
+      }
+      <app-ui-date-input [label]="config.labelFecha" [(model)]="form.fecha"></app-ui-date-input>
+      @if (config.labelMonto) {
+        <app-ui-input [label]="config.labelMonto" placeholder="$ 0,00" [(model)]="form.monto"></app-ui-input>
+      }
+    </div>
+
+    @if (tipo === 'intimacion') {
+      <div class="grid grid-cols-2 gap-3">
+        <app-ui-date-input label="Vence el *" [min]="form.fecha" [(model)]="form.fechaVencimiento"></app-ui-date-input>
+        <app-ui-input label="Bajo apercibimiento de" placeholder="Ej.: ejecución, embargo" [(model)]="form.apercibimiento"></app-ui-input>
+      </div>
+      <p class="text-xs text-text-primary/40 dark:text-slate-500">
+        Calculá el vencimiento en días hábiles judiciales. Si el juzgado impone una multa o astreintes, eso es una obligación nueva: creá otra previsión de tipo Multa.
+      </p>
+    }
+
+    @if (tipo === 'acreditacion') {
+      <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" [(ngModel)]="form.ordenaNotificar" class="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary/30" />
+        <span class="flex flex-col gap-0.5">
+          <span class="text-sm text-text-primary dark:text-slate-100">El proveído ordena notificar</span>
+          <span class="text-xs text-text-primary/40 dark:text-slate-500">Se genera una tarea en Agenda (vence en 5 días). La previsión no se puede cerrar hasta cumplirla.</span>
+        </span>
+      </label>
+    }
+
+    @if (tipo === 'impulso' || tipo === 'intimacion') {
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">Observaciones</label>
+        <textarea [(ngModel)]="form.observaciones" rows="2"
+          class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"></textarea>
+      </div>
+    }
+
+    @if (config.labelArchivo) {
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ config.labelArchivo }}</label>
+        @if (archivoActual && !archivo) {
+          <span class="text-xs text-text-primary/50 dark:text-slate-400">
+            Archivo actual: {{ archivoActual }}. Si no adjuntás otro, se conserva.
+          </span>
+        }
+        @if (archivo) {
+          <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-primary/20 dark:border-primary/30 bg-primary/5 dark:bg-primary/10">
+            <span class="text-sm text-primary font-medium flex-1 truncate">{{ archivo.name }}</span>
+            <button type="button" (click)="archivo = null" class="text-text-primary/30 dark:text-slate-500 hover:text-danger transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        } @else {
+          <label
+            class="flex items-center gap-3 px-4 py-4 rounded-lg border border-dashed border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 transition w-full cursor-pointer"
+            (dragover)="$event.preventDefault()"
+            (drop)="onDrop($event)"
+          >
+            <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileChange($event)" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400 dark:text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+            </svg>
+            <div class="flex flex-col">
+              <span class="text-sm text-text-primary/60 dark:text-slate-400">Adjuntar archivo</span>
+              <span class="text-xs text-text-primary/30 dark:text-slate-500">PDF, JPG, PNG hasta 10MB · queda en la pestaña Documentos del expediente</span>
+            </div>
+          </label>
+        }
+      </div>
+    }
+
+  </div>
+
+  <div slot="footer" class="flex justify-end gap-2">
+    <app-primary-btn variant="secondary" (click)="cerrar.emit()">Cancelar</app-primary-btn>
+    <app-primary-btn [loading]="guardando" (click)="guardar()">{{ config.boton }}</app-primary-btn>
+  </div>
+
+</app-ui-modal>

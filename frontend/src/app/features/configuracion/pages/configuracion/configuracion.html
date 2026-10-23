@@ -1,16 +1,16 @@
 <div class="flex flex-col gap-6 max-w-4xl px-12 py-8">
   <!-- ENCABEZADO -->
   <div>
-    <h1 class="text-2xl font-bold text-text-primary">Configuración</h1>
-    <p class="text-sm text-text-primary/50 mt-0.5">Gestión de perfil y seguridad de la cuenta</p>
+    <h1 class="text-2xl font-bold text-text-primary dark:text-slate-100">Configuración</h1>
+    <p class="text-sm text-text-primary/50 dark:text-slate-400 mt-0.5">Gestión de perfil y seguridad de la cuenta</p>
   </div>
 
   <!-- TABS -->
-  <div class="flex gap-8 border-b border-gray-200">
+  <div class="flex gap-8 border-b border-gray-200 dark:border-slate-700">
     <button
       (click)="tab.set('perfil')"
       class="relative pb-3 text-sm font-medium transition-colors"
-      [class]="tab() === 'perfil' ? 'text-primary' : 'text-text-primary/50 hover:text-text-primary'"
+      [class]="tab() === 'perfil' ? 'text-primary' : 'text-text-primary/50 dark:text-slate-400 hover:text-text-primary dark:hover:text-slate-200'"
     >
       Perfil
       @if (tab() === 'perfil') {
@@ -21,7 +21,7 @@
     <button
       (click)="tab.set('seguridad')"
       class="relative pb-3 text-sm font-medium transition-colors"
-      [class]="tab() === 'seguridad' ? 'text-primary' : 'text-text-primary/50 hover:text-text-primary'"
+      [class]="tab() === 'seguridad' ? 'text-primary' : 'text-text-primary/50 dark:text-slate-400 hover:text-text-primary dark:hover:text-slate-200'"
     >
       Seguridad y Privacidad
       @if (tab() === 'seguridad') {
@@ -32,94 +32,94 @@
 
   @if (tab() === 'perfil') {
     <section class="flex flex-col">
-      <h2 class="text-xl font-bold text-text-primary mb-2">Datos del usuario</h2>
+      <h2 class="text-xl font-bold text-text-primary dark:text-slate-100 mb-2">Datos del usuario</h2>
 
       <!-- Avatar -->
-      <div class="flex items-center gap-4 py-6 border-b border-gray-100">
-        <div class="w-16 h-16 rounded-full overflow-hidden bg-text-primary/10 flex items-center justify-center shrink-0">
+      <div class="flex items-center gap-4 py-6 border-b border-gray-100 dark:border-slate-700">
+        <div class="w-16 h-16 rounded-full overflow-hidden bg-text-primary/10 dark:bg-slate-700 flex items-center justify-center shrink-0">
           @if (perfil.avatarUrl) {
             <img [src]="perfil.avatarUrl" [alt]="perfil.nombre" class="w-full h-full object-cover" />
           } @else {
-            <span class="text-lg font-semibold text-text-primary/70">{{ iniciales() }}</span>
+            <span class="text-lg font-semibold text-text-primary/70 dark:text-slate-300">{{ iniciales() }}</span>
           }
         </div>
         @if (editando()) {
           <div class="flex flex-col gap-1">
-            <label class="inline-flex w-fit cursor-pointer px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-text-primary/80 hover:bg-gray-50 transition">
+            <label class="inline-flex w-fit cursor-pointer px-4 py-2 rounded-lg border border-gray-200 dark:border-slate-700 text-sm font-medium text-text-primary/80 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
               Cambiar imagen
               <input type="file" accept="image/*" class="hidden" (change)="onImagenSeleccionada($event)" />
             </label>
             @if (imagenError()) {
               <p class="text-xs text-danger">{{ imagenError() }}</p>
             } @else {
-              <p class="text-xs text-text-primary/45">Tamaño máximo de 5MB</p>
+              <p class="text-xs text-text-primary/45 dark:text-slate-500">Tamaño máximo de 5MB</p>
             }
           </div>
         }
       </div>
 
       <!-- Campos -->
-      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100">
-        <label class="text-sm font-semibold text-text-primary">Nombre</label>
+      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100 dark:border-slate-700">
+        <label class="text-sm font-semibold text-text-primary dark:text-slate-100">Nombre</label>
         @if (editando()) {
           <div class="flex flex-col gap-1 max-w-sm">
             <input type="text" [(ngModel)]="perfil.nombre"
-              class="px-3 py-2 rounded-lg border bg-white text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              [ngClass]="perfilErrors().nombre ? 'border-danger' : 'border-gray-200'" />
+              class="px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+              [ngClass]="perfilErrors().nombre ? 'border-danger' : 'border-gray-200 dark:border-slate-700'" />
             @if (perfilErrors().nombre) {
               <p class="text-xs text-danger">{{ perfilErrors().nombre }}</p>
             }
           </div>
         } @else {
-          <span class="text-sm text-text-primary/70">{{ perfil.nombre }}</span>
+          <span class="text-sm text-text-primary/70 dark:text-slate-300">{{ perfil.nombre }}</span>
         }
       </div>
 
-      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100">
-        <label class="text-sm font-semibold text-text-primary">Apellido</label>
+      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100 dark:border-slate-700">
+        <label class="text-sm font-semibold text-text-primary dark:text-slate-100">Apellido</label>
         @if (editando()) {
           <div class="flex flex-col gap-1 max-w-sm">
             <input type="text" [(ngModel)]="perfil.apellido"
-              class="px-3 py-2 rounded-lg border bg-white text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              [ngClass]="perfilErrors().apellido ? 'border-danger' : 'border-gray-200'" />
+              class="px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+              [ngClass]="perfilErrors().apellido ? 'border-danger' : 'border-gray-200 dark:border-slate-700'" />
             @if (perfilErrors().apellido) {
               <p class="text-xs text-danger">{{ perfilErrors().apellido }}</p>
             }
           </div>
         } @else {
-          <span class="text-sm text-text-primary/70">{{ perfil.apellido }}</span>
+          <span class="text-sm text-text-primary/70 dark:text-slate-300">{{ perfil.apellido }}</span>
         }
       </div>
 
-      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100">
-        <label class="text-sm font-semibold text-text-primary">Matrícula</label>
+      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100 dark:border-slate-700">
+        <label class="text-sm font-semibold text-text-primary dark:text-slate-100">Matrícula</label>
         @if (editando()) {
           <div class="flex flex-col gap-1 max-w-sm">
             <input type="text" [(ngModel)]="perfil.matricula"
-              class="px-3 py-2 rounded-lg border bg-white text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              [ngClass]="perfilErrors().matricula ? 'border-danger' : 'border-gray-200'" />
+              class="px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+              [ngClass]="perfilErrors().matricula ? 'border-danger' : 'border-gray-200 dark:border-slate-700'" />
             @if (perfilErrors().matricula) {
               <p class="text-xs text-danger">{{ perfilErrors().matricula }}</p>
             }
           </div>
         } @else {
-          <span class="text-sm text-text-primary/70">{{ perfil.matricula }}</span>
+          <span class="text-sm text-text-primary/70 dark:text-slate-300">{{ perfil.matricula }}</span>
         }
       </div>
 
-      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100">
-        <label class="text-sm font-semibold text-text-primary">Email</label>
+      <div class="grid grid-cols-[160px_1fr] items-center gap-4 py-5 border-b border-gray-100 dark:border-slate-700">
+        <label class="text-sm font-semibold text-text-primary dark:text-slate-100">Email</label>
         @if (editando()) {
           <div class="flex flex-col gap-1 max-w-sm">
             <input type="email" [(ngModel)]="perfil.email"
-              class="px-3 py-2 rounded-lg border bg-white text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
-              [ngClass]="perfilErrors().email ? 'border-danger' : 'border-gray-200'" />
+              class="px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 text-sm text-text-primary dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200"
+              [ngClass]="perfilErrors().email ? 'border-danger' : 'border-gray-200 dark:border-slate-700'" />
             @if (perfilErrors().email) {
               <p class="text-xs text-danger">{{ perfilErrors().email }}</p>
             }
           </div>
         } @else {
-          <span class="text-sm text-text-primary/70">{{ perfil.email }}</span>
+          <span class="text-sm text-text-primary/70 dark:text-slate-300">{{ perfil.email }}</span>
         }
       </div>
 
@@ -148,21 +148,21 @@
   }
 
   @if (tab() === 'seguridad') {
-    <div class="bg-white rounded-2xl border border-black/8 shadow-sm max-w-3xl overflow-hidden">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-black/8 dark:border-slate-700 shadow-sm max-w-3xl overflow-hidden">
       <!-- Header card -->
-      <div class="px-6 py-5 border-b border-gray-100">
-        <h3 class="text-lg font-bold text-text-primary">Detalles de la cuenta</h3>
+      <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+        <h3 class="text-lg font-bold text-text-primary dark:text-slate-100">Detalles de la cuenta</h3>
       </div>
 
       <!-- Cambiar contraseña -->
-      <div class="px-6 py-5 flex items-center justify-between gap-4 border-b border-gray-100">
+      <div class="px-6 py-5 flex items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-700">
         <div>
-          <p class="text-sm font-semibold text-text-primary">Cambiar contraseña</p>
-          <p class="text-sm text-text-primary/50 mt-0.5">Actualice la contraseña de acceso a su cuenta</p>
+          <p class="text-sm font-semibold text-text-primary dark:text-slate-100">Cambiar contraseña</p>
+          <p class="text-sm text-text-primary/50 dark:text-slate-400 mt-0.5">Actualice la contraseña de acceso a su cuenta</p>
         </div>
         <button
           (click)="abrirPasswordModal()"
-          class="shrink-0 px-4 py-2 rounded-lg border border-primary text-sm font-medium text-primary hover:bg-primary/5 transition"
+          class="shrink-0 px-4 py-2 rounded-lg border border-primary text-sm font-medium text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition"
         >
           Cambiar contraseña
         </button>
@@ -171,14 +171,14 @@
       <!-- Eliminar cuenta -->
       <div class="px-6 py-5 flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm font-semibold text-text-primary">Eliminar cuenta</p>
-          <p class="text-sm text-text-primary/50 mt-0.5">
+          <p class="text-sm font-semibold text-text-primary dark:text-slate-100">Eliminar cuenta</p>
+          <p class="text-sm text-text-primary/50 dark:text-slate-400 mt-0.5">
             Elimine permanentemente su cuenta y todos los datos asociados a ella
           </p>
         </div>
         <button
           (click)="abrirDeleteModal()"
-          class="shrink-0 px-4 py-2 rounded-lg border border-danger text-sm font-medium text-danger hover:bg-danger/5 transition"
+          class="shrink-0 px-4 py-2 rounded-lg border border-danger text-sm font-medium text-danger hover:bg-danger/5 dark:hover:bg-danger/10 transition"
         >
           Eliminar cuenta
         </button>
@@ -189,8 +189,8 @@
 
 <app-ui-modal [open]="passwordModalAbierto()" (cerrar)="cerrarPasswordModal()">
   <div slot="titulo">
-    <h2 class="text-lg font-bold text-text-primary">Cambiar contraseña</h2>
-    <p class="text-sm text-text-primary/50 mt-0.5">Ingrese su contraseña actual y defina una nueva.</p>
+    <h2 class="text-lg font-bold text-text-primary dark:text-slate-100">Cambiar contraseña</h2>
+    <p class="text-sm text-text-primary/50 dark:text-slate-400 mt-0.5">Ingrese su contraseña actual y defina una nueva.</p>
   </div>
 
   <div slot="cuerpo" class="flex flex-col gap-4">
@@ -221,7 +221,7 @@
   <div slot="footer" class="flex justify-end gap-3">
     <button
       (click)="cerrarPasswordModal()"
-      class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-200 text-text-primary/70 hover:bg-gray-50 transition"
+      class="px-5 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-slate-700 text-text-primary/70 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
     >
       Cancelar
     </button>

@@ -5,13 +5,18 @@ const documentosController = require('../controllers/documentos.controller');
 
 const uploadDocumento = require('../middlewares/uploadDocumento');
 
-router.get('/documento', documentosController.obtenerDocumentos);
+// guard de autenticación: va POR RUTA porque este router se monta en el prefijo
+// ancho '/api', compartido con rutas públicas como /api/auth. Un router.use aquí
+// interceptaría también esas rutas hermanas.
+const authMiddleware = require('../middlewares/auth.middleware');
 
-router.get('/documentos', documentosController.obtenerTodosLosDocumentos);
+router.get('/documento', authMiddleware, documentosController.obtenerDocumentos);
 
-router.post('/insertarDocumento', documentosController.insertarDocumento);
+router.get('/documentos', authMiddleware, documentosController.obtenerTodosLosDocumentos);
 
-router.post('/subirDocumento', (req, res, next) => {
+router.post('/insertarDocumento', authMiddleware, documentosController.insertarDocumento);
+
+router.post('/subirDocumento', authMiddleware, (req, res, next) => {
     uploadDocumento.single('archivo')(req, res, (err) => {
         if (err) {
             return res.status(400).json({ mensaje: err.message });
@@ -20,10 +25,10 @@ router.post('/subirDocumento', (req, res, next) => {
     });
 }, documentosController.subirDocumento);
 
-router.get('/documento/:iddocumento/descargar', documentosController.descargarDocumento);
+router.get('/documento/:iddocumento/descargar', authMiddleware, documentosController.descargarDocumento);
 
-router.delete('/documento/:iddocumento', documentosController.eliminarDocumento);
+router.delete('/documento/:iddocumento', authMiddleware, documentosController.eliminarDocumento);
 
-router.put('/documento/:iddocumento', uploadDocumento.single('archivo'), documentosController.modificarDocumento);
+router.put('/documento/:iddocumento', authMiddleware, uploadDocumento.single('archivo'), documentosController.modificarDocumento);
 
 module.exports = router;

@@ -2,3 +2,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-background: #F8FAFC;
+  --color-surface:    #FFFFFF;
+  --color-text:       #000626;
+}
+
+html.dark {
+  --color-background: #0F172A;
+  --color-surface:    #1E293B;
+  --color-text:       #F1F5F9;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
