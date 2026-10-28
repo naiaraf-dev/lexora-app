@@ -1,12 +1,13 @@
 <div class="flex flex-col gap-1">
   @if (label) {
-    <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">
+    <label [for]="inputId" class="text-xs font-medium text-text-primary/60 dark:text-slate-400">
       {{ label }}
     </label>
   }
 
   <div class="relative">
     <input
+      [id]="inputId"
       [type]="tipoEfectivo()"
       [ngModel]="model"
       (ngModelChange)="modelChange.emit($event)"

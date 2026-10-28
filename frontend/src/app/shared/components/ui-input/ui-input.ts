@@ -1,6 +1,9 @@
 import { Component, computed, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+// contador para darle a cada input un id único y asociarlo a su label (accesibilidad)
+let siguienteId = 0;
+
 @Component({
   selector: 'app-ui-input',
   standalone: true,
@@ -14,6 +17,8 @@ export class UiInput {
   @Output() modelChange = new EventEmitter<any>();
   @Input() disabled = false;
   @Input() type = 'text';
+
+  readonly inputId = `ui-input-${siguienteId++}`;
 
   mostrarPassword = signal(false);
 
