@@ -1,6 +1,9 @@
 import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+// contador para generar ids únicos por instancia
+let siguienteId = 0;
+
 export interface UiSelectOption {
   label: string;
   value: string;
@@ -25,6 +28,11 @@ export class UiSelect {
   @Input() variant: 'filtro' | 'formulario' = 'filtro';
   @Input() placeholder = 'Seleccionar...';
   @Output() modelChange = new EventEmitter<any>();
+
+  // ids únicos para asociar el label con el combobox y su lista de opciones (accesibilidad)
+  private readonly idUnico = `ui-select-${siguienteId++}`;
+  readonly labelId = `${this.idUnico}-label`;
+  readonly listboxId = `${this.idUnico}-opciones`;
 
   abierto = false;
   abrirHaciaArriba = false;

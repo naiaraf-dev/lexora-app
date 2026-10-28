@@ -1,10 +1,16 @@
 <div class="relative flex flex-col gap-1">
     @if (label) {
-        <label class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ label }}</label>
+        <label [id]="labelId" class="text-xs font-medium text-text-primary/60 dark:text-slate-400">{{ label }}</label>
     }
 
+    <!-- role="combobox" + aria-labelledby: lectores de pantalla (y tests) lo identifican por su label -->
     <button
         type="button"
+        role="combobox"
+        aria-haspopup="listbox"
+        [attr.aria-labelledby]="label ? labelId : null"
+        [attr.aria-expanded]="abierto"
+        [attr.aria-controls]="abierto ? listboxId : null"
         (click)="toggleAbierto()"
         class="w-full min-w-[180px] flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-white dark:bg-slate-800 text-sm text-left transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
@@ -20,6 +26,9 @@
 
     @if (abierto) {
         <div
+            role="listbox"
+            [id]="listboxId"
+            [attr.aria-labelledby]="label ? labelId : null"
             class="fixed z-50 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg py-1 flex flex-col max-h-64 overflow-y-auto"
             [style.top]="panelStyle.top"
             [style.bottom]="panelStyle.bottom"
@@ -29,6 +38,8 @@
             @if (variant === 'filtro') {
                 <button
                     type="button"
+                    role="option"
+                    [attr.aria-selected]="!model"
                     (click)="elegir('')"
                     class="px-3 py-2 text-sm text-left transition-colors"
                     [class]="!model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
@@ -40,6 +51,8 @@
             @for (opt of options; track opt.value) {
                 <button
                     type="button"
+                    role="option"
+                    [attr.aria-selected]="opt.value === model"
                     (click)="elegir(opt.value)"
                     class="px-3 py-2 text-sm text-left transition-colors"
                     [class]="opt.value === model ? 'bg-primary/10 text-primary font-medium' : 'text-text-primary dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'"
