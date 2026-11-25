@@ -47,7 +47,7 @@ async function resolverDocumento(input, ctx) {
 }
 
 async function descargar(storageKey) {
-    const respuesta = await fetch(cloudinaryDocumento.obtenerUrlDocumentoCloudinary(storageKey));
+    const respuesta = await fetch(await cloudinaryDocumento.obtenerUrlDocumentoCloudinary(storageKey));
     if (!respuesta.ok) throw errorLitis(404, 'NO_ENCONTRADO', 'El archivo no está disponible.');
 
     const declarado = Number(respuesta.headers.get('content-length'));

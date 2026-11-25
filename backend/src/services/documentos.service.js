@@ -250,7 +250,7 @@ async function obtenerUrlDescargaDocumento(idDocumento) {
         throw error;
     }
 
-    const url = obtenerUrlDocumentoCloudinary(documento.storage_key);
+    const url = await obtenerUrlDocumentoCloudinary(documento.storage_key);
 
     return {
         documento,

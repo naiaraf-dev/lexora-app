@@ -1,5 +1,8 @@
 const path = require('path');
-const cloudinary = require('../config/cloudinary');
+const { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+const s3 = require('../config/s3');
+const BUCKET = process.env.S3_BUCKET;
 
 // limpia el nombre del archivo para que no tenga espacios ni caracteres raros
 function limpiarNombreArchivo(nombre) {
@@ -26,20 +29,10 @@ function subirDocumentoACloudinary(file, carpeta = 'lexora/documentos') {
         // arma un public id unico usando la fecha actual
         const publicId = `${Date.now()}_${nombreLimpio}${extension}`;
 
-        const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder: carpeta,
-                public_id: publicId,
-                resource_type: 'raw'
-            },
-            (error, result) => {
-                if (error) return reject(error);
-                resolve(result);
-            }
-        );
-
-        // manda el buffer del archivo al stream de cloudinary
-        uploadStream.end(file.buffer);
+        const key = `${carpeta}/${publicId}`;
+        s3.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: file.buffer, ContentType: file.mimetype }))
+            .then(() => resolve({ public_id: key, secure_url: null, resource_type: 'raw', format: extension.slice(1) }))
+            .catch(reject);
     });
 }
 
@@ -51,21 +44,13 @@ async function eliminarDocumentoDeCloudinary(storageKey) {
         };
     }
 
-    const resultado = await cloudinary.uploader.destroy(storageKey, {
-        resource_type: 'raw'
-    });
-
-    return resultado;
+    await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: storageKey }));
+    return { result: 'ok' };
 }
 
 // genera la url segura para acceder o descargar el documento
-function obtenerUrlDocumentoCloudinary(storageKey) {
-    return cloudinary.url(storageKey, {
-        resource_type: 'raw',
-        type: 'upload',
-        secure: true,
-        sign_url: true
-    });
+async function obtenerUrlDocumentoCloudinary(storageKey) {
+    return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKET, Key: storageKey }), { expiresIn: 300 });
 }
 
 module.exports = {

@@ -8,7 +8,7 @@ const config = {
     database: process.env.DB_NAME,
 
     options: {
-        instanceName: process.env.DB_INSTANCE,
+        instanceName: process.env.DB_INSTANCE || undefined,
         encrypt: false,
         trustServerCertificate: true
     },
